@@ -1,8 +1,8 @@
 # OpenCAD - Progress Tracking
 
 **Last Updated**: 2026-03-29
-**Current Phase**: Phase 5-7 UI Integration, Phase 7 CRDT active
-**Overall Progress**: 55%
+**Current Phase**: Phase 5-7 UI Components, Phase 7 Collaboration Active
+**Overall Progress**: 60%
 
 ---
 
@@ -14,9 +14,9 @@
 | Phase 2: CAD Kernel | IN PROGRESS | 25% |
 | Phase 3: Sketcher | COMPLETE | 80% |
 | Phase 4: Parametric Features | COMPLETE | 60% |
-| Phase 5: Professional UI | IN PROGRESS | 85% |
+| Phase 5: Professional UI | IN PROGRESS | 90% |
 | Phase 6: File I/O | COMPLETE | 85% |
-| Phase 7: Collaboration | IN PROGRESS | 30% |
+| Phase 7: Collaboration | IN PROGRESS | 50% |
 | Phase 8: Assemblies | PENDING | 0% |
 | Phase 9: Drawings | PENDING | 0% |
 | Phase 10: Plugins & AI | PENDING | 0% |
@@ -24,6 +24,65 @@
 ---
 
 ## Session Log
+
+### 2026-03-29 - Session 7: WebRTC Sync, Collab Store, UI Components
+
+**Completed:**
+- [x] WebRTC collaboration sync layer (webrtc-sync.ts)
+  - CollaborationSync class: create/join/leave session lifecycle
+  - Connection state management (disconnected, connecting, connected, error)
+  - Room ID generation (12-char lowercase alphanumeric)
+  - Auto-reconnection with exponential backoff (max 10 attempts)
+  - Peer color assignment from ID hash
+  - Random display name generation (Adjective+Noun)
+  - Cursor and selection awareness broadcasting
+  - Singleton pattern (getCollaborationSync/destroyCollaborationSync)
+  - 23 WebRTC sync tests
+- [x] Collaboration Zustand store (collab-store.ts)
+  - Connection state, room ID, peer list, host flag
+  - joinSession/leaveSession actions
+  - updatePeer/removePeer/setPeers actions
+  - updateLocalPresence for cursor/selection
+  - Selector hooks: useConnectionState, usePeers, useIsConnected, usePeerCount, useLocalUser
+  - 17 collab-store tests
+- [x] Toast notification system (Toast.tsx)
+  - Module-level state (works outside React tree)
+  - ToastContainer component with auto-dismiss
+  - 4 toast types: success, error, warning, info
+  - Click to dismiss, stacked layout
+  - useToast imperative hook
+  - 5 toast tests
+- [x] DisplayModeToggle component (DisplayModeToggle.tsx)
+  - Wireframe / Shaded / Shaded+Edges toggle buttons
+  - Grid, Axes, Shadows toggle buttons
+  - Connected to view-store
+  - 8 display mode tests
+- [x] ContextMenu component (ContextMenu.tsx)
+  - Positioned at mouse coordinates with viewport clamping
+  - Menu items with icon, label, shortcut, disabled/danger states
+  - Divider separators
+  - Keyboard navigation (arrows, enter, escape)
+  - Click-outside-to-close
+  - Submenu support
+  - 10 context menu tests
+- [x] Wired ToastContainer into AppLayout
+
+**Test → Source File Mapping:**
+| Test File | Source File | Tests |
+|-----------|------------|-------|
+| webrtc-sync.test.ts | webrtc-sync.ts | 23 |
+| collab-store.test.ts | collab-store.ts | 17 |
+| Toast.test.ts | Toast.tsx | 5 |
+| DisplayModeToggle.test.ts | DisplayModeToggle.tsx + view-store.ts | 8 |
+| ContextMenu.test.ts | ContextMenu.tsx | 10 |
+| CommandPalette.test.tsx | CommandPalette.tsx + useKeyboardShortcuts.ts | 13 |
+| DocumentDashboard.test.tsx | DocumentDashboard.tsx + db.ts + cad-store.ts | 13 |
+
+**Build Stats:**
+- 22 test suites, 344 tests, all passing
+- Clean TypeScript compilation
+
+---
 
 ### 2026-03-29 - Session 6: Command Palette, Document Dashboard, Keyboard Wiring
 

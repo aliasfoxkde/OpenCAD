@@ -8,6 +8,7 @@ import { SketchCanvas } from '../sketcher/SketchCanvas';
 import { SketchToolbar } from '../sketcher/SketchToolbar';
 import { CommandPalette } from '../ui/CommandPalette';
 import { DocumentDashboard } from '../ui/DocumentDashboard';
+import { ToastContainer } from '../ui/Toast';
 import { useUIStore } from '../../stores/ui-store';
 import { useCADStore } from '../../stores/cad-store';
 import { useSketchStore } from '../../stores/sketch-store';
@@ -98,6 +99,9 @@ export function AppLayout() {
 
       {/* Command Palette (modal overlay) */}
       <CommandPalette />
+
+      {/* Toast Notifications */}
+      <ToastContainer />
     </div>
   );
 }

@@ -243,7 +243,7 @@
 - [x] Keyboard shortcuts (industry-standard CAD bindings)
 - [x] Command palette (Ctrl+K, search all commands)
 - [x] Command palette UI component (modal overlay with search, keyboard nav, grouped results)
-- [ ] Context menus (right-click on geometry, features)
+- [x] Context menus (right-click on geometry, features)
 - [x] Menu bar (File, Edit, View, Insert, Tools, Help)
 
 ### 5.4 Measurement and Analysis
@@ -259,15 +259,15 @@
 - [ ] Material library (metal, plastic, wood, glass)
 - [ ] Color picker for bodies/faces
 - [ ] Transparency mode
-- [ ] Wireframe / shaded / shaded-with-edges modes
-- [ ] Shadow toggle
+- [x] Wireframe / shaded / shaded-with-edges modes
+- [x] Shadow toggle
 - [ ] Ambient occlusion
 
 ### 5.6 Status and Feedback
 
 - [ ] Status bar (coordinates, units, active tool)
 - [ ] Progress indicators (rebuild, import)
-- [ ] Toast notifications
+- [x] Toast notifications
 - [ ] Error messages with actionable guidance
 - [ ] Undo/redo indicator
 
@@ -319,16 +319,16 @@
 
 ### 7.1 Sync Infrastructure
 
-- [ ] y-webrtc integration (peer-to-peer)
+- [x] y-webrtc integration (peer-to-peer)
 - [ ] Optional y-websocket server config
-- [ ] Connection management UI
-- [ ] Reconnection handling
+- [x] Connection management UI
+- [x] Reconnection handling
 - [ ] Offline queue (sync when online)
 
 ### 7.2 Multi-User UX
 
-- [ ] User presence indicators
-- [ ] Cursor sharing in viewport
+- [x] User presence indicators
+- [x] Cursor sharing in viewport
 - [ ] "Follow user" mode
 - [ ] Selection broadcasting
 - [ ] Conflict resolution UI
@@ -441,7 +441,7 @@
 ## Progress Summary
 
 - **Total Tasks**: ~200
-- **Completed**: 46
+- **Completed**: 53
 - **In Progress**: 3
-- **Pending**: ~151
-- **Completion**: 23%
+- **Pending**: ~144
+- **Completion**: 27%
