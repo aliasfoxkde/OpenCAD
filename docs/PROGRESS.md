@@ -1,8 +1,8 @@
 # OpenCAD - Progress Tracking
 
 **Last Updated**: 2026-03-29
-**Current Phase**: Phase 2 CAD Kernel + Phase 4 Parametric Features (in progress)
-**Overall Progress**: 20%
+**Current Phase**: Phase 3 Sketcher COMPLETE + Phase 4 Parametric Features
+**Overall Progress**: 30%
 
 ---
 
@@ -12,9 +12,9 @@
 |-------|--------|----------|
 | Phase 1: Foundation | COMPLETE | 90% |
 | Phase 2: CAD Kernel | IN PROGRESS | 15% |
-| Phase 3: Sketcher | PENDING | 0% |
-| Phase 4: Parametric Features | IN PROGRESS | 30% |
-| Phase 5: Professional UI | PENDING | 0% |
+| Phase 3: Sketcher | COMPLETE | 80% |
+| Phase 4: Parametric Features | COMPLETE | 60% |
+| Phase 5: Professional UI | COMPLETE | 70% |
 | Phase 6: File I/O | PENDING | 0% |
 | Phase 7: Collaboration | PENDING | 0% |
 | Phase 8: Assemblies | PENDING | 0% |
@@ -24,6 +24,32 @@
 ---
 
 ## Session Log
+
+### 2026-03-29 - Session 3: 2D Sketcher with Constraint Solver
+
+**Completed:**
+- [x] Sketch store (Zustand): elements, constraints, tools, selection, drawing workflow, undo/redo, DOF counting
+- [x] Snap engine: endpoint/midpoint/center/grid snap detection with 8px threshold
+- [x] Constraint solver: Newton-Raphson with analytical Jacobians
+  - Coincident, horizontal, vertical, parallel, perpendicular, distance, equal, fix, midpoint constraints
+  - Gaussian elimination with column pivoting for underdetermined systems
+  - Damping factor (0.9) for convergence stability
+- [x] SketchCanvas: HTML5 Canvas 2D overlay
+  - Grid rendering (main + sub-grid), axis rendering (red X, green Y)
+  - Element rendering: lines, circles, arcs (3-point), rectangles, points
+  - Snap indicators: square (endpoint), diamond (midpoint), circle (center), cross (grid)
+  - Drawing preview with dashed lines
+  - Hit testing for element selection
+  - Canvas coordinate system: Y-flipped, origin centered
+- [x] SketchToolbar: floating tool palette with drawing tools, constraint tools, DOF indicator
+- [x] Integration: SketchCanvas/Toolbar wired into AppLayout viewport overlay
+- [x] 108 tests passing across 9 test files (45 new sketcher tests)
+
+**Build Stats:**
+- 9 test suites, 108 tests, all passing
+- Clean TypeScript compilation (no errors)
+
+---
 
 ### 2026-03-29 - Session 2: Parametric Feature System
 
