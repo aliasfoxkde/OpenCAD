@@ -17,6 +17,7 @@ import { handleKeyEvent, registerStandardCommands } from '../../hooks/useKeyboar
 import { getDefaultParameters } from '../../cad/features';
 import { nanoid } from 'nanoid';
 import { handleNewDocument, handleOpenDocument, handleSaveDocument, handleExport, handleImportFile } from '../../lib/file-actions';
+import { zoomCamera } from '../viewport/CameraController';
 import type { ToolType, FeatureType } from '../../types/cad';
 
 const primitiveTypeMap: Partial<Record<ToolType, FeatureType>> = {
@@ -38,6 +39,10 @@ export function AppLayout() {
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
   const sketchActive = useSketchStore((s) => s.active);
   const documentId = useCADStore((s) => s.documentId);
+  const leftPanelWidth = useViewStore((s) => s.leftPanelWidth);
+  const rightPanelWidth = useViewStore((s) => s.rightPanelWidth);
+  const setLeftPanelWidth = useViewStore((s) => s.setLeftPanelWidth);
+  const setRightPanelWidth = useViewStore((s) => s.setRightPanelWidth);
   const toggleCommandPalette = useUIStore((s) => s.toggleCommandPalette);
   const clearSelection = useCADStore((s) => s.clearSelection);
   const removeFeature = useCADStore((s) => s.removeFeature);
@@ -73,15 +78,26 @@ export function AppLayout() {
     useViewStore.getState().setCameraPreset(preset);
   }, []);
 
+  // Auto-save every 30s when dirty
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const state = useCADStore.getState();
+      if (state.dirty && state.documentId) {
+        handleSaveDocument();
+      }
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Register keyboard shortcuts on mount
   useEffect(() => {
     registerStandardCommands({
       toggleCommandPalette,
       toggleGrid: () => useViewStore.getState().toggleGrid(),
       toggleWireframe: () => useViewStore.getState().toggleWireframe(),
-      fitView: () => {},
-      zoomIn: () => {},
-      zoomOut: () => {},
+      fitView: () => useViewStore.getState().requestFitView(),
+      zoomIn: () => zoomCamera('in'),
+      zoomOut: () => zoomCamera('out'),
       save: () => { handleSaveDocument(); },
       undo: () => useCADStore.getState().undo(),
       redo: () => useCADStore.getState().redo(),
@@ -136,9 +152,14 @@ export function AppLayout() {
 
       <div style={styles.main}>
         {leftPanelOpen && (
-          <div style={styles.leftPanel}>
-            <FeatureTree />
-          </div>
+          <>
+            <div style={{ ...styles.leftPanel, width: leftPanelWidth }}>
+              <FeatureTree />
+            </div>
+            <ResizeHandle
+              onResize={(delta) => setLeftPanelWidth(Math.max(150, Math.min(400, leftPanelWidth + delta)))}
+            />
+          </>
         )}
 
         <DropZone>
@@ -148,9 +169,14 @@ export function AppLayout() {
         </DropZone>
 
         {rightPanelOpen && (
-          <div style={styles.rightPanel}>
-            <PropertiesPanel />
-          </div>
+          <>
+            <ResizeHandle
+              onResize={(delta) => setRightPanelWidth(Math.max(200, Math.min(450, rightPanelWidth - delta)))}
+            />
+            <div style={{ ...styles.rightPanel, width: rightPanelWidth }}>
+              <PropertiesPanel />
+            </div>
+          </>
         )}
       </div>
 
@@ -160,6 +186,57 @@ export function AppLayout() {
     </div>
   );
 }
+
+// ============================================================
+// Resize Handle for panel dragging
+// ============================================================
+
+function ResizeHandle({ onResize }: { onResize: (deltaX: number) => void }) {
+  const dragging = useRef(false);
+  const startX = useRef(0);
+
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragging.current = true;
+    startX.current = e.clientX;
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!dragging.current) return;
+      const delta = ev.clientX - startX.current;
+      startX.current = ev.clientX;
+      onResize(delta);
+    };
+
+    const onMouseUp = () => {
+      dragging.current = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [onResize]);
+
+  return (
+    <div
+      style={resizeHandleStyle}
+      onMouseDown={onMouseDown}
+    />
+  );
+}
+
+const resizeHandleStyle: React.CSSProperties = {
+  width: 4,
+  cursor: 'col-resize',
+  background: 'transparent',
+  flexShrink: 0,
+  position: 'relative',
+  zIndex: 10,
+};
 
 // ============================================================
 // Drop Zone for file import
@@ -334,7 +411,7 @@ function MenuBar({
         { type: 'item', label: 'Toggle Grid', shortcut: 'G', action: () => useViewStore.getState().toggleGrid() },
         { type: 'item', label: 'Toggle Wireframe', shortcut: 'W', action: () => useViewStore.getState().toggleWireframe() },
         { type: 'item', label: 'Toggle Shadows', action: () => useViewStore.getState().toggleShadows() },
-        { type: 'item', label: 'Fit View', shortcut: 'F', action: () => {} },
+        { type: 'item', label: 'Fit View', shortcut: 'F', action: () => useViewStore.getState().requestFitView() },
       ],
     },
     {
@@ -449,9 +526,6 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
   },
   leftPanel: {
-    width: 220,
-    minWidth: 180,
-    maxWidth: 320,
     flexShrink: 0,
   },
   viewport: {
@@ -460,9 +534,6 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
   },
   rightPanel: {
-    width: 260,
-    minWidth: 200,
-    maxWidth: 360,
     flexShrink: 0,
   },
 };

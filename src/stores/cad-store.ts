@@ -10,12 +10,13 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
   selectionTarget: null,
   activeTool: 'select',
   isSketchMode: false,
+  dirty: false,
 
   setDocument: (id, name) => set({ documentId: id, documentName: name }),
   addFeature: (feature) =>
     set((state) => {
       pushState(state.features);
-      return { features: [...state.features, feature] };
+      return { features: [...state.features, feature], dirty: true };
     }),
   addFeatureAndSelect: (feature) =>
     set((state) => {
@@ -23,6 +24,7 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
       return {
         features: [...state.features, feature],
         selectedIds: [feature.id],
+        dirty: true,
       };
     }),
   removeFeature: (id) =>
@@ -31,6 +33,7 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
       return {
         features: state.features.filter((f) => f.id !== id),
         selectedIds: state.selectedIds.filter((sid) => sid !== id),
+        dirty: true,
       };
     }),
   updateFeature: (id, updates) =>
@@ -40,12 +43,14 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
         features: state.features.map((f) =>
           f.id === id ? { ...f, ...updates } : f,
         ),
+        dirty: true,
       };
     }),
   duplicateFeature: (id) =>
     set((state) => {
       const source = state.features.find((f) => f.id === id);
       if (!source) return state;
+      pushState(state.features);
       const clone = structuredClone(source);
       clone.id = crypto.randomUUID();
       clone.name = `${source.name} (copy)`;
@@ -55,6 +60,7 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
       return {
         features: [...state.features, clone],
         selectedIds: [clone.id],
+        dirty: true,
       };
     }),
   select: (ids, target) =>
@@ -70,23 +76,23 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
       pushState(state.features);
       const removed = features.splice(oldIndex, 1);
       features.splice(newIndex, 0, removed[0]!);
-      return { features };
+      return { features, dirty: true };
     }),
   loadFeatures: (features) => {
     pushState(useCADStore.getState().features);
-    set({ features, selectedIds: [], selectionTarget: null });
+    set({ features, selectedIds: [], selectionTarget: null, dirty: false });
   },
   undo: () =>
     set((state) => {
       const prev = undo(state.features);
       if (!prev) return state;
-      return { features: prev, selectedIds: [] };
+      return { features: prev, selectedIds: [], dirty: true };
     }),
   redo: () =>
     set((state) => {
       const next = redo(state.features);
       if (!next) return state;
-      return { features: next, selectedIds: [] };
+      return { features: next, selectedIds: [], dirty: true };
     }),
 }));
 

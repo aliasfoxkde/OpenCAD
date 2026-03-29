@@ -8,6 +8,7 @@ export interface CADStoreState {
   selectionTarget: SelectionTarget | null;
   activeTool: ToolType;
   isSketchMode: boolean;
+  dirty: boolean;
 }
 
 export interface CADStoreActions {
@@ -35,6 +36,9 @@ export interface ViewStoreState {
   showWireframe: boolean;
   showShadows: boolean;
   cameraPreset: string | null;
+  fitViewRequested: number;
+  leftPanelWidth: number;
+  rightPanelWidth: number;
 }
 
 export interface ViewStoreActions {
@@ -45,6 +49,9 @@ export interface ViewStoreActions {
   toggleWireframe: () => void;
   toggleShadows: () => void;
   setCameraPreset: (name: string) => void;
+  requestFitView: () => void;
+  setLeftPanelWidth: (width: number) => void;
+  setRightPanelWidth: (width: number) => void;
 }
 
 export interface UIStoreState {

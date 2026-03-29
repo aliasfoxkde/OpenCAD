@@ -9,6 +9,9 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
   showWireframe: false,
   showShadows: false,
   cameraPreset: null,
+  fitViewRequested: 0,
+  leftPanelWidth: 220,
+  rightPanelWidth: 260,
 
   setDisplayMode: (mode) => set({ displayMode: mode }),
   setViewportLayout: (layout) => set({ viewportLayout: layout }),
@@ -17,4 +20,7 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
   toggleWireframe: () => set((s) => ({ showWireframe: !s.showWireframe })),
   toggleShadows: () => set((s) => ({ showShadows: !s.showShadows })),
   setCameraPreset: (name) => set({ cameraPreset: name }),
+  requestFitView: () => set((s) => ({ fitViewRequested: s.fitViewRequested + 1 })),
+  setLeftPanelWidth: (width) => set({ leftPanelWidth: width }),
+  setRightPanelWidth: (width) => set({ rightPanelWidth: width }),
 }));

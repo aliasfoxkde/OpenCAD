@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useCADStore } from '../../stores/cad-store';
 import { getFeatureDefinition } from '../../cad/features/feature-registry';
 
@@ -7,6 +8,33 @@ export function FeatureTree() {
   const select = useCADStore((s) => s.select);
   const updateFeature = useCADStore((s) => s.updateFeature);
   const removeFeature = useCADStore((s) => s.removeFeature);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  const startEditing = useCallback((featureId: string, currentName: string) => {
+    setEditingId(featureId);
+    setEditName(currentName);
+  }, []);
+
+  const commitRename = useCallback(() => {
+    if (editingId && editName.trim()) {
+      updateFeature(editingId, { name: editName.trim() });
+    }
+    setEditingId(null);
+  }, [editingId, editName, updateFeature]);
+
+  const cancelRename = useCallback(() => {
+    setEditingId(null);
+  }, []);
+
+  // Focus and select input when editing starts
+  useEffect(() => {
+    if (editingId && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingId]);
 
   return (
     <div style={styles.panel}>
@@ -28,10 +56,26 @@ export function FeatureTree() {
               ...(selectedIds.includes(feature.id) ? styles.selected : {}),
             }}
             onClick={() => select([feature.id])}
+            onDoubleClick={() => startEditing(feature.id, feature.name)}
           >
             <span style={styles.index}>{index + 1}</span>
             <span style={styles.icon}>{getFeatureIcon(feature.type)}</span>
-            <span style={styles.name}>{feature.name}</span>
+            {editingId === feature.id ? (
+              <input
+                ref={editInputRef}
+                style={styles.renameInput}
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onBlur={commitRename}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') commitRename();
+                  if (e.key === 'Escape') cancelRename();
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <span style={styles.name}>{feature.name}</span>
+            )}
             <button
               style={styles.toggleBtn}
               onClick={(e) => {
@@ -132,6 +176,20 @@ const styles: Record<string, React.CSSProperties> = {
   },
   name: {
     flex: 1,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  renameInput: {
+    flex: 1,
+    background: '#0f172a',
+    border: '1px solid #3b82f6',
+    borderRadius: 2,
+    padding: '1px 4px',
+    fontSize: 12,
+    color: '#f1f5f9',
+    outline: 'none',
+    minWidth: 0,
   },
   toggleBtn: {
     fontSize: 9,
