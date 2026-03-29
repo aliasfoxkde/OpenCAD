@@ -1,8 +1,8 @@
 # OpenCAD - Progress Tracking
 
 **Last Updated**: 2026-03-29
-**Current Phase**: Phase 5-7 UI Components, Phase 7 Collaboration Active
-**Overall Progress**: 60%
+**Current Phase**: Phase 10 Ecosystem — API, MCP, SEO, Documentation
+**Overall Progress**: 65%
 
 ---
 
@@ -14,16 +14,68 @@
 | Phase 2: CAD Kernel | IN PROGRESS | 25% |
 | Phase 3: Sketcher | COMPLETE | 80% |
 | Phase 4: Parametric Features | COMPLETE | 60% |
-| Phase 5: Professional UI | IN PROGRESS | 90% |
+| Phase 5: Professional UI | COMPLETE | 95% |
 | Phase 6: File I/O | COMPLETE | 85% |
 | Phase 7: Collaboration | IN PROGRESS | 50% |
 | Phase 8: Assemblies | PENDING | 0% |
 | Phase 9: Drawings | PENDING | 0% |
-| Phase 10: Plugins & AI | PENDING | 0% |
+| Phase 10: Plugins & AI | IN PROGRESS | 70% |
 
 ---
 
 ## Session Log
+
+### 2026-03-29 - Session 8: Client API, MCP Server, SEO, Documentation
+
+**Completed:**
+- [x] AGENTS.md — AI coding assistant guide (stack, architecture, types, conventions)
+- [x] Vite SEO plugin (vite-plugin-seo.ts)
+  - generateBundle hook emits robots.txt + sitemap.xml at build time
+  - robots.txt: User-agent: *, Allow: /, Sitemap link
+  - sitemap.xml: 3 SPA routes (/, /editor, /docs) with priority/changefreq
+  - 6 SEO plugin tests
+  - Wired into vite.config.ts + index.html (sitemap link, OG/Twitter meta)
+- [x] Client-side API facade (src/api/)
+  - types.ts: APIResponse, FeatureSummary, FeatureDetail, ExportOptions/Result, etc.
+  - document-api.ts: createDocument, listAllDocuments, openDocument, saveCurrentDocument, removeDocument
+  - feature-api.ts: addFeature, removeFeature, modifyFeature, getFeatures, listAvailable, getDefaults
+  - measure-api.ts: measureDistance, computeVolume, computeSurfaceArea, computeBounds, getMassProperties
+  - export-api.ts: exportToFormat (STL/OBJ/GLB/OCAD), downloadExport, importSTLFile, importOBJFile
+  - opencad-api.ts: OpenCADAPI class combining all sub-APIs
+  - Wired window.OpenCAD in main.tsx
+  - 28 API tests (mocked stores/I/O)
+- [x] MCP Server (mcp-server/)
+  - index.ts: stdio MCP server entry point
+  - core/project-io.ts: read/write/list/delete .ocad files on disk
+  - core/mesh-engine.ts: re-exports pure-math mesh generators
+  - core/measurement.ts: re-exports measurement functions
+  - core/feature-registry.ts: re-exports feature registry
+  - tools/document-tools.ts: create_document, list_documents, open_document, delete_document
+  - tools/feature-tools.ts: add_feature, modify_feature, delete_feature, get_document_state
+  - tools/export-tools.ts: export_file (STL/OBJ/glTF)
+  - tools/measure-tools.ts: measure (distance, volume, surface_area, bounding_box, mass_properties)
+  - tools/info-tools.ts: list_available_features, get_feature_parameters
+  - 20 MCP server tests (project-io roundtrip, measurements)
+  - .claude/mcp.json configured with opencad server
+  - npm scripts: mcp:dev, test:mcp
+- [x] Documentation
+  - docs/API.md: Client API reference
+  - docs/MCP.md: MCP server setup and tool reference
+
+**Test → Source File Mapping (new):**
+| Test File | Source File | Tests |
+|-----------|------------|-------|
+| vite-plugin-seo.test.ts | vite-plugin-seo.ts | 6 |
+| opencad-api.test.ts | src/api/*.ts | 28 |
+| project-io.test.ts | mcp-server/src/core/project-io.ts | 13 |
+| measure-tools.test.ts | mcp-server/src/core/measurement.ts | 7 |
+
+**Build Stats:**
+- 24 test suites, 378 tests (root) + 2 suites, 20 tests (MCP) = 398 total, all passing
+- Clean TypeScript compilation
+- New dependencies: @modelcontextprotocol/sdk, zod, tsx
+
+---
 
 ### 2026-03-29 - Session 7: WebRTC Sync, Collab Store, UI Components
 

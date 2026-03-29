@@ -16,7 +16,9 @@
     "format:check": "prettier --check src/",
     "pages:dev": "wrangler pages dev dist --port 8788",
     "pages:deploy": "wrangler pages deploy dist",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "mcp:dev": "tsx mcp-server/src/index.ts",
+    "test:mcp": "vitest run --config vitest.mcp.config.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
@@ -32,6 +34,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.28.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.14",
@@ -41,9 +44,11 @@
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.0.1",
     "prettier": "^3.8.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^8.0.3",
     "vitest": "^4.1.2",
-    "wrangler": "^4.78.0"
+    "wrangler": "^4.78.0",
+    "zod": "^4.3.6"
   }
 }
