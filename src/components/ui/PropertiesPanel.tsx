@@ -1,22 +1,26 @@
 import { useCADStore } from '../../stores/cad-store';
-import type { PrimitiveType } from '../../types/cad';
+import { getDefaultParameters, getFeatureDefinition } from '../../cad/features';
 import { nanoid } from 'nanoid';
+import type { ParameterDef } from '../../cad/features';
+import type { FeatureType } from '../../types/cad';
 
-const primitives: { type: PrimitiveType; label: string }[] = [
+/** Map primitive ToolType to feature-registry type */
+const primitiveTypeMap: Record<string, FeatureType> = {
+  box: 'extrude',
+  cylinder: 'revolve',
+  sphere: 'sphere',
+  cone: 'cone',
+  torus: 'torus',
+};
+
+/** Primitives for the Create section */
+const primitives = [
   { type: 'box', label: 'Box' },
   { type: 'cylinder', label: 'Cylinder' },
   { type: 'sphere', label: 'Sphere' },
   { type: 'cone', label: 'Cone' },
   { type: 'torus', label: 'Torus' },
 ];
-
-const defaultParams: Record<PrimitiveType, Record<string, number>> = {
-  box: { width: 2, height: 2, depth: 2 },
-  cylinder: { radius: 0.5, height: 2 },
-  sphere: { radius: 1 },
-  cone: { radius: 0.5, height: 2 },
-  torus: { radius: 0.5, tube: 0.15 },
-};
 
 export function PropertiesPanel() {
   const selectedIds = useCADStore((s) => s.selectedIds);
@@ -25,13 +29,18 @@ export function PropertiesPanel() {
   const addFeature = useCADStore((s) => s.addFeature);
 
   const selectedFeature = features.find((f) => selectedIds.includes(f.id));
+  const featureDef = selectedFeature ? getFeatureDefinition(selectedFeature.type) : undefined;
 
-  const handleCreatePrimitive = (type: PrimitiveType) => {
+  const handleCreatePrimitive = (primitiveType: string) => {
+    const featureType = primitiveTypeMap[primitiveType];
+    if (!featureType) return;
+
+    const defaults = getDefaultParameters(featureType);
     addFeature({
       id: nanoid(),
-      type: 'extrude',
-      name: `${type.charAt(0).toUpperCase() + type.slice(1)} ${features.length + 1}`,
-      parameters: defaultParams[type],
+      type: featureType,
+      name: `${primitiveType.charAt(0).toUpperCase() + primitiveType.slice(1)} ${features.length + 1}`,
+      parameters: defaults,
       dependencies: [],
       children: [],
       suppressed: false,
@@ -64,27 +73,56 @@ export function PropertiesPanel() {
           ))}
         </div>
       </div>
-      {selectedFeature && (
+      {selectedFeature && featureDef && (
         <div style={styles.section}>
           <div style={styles.sectionTitle}>
-            Properties - {selectedFeature.name}
+            Properties — {selectedFeature.name}
           </div>
-          {Object.entries(selectedFeature.parameters).map(([key, value]) => (
-            <div key={key} style={styles.paramRow}>
-              <label style={styles.paramLabel}>{key}</label>
-              <input
-                type="number"
-                style={styles.paramInput}
-                value={value as number}
-                step={0.1}
-                onChange={(e) =>
-                  handleParamChange(key, parseFloat(e.target.value) || 0)
-                }
+          <div style={styles.typeLabel}>
+            {featureDef.icon} {featureDef.label}
+          </div>
+          {featureDef.parameters
+            .filter((p) => p.type === 'number')
+            .map((paramDef) => (
+              <ParameterInput
+                key={paramDef.name}
+                paramDef={paramDef}
+                value={(selectedFeature.parameters[paramDef.name] as number) ?? paramDef.default as number}
+                onChange={(v) => handleParamChange(paramDef.name, v)}
               />
-            </div>
-          ))}
+            ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function ParameterInput({
+  paramDef,
+  value,
+  onChange,
+}: {
+  paramDef: ParameterDef;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div style={styles.paramRow}>
+      <label style={styles.paramLabel}>
+        {paramDef.label}
+        {paramDef.unit && (
+          <span style={styles.paramUnit}> {paramDef.unit}</span>
+        )}
+      </label>
+      <input
+        type="number"
+        style={styles.paramInput}
+        value={value}
+        min={paramDef.min}
+        max={paramDef.max}
+        step={paramDef.step ?? 0.1}
+        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+      />
     </div>
   );
 }
@@ -121,6 +159,12 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
+  typeLabel: {
+    fontSize: 12,
+    color: '#e2e8f0',
+    marginBottom: 8,
+    fontWeight: 500,
+  },
   primitiveGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(3, 1fr)',
@@ -144,7 +188,11 @@ const styles: Record<string, React.CSSProperties> = {
   paramLabel: {
     fontSize: 11,
     color: '#94a3b8',
-    width: 60,
+    width: 80,
+  },
+  paramUnit: {
+    color: '#475569',
+    fontSize: 10,
   },
   paramInput: {
     flex: 1,

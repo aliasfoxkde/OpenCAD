@@ -1,4 +1,5 @@
 import { useCADStore } from '../../stores/cad-store';
+import { getFeatureDefinition } from '../../cad/features/feature-registry';
 
 export function FeatureTree() {
   const features = useCADStore((s) => s.features);
@@ -59,18 +60,8 @@ export function FeatureTree() {
 }
 
 function getFeatureIcon(type: string): string {
-  const icons: Record<string, string> = {
-    extrude: '[__]',
-    revolve: '(|)',
-    sphere: '(o)',
-    cone: '/\\',
-    torus: '(O)',
-    fillet: '~',
-    chamfer: '/~',
-    cut: '[-]',
-    sketch: '[S]',
-  };
-  return icons[type] ?? '[+]';
+  const def = getFeatureDefinition(type);
+  return def?.icon ?? '[+]';
 }
 
 const styles: Record<string, React.CSSProperties> = {
