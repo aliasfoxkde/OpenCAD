@@ -1,8 +1,8 @@
 # OpenCAD - Progress Tracking
 
 **Last Updated**: 2026-03-29
-**Current Phase**: Phase 3 Sketcher COMPLETE + Phase 4 Parametric Features
-**Overall Progress**: 30%
+**Current Phase**: Phase 6 File I/O COMPLETE
+**Overall Progress**: 40%
 
 ---
 
@@ -15,7 +15,7 @@
 | Phase 3: Sketcher | COMPLETE | 80% |
 | Phase 4: Parametric Features | COMPLETE | 60% |
 | Phase 5: Professional UI | COMPLETE | 70% |
-| Phase 6: File I/O | PENDING | 0% |
+| Phase 6: File I/O | COMPLETE | 70% |
 | Phase 7: Collaboration | PENDING | 0% |
 | Phase 8: Assemblies | PENDING | 0% |
 | Phase 9: Drawings | PENDING | 0% |
@@ -24,6 +24,27 @@
 ---
 
 ## Session Log
+
+### 2026-03-29 - Session 4: File I/O System
+
+**Completed:**
+- [x] STL binary exporter: binary STL from MeshData with computed face normals
+- [x] STL ASCII exporter: text-based STL for multiple meshes
+- [x] STL importer: binary and ASCII STL parsing with auto-detection
+- [x] OBJ exporter: Wavefront OBJ with v/vn/f format, multi-mesh support with index offsets
+- [x] OBJ importer: parses v/vn/f with all face format variants (v, v/vt, v/vt/vn, v//vn), quad triangulation
+- [x] glTF/GLB exporter: glTF 2.0 binary with JSON+BIN chunks, position min/max bounds, multi-mesh
+- [x] Project save/load: .ocad JSON format with versioning, feature tree and sketch serialization
+- [x] Download helper: browser file download via Blob + URL.createObjectURL
+- [x] File picker helper: browser file open dialog with auto text/binary detection
+- [x] Barrel export: src/cad/io/index.ts
+- [x] 25 I/O tests (133 total passing across 10 test files)
+
+**Build Stats:**
+- 10 test suites, 133 tests, all passing
+- Clean TypeScript compilation
+
+---
 
 ### 2026-03-29 - Session 3: 2D Sketcher with Constraint Solver
 
