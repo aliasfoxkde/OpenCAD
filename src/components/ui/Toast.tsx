@@ -5,7 +5,7 @@
  * imperative toast creation with auto-dismiss.
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 

@@ -6,7 +6,7 @@
  */
 
 import { create } from 'zustand';
-import type { PeerInfo, ConnectionState } from '../cad/collab/webrtc-sync';
+import type { ConnectionState } from '../cad/collab/webrtc-sync';
 
 export interface CollabUser {
   peerId: string;
@@ -78,15 +78,16 @@ export const useCollabStore = create<CollabStore>((set) => ({
       localColor: INITIAL_STATE.localColor,
     }),
 
-  updateLocalPresence: (updates) =>
-    set((state) => ({
-      // Store cursor/selection locally for awareness broadcast
-      ...(updates.cursor !== undefined ? { _localCursor: updates.cursor } : {}),
-      ...(updates.selection !== undefined ? { _localSelection: updates.selection } : {}),
+  updateLocalPresence: (_updates) =>
+    set(() => ({
+      // Cursor/selection are broadcast via awareness, not stored in state
     })),
 
   setPeers: (peers) =>
-    set({ peers, connectionState: peers.length > 0 || 'connected' as ConnectionState }),
+    set((state) => ({
+      peers,
+      connectionState: peers.length > 0 ? 'connected' : state.connectionState,
+    })),
 
   updatePeer: (peerId, updates) =>
     set((state) => ({

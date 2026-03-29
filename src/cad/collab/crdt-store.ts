@@ -8,7 +8,7 @@
 
 import * as Y from 'yjs';
 import { IndexeddbPersistence } from 'y-indexeddb';
-import type { FeatureNode } from '../../types/cad';
+import type { FeatureNode, FeatureType } from '../../types/cad';
 
 const DB_PREFIX = 'opencad-yjs';
 
@@ -140,7 +140,7 @@ export function getFeatures(crdtDoc: CRDTDocument): FeatureNode[] {
 function yMapToFeatureNode(map: Y.Map<unknown>): FeatureNode {
   return {
     id: map.get('id') as string,
-    type: map.get('type') as string,
+    type: map.get('type') as FeatureType,
     name: map.get('name') as string,
     parameters: JSON.parse((map.get('parameters') as string) || '{}'),
     dependencies: JSON.parse((map.get('dependencies') as string) || '[]'),

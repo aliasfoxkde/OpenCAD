@@ -79,7 +79,7 @@ describe('ContextMenu Logic', () => {
       expect(items).toHaveLength(8);
       const dividers = items.filter((i) => i === 'divider');
       expect(dividers).toHaveLength(2);
-      const dangerItems = items.filter((i): i is ContextMenuItem => i !== 'divider' && i.danger);
+      const dangerItems = items.filter((i): i is ContextMenuItem => i !== 'divider' && !!i.danger);
       expect(dangerItems).toHaveLength(1);
     });
 
@@ -95,7 +95,7 @@ describe('ContextMenu Logic', () => {
       ];
       const enabled = items.filter((i): i is ContextMenuItem => i !== 'divider' && !i.disabled);
       expect(enabled).toHaveLength(4);
-      const disabled = items.filter((i): i is ContextMenuItem => i !== 'divider' && i.disabled);
+      const disabled = items.filter((i): i is ContextMenuItem => i !== 'divider' && !!i.disabled);
       expect(disabled).toHaveLength(1);
     });
 
@@ -108,13 +108,12 @@ describe('ContextMenu Logic', () => {
             { id: 'add-box', label: 'Box' },
             { id: 'add-cylinder', label: 'Cylinder' },
             { id: 'add-sphere', label: 'Sphere' },
-            'divider',
             { id: 'add-extrude', label: 'Extrude' },
           ],
         },
       ];
       const submenu = (items[0] as ContextMenuItem).submenu;
-      expect(submenu).toHaveLength(5);
+      expect(submenu).toHaveLength(4);
     });
   });
 });

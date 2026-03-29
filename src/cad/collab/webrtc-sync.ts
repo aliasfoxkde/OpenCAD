@@ -8,7 +8,6 @@
  * - Room ID generation for shareable links
  */
 
-import * as Y from 'yjs';
 import { WebrtcProvider } from 'y-webrtc';
 import type { CRDTDocument } from './crdt-store';
 
@@ -162,8 +161,7 @@ export class CollaborationSync {
     try {
       this.provider = new WebrtcProvider(roomId, crdtDoc.doc, {
         signaling: ['wss://signaling.yjs.dev'],
-        iceServers: ICE_SERVERS.iceServers,
-        awareness: new Y.Map(),
+        peerOpts: ICE_SERVERS,
       });
 
       // Set local awareness
@@ -263,9 +261,9 @@ export class CollaborationSync {
     if (!this.provider) return;
 
     const peers: PeerInfo[] = [];
-    this.provider.awareness.getStates().forEach((state: Map<string, unknown>, clientId: number) => {
+    this.provider.awareness.getStates().forEach((state, clientId) => {
       if (clientId === this.provider!.awareness.clientID) return;
-      const user = state.get('user') as { name?: string; color?: string; peerId?: string } | undefined;
+      const user = state.user as { name?: string; color?: string; peerId?: string } | undefined;
       peers.push({
         peerId: user?.peerId ?? `client_${clientId}`,
         displayName: user?.name ?? 'Unknown',

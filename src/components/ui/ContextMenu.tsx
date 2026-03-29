@@ -32,7 +32,7 @@ export interface ContextMenuProps {
 
 export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [openSubmenuIndex, setOpenSubmenuIndex] = useState(-1);
+  const [, setOpenSubmenuIndex] = useState(-1);
   const [position, setPosition] = useState({ x, y });
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -80,7 +80,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         const item = items[selectedIndex];
-        if (item !== 'divider' && !item.disabled && item.action) {
+        if (item && item !== 'divider' && !item.disabled && item.action) {
           item.action();
           onClose();
         }

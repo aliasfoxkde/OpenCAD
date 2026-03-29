@@ -5,9 +5,7 @@ import {
   deleteDocument,
   createNewDocument,
   createDocumentId,
-  closeDB,
   deleteDatabase,
-  type StoredDocument,
 } from '../../cad/io/db';
 import { useCADStore } from '../../stores/cad-store';
 

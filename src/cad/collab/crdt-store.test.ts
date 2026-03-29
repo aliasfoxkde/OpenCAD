@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as Y from 'yjs';
 import {
   createCRDTDocument,
-  loadCRDTDocument,
   closeCRDTDocument,
   getActiveCRDTDocument,
   addFeature,
