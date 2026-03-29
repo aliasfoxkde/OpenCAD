@@ -35,6 +35,8 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
       features.splice(newIndex, 0, removed[0]!);
       return { features };
     }),
+  loadFeatures: (features) =>
+    set({ features, selectedIds: [], selectionTarget: null }),
 }));
 
 // Selector hooks for performance

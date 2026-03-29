@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Viewport } from '../viewport/Viewport';
 import { Toolbar } from '../ui/Toolbar';
 import { FeatureTree } from '../ui/FeatureTree';
@@ -5,13 +6,60 @@ import { PropertiesPanel } from '../ui/PropertiesPanel';
 import { StatusBar } from '../ui/StatusBar';
 import { SketchCanvas } from '../sketcher/SketchCanvas';
 import { SketchToolbar } from '../sketcher/SketchToolbar';
+import { CommandPalette } from '../ui/CommandPalette';
+import { DocumentDashboard } from '../ui/DocumentDashboard';
 import { useUIStore } from '../../stores/ui-store';
+import { useCADStore } from '../../stores/cad-store';
 import { useSketchStore } from '../../stores/sketch-store';
+import { handleKeyEvent, registerStandardCommands } from '../../hooks/useKeyboardShortcuts';
 
 export function AppLayout() {
   const leftPanelOpen = useUIStore((s) => s.leftPanelOpen);
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
   const sketchActive = useSketchStore((s) => s.active);
+  const documentId = useCADStore((s) => s.documentId);
+  const toggleCommandPalette = useUIStore((s) => s.toggleCommandPalette);
+  const clearSelection = useCADStore((s) => s.clearSelection);
+  const setSketchMode = useCADStore((s) => s.setSketchMode);
+
+  // Register keyboard shortcuts on mount
+  useEffect(() => {
+    registerStandardCommands({
+      toggleCommandPalette,
+      toggleGrid: () => {},
+      toggleWireframe: () => {},
+      fitView: () => {},
+      zoomIn: () => {},
+      zoomOut: () => {},
+      save: () => {},
+      undo: () => {},
+      redo: () => {},
+      newDocument: () => {},
+      openDocument: () => {},
+      delete: () => clearSelection(),
+      selectAll: () => {},
+      copy: () => {},
+      paste: () => {},
+      escape: () => {
+        setSketchMode(false);
+        if (useUIStore.getState().commandPaletteOpen) {
+          toggleCommandPalette();
+        }
+      },
+      enterSketch: () => setSketchMode(true),
+    });
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      handleKeyEvent(e);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [toggleCommandPalette, clearSelection, setSketchMode]);
+
+  // Show dashboard when no document is open
+  if (!documentId) {
+    return <DocumentDashboard />;
+  }
 
   return (
     <div style={styles.root}>
@@ -47,6 +95,9 @@ export function AppLayout() {
 
       {/* Status Bar */}
       <StatusBar />
+
+      {/* Command Palette (modal overlay) */}
+      <CommandPalette />
     </div>
   );
 }

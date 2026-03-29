@@ -1,12 +1,77 @@
 # OpenCAD - Progress Tracking
 
 **Last Updated**: 2026-03-29
-**Current Phase**: Phase 6+ Complete, Phase 7 CRDT started
-**Overall Progress**: 50%
+**Current Phase**: Phase 5-7 UI Integration, Phase 7 CRDT active
+**Overall Progress**: 55%
 
 ---
 
 ## Progress Summary
+
+| Phase | Status | Progress |
+|-------|--------|----------|
+| Phase 1: Foundation | COMPLETE | 90% |
+| Phase 2: CAD Kernel | IN PROGRESS | 25% |
+| Phase 3: Sketcher | COMPLETE | 80% |
+| Phase 4: Parametric Features | COMPLETE | 60% |
+| Phase 5: Professional UI | IN PROGRESS | 85% |
+| Phase 6: File I/O | COMPLETE | 85% |
+| Phase 7: Collaboration | IN PROGRESS | 30% |
+| Phase 8: Assemblies | PENDING | 0% |
+| Phase 9: Drawings | PENDING | 0% |
+| Phase 10: Plugins & AI | PENDING | 0% |
+
+---
+
+## Session Log
+
+### 2026-03-29 - Session 6: Command Palette, Document Dashboard, Keyboard Wiring
+
+**Completed:**
+- [x] CommandPalette.tsx: modal overlay component with search, keyboard navigation, category grouping
+  - Searches command registry by label/category/shortcut
+  - Arrow key navigation, Enter to execute, Escape to close
+  - Click-outside-to-close, grouped by category headers
+  - Footer with navigation hints
+- [x] DocumentDashboard.tsx: document management screen shown when no document open
+  - Lists documents from IndexedDB sorted by modified date
+  - Create new document with custom name
+  - Open existing document (loads features into cad-store)
+  - Delete with confirmation
+  - Error/loading states
+- [x] Wired keyboard shortcuts into AppLayout
+  - registerStandardCommands called on mount with store actions
+  - Global keydown listener attached/cleaned up
+  - Escape closes palette and exits sketch mode
+  - Delete clears selection
+- [x] Added loadFeatures action to cad-store for document loading
+- [x] 13 CommandPalette logic tests (search, execute, state integration)
+- [x] 13 DocumentDashboard logic tests (CRUD, store integration, feature loading)
+
+**Test → Source File Mapping:**
+| Test File | Source File | Tests |
+|-----------|------------|-------|
+| CommandPalette.test.tsx | CommandPalette.tsx + useKeyboardShortcuts.ts | 13 |
+| DocumentDashboard.test.tsx | DocumentDashboard.tsx + db.ts + cad-store.ts | 13 |
+| mesh-generators.test.ts | mesh-generators.ts | 36 |
+| measure.test.ts | measure.ts | 22 |
+| io.test.ts | stl/obj/gltf/project | 25 |
+| db.test.ts | db.ts | 18 |
+| useKeyboardShortcuts.test.ts | useKeyboardShortcuts.ts | 23 |
+| crdt-store.test.ts | crdt-store.ts | 22 |
+| constraint-solver.test.ts | constraint-solver.ts | 14 |
+| snap-engine.test.ts | snap-engine.ts | 14 |
+| sketch-store.test.ts | sketch-store.ts | 18 |
+| dependency-graph.test.ts | dependency-graph.ts | 12 |
+| feature-registry.test.ts | feature-registry.ts | 12 |
+| feature-engine.test.ts | feature-engine.ts | 22 |
+| cad-store.test.ts | cad-store.ts | 8 |
+| view-store.test.ts | view-store.ts | 4 |
+| ui-store.test.ts | ui-store.ts | 4 |
+
+**Build Stats:**
+- 17 test suites, 280 tests, all passing
+- Clean TypeScript compilation (only pre-existing gltf-exporter SharedArrayBuffer warnings)
 
 | Phase | Status | Progress |
 |-------|--------|----------|

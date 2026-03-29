@@ -242,8 +242,9 @@
 - [ ] View cube (click face to align view)
 - [x] Keyboard shortcuts (industry-standard CAD bindings)
 - [x] Command palette (Ctrl+K, search all commands)
+- [x] Command palette UI component (modal overlay with search, keyboard nav, grouped results)
 - [ ] Context menus (right-click on geometry, features)
-- [ ] Menu bar (File, Edit, View, Insert, Tools, Help)
+- [x] Menu bar (File, Edit, View, Insert, Tools, Help)
 
 ### 5.4 Measurement and Analysis
 
@@ -301,7 +302,8 @@
 - [x] Crash recovery (restore from auto-save)
 - [x] Document list / dashboard
 - [ ] Document thumbnails
-- [ ] Document rename / duplicate / delete
+- [x] Document rename / duplicate / delete
+- [x] Document dashboard (list, create, open, delete documents)
 
 ### 6.4 Yjs CRDT Integration
 
@@ -439,7 +441,7 @@
 ## Progress Summary
 
 - **Total Tasks**: ~200
-- **Completed**: 42
+- **Completed**: 46
 - **In Progress**: 3
-- **Pending**: ~155
-- **Completion**: 21%
+- **Pending**: ~151
+- **Completion**: 23%

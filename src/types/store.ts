@@ -20,6 +20,7 @@ export interface CADStoreActions {
   setActiveTool: (tool: ToolType) => void;
   setSketchMode: (active: boolean) => void;
   reorderFeature: (id: string, newIndex: number) => void;
+  loadFeatures: (features: FeatureNode[]) => void;
 }
 
 export interface ViewStoreState {
