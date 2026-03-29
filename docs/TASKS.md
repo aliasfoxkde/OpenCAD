@@ -240,18 +240,18 @@
 ### 5.3 Navigation
 
 - [ ] View cube (click face to align view)
-- [ ] Keyboard shortcuts (industry-standard CAD bindings)
-- [ ] Command palette (Ctrl+K, search all commands)
+- [x] Keyboard shortcuts (industry-standard CAD bindings)
+- [x] Command palette (Ctrl+K, search all commands)
 - [ ] Context menus (right-click on geometry, features)
 - [ ] Menu bar (File, Edit, View, Insert, Tools, Help)
 
 ### 5.4 Measurement and Analysis
 
-- [ ] Measure distance (point-to-point)
-- [ ] Measure angle
+- [x] Measure distance (point-to-point)
+- [x] Measure angle
 - [ ] Measure radius/diameter
 - [ ] Section view (dynamic cross-section)
-- [ ] Mass properties (volume, surface area, center of mass)
+- [x] Mass properties (volume, surface area, center of mass)
 
 ### 5.5 Appearance
 
@@ -278,36 +278,36 @@
 
 - [ ] STEP import (via opencascade.js)
 - [ ] IGES import (via opencascade.js)
-- [ ] STL import (via Three.js)
-- [ ] OBJ import (via Three.js)
-- [ ] glTF/GLB import (via Three.js)
+- [x] STL import (via Three.js)
+- [x] OBJ import (via Three.js)
+- [x] glTF/GLB import (via Three.js)
 - [ ] 3MF import
 - [ ] Drag-and-drop file import
 
 ### 6.2 Export Formats
 
 - [ ] STEP export (engineering exchange)
-- [ ] STL export (3D printing)
-- [ ] OBJ export
-- [ ] glTF/GLB export (web viewing)
+- [x] STL export (3D printing)
+- [x] OBJ export
+- [x] glTF/GLB export (web viewing)
 - [ ] 3MF export (3D printing)
 - [ ] SVG export (2D drawings)
 - [ ] Screenshot export (PNG)
 
 ### 6.3 Document Persistence
 
-- [ ] IndexedDB document storage
-- [ ] Auto-save (every 30 seconds)
-- [ ] Crash recovery (restore from auto-save)
-- [ ] Document list / dashboard
+- [x] IndexedDB document storage
+- [x] Auto-save (every 30 seconds)
+- [x] Crash recovery (restore from auto-save)
+- [x] Document list / dashboard
 - [ ] Document thumbnails
 - [ ] Document rename / duplicate / delete
 
 ### 6.4 Yjs CRDT Integration
 
-- [ ] Yjs document adapter
-- [ ] y-indexeddb for local persistence
-- [ ] CRDT-backed feature tree
+- [x] Yjs document adapter
+- [x] y-indexeddb for local persistence
+- [x] CRDT-backed feature tree
 - [ ] Version history with snapshots
 - [ ] Branch and merge workflow
 
@@ -439,7 +439,7 @@
 ## Progress Summary
 
 - **Total Tasks**: ~200
-- **Completed**: 2
-- **In Progress**: 0
-- **Pending**: ~198
-- **Completion**: 1%
+- **Completed**: 42
+- **In Progress**: 3
+- **Pending**: ~155
+- **Completion**: 21%

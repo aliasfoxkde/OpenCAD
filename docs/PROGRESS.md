@@ -1,8 +1,8 @@
 # OpenCAD - Progress Tracking
 
 **Last Updated**: 2026-03-29
-**Current Phase**: Phase 6 File I/O COMPLETE
-**Overall Progress**: 40%
+**Current Phase**: Phase 6+ Complete, Phase 7 CRDT started
+**Overall Progress**: 50%
 
 ---
 
@@ -11,12 +11,12 @@
 | Phase | Status | Progress |
 |-------|--------|----------|
 | Phase 1: Foundation | COMPLETE | 90% |
-| Phase 2: CAD Kernel | IN PROGRESS | 15% |
+| Phase 2: CAD Kernel | IN PROGRESS | 25% |
 | Phase 3: Sketcher | COMPLETE | 80% |
 | Phase 4: Parametric Features | COMPLETE | 60% |
-| Phase 5: Professional UI | COMPLETE | 70% |
-| Phase 6: File I/O | COMPLETE | 70% |
-| Phase 7: Collaboration | PENDING | 0% |
+| Phase 5: Professional UI | COMPLETE | 75% |
+| Phase 6: File I/O | COMPLETE | 85% |
+| Phase 7: Collaboration | IN PROGRESS | 30% |
 | Phase 8: Assemblies | PENDING | 0% |
 | Phase 9: Drawings | PENDING | 0% |
 | Phase 10: Plugins & AI | PENDING | 0% |
@@ -24,6 +24,54 @@
 ---
 
 ## Session Log
+
+### 2026-03-29 - Session 5: Persistence, Shortcuts, Measurement, CRDT
+
+**Completed:**
+- [x] Extracted mesh generators from cad-worker.ts into mesh-generators.ts (testable module)
+- [x] 36 mesh generator tests: box, cylinder, sphere, cone, torus + cross-cutting validations
+  - Validated: vertex/normal/indices counts, index bounds, NaN-free, no degenerate triangles, unit normals, bounding box dimensions, radius accuracy
+- [x] Measurement tools: distance3D, angleBetween, computeBounds, computeCentroid, computeSurfaceArea, computeVolume
+  - Divergence theorem volume estimation, AABB bounding box, vertex centroid
+  - 22 measurement tests with triangle mesh and unit cube fixtures
+- [x] IndexedDB persistence: save/load documents, auto-save (30s), crash recovery snapshots, document list
+  - AutoSaveManager class with start/stop lifecycle
+  - Snapshot pruning (keep latest N)
+  - 18 persistence tests using fake-indexeddb
+- [x] Keyboard shortcut registry: command registration, shortcut parsing, key event handling
+  - 17 standard CAD commands (Ctrl+Z, Ctrl+S, Ctrl+K, G, W, F, etc.)
+  - Input field exclusion, command palette search
+  - 23 keyboard shortcut tests
+- [x] Yjs CRDT persistence layer: feature tree in Y.Array<Y.Map>, metadata in Y.Map
+  - addFeature, removeFeature, updateFeature with transactions
+  - observeFeatures for reactive updates
+  - exportSnapshot/importSnapshot for roundtrip
+  - 22 CRDT tests including concurrent edit simulation
+
+**Test → Source File Mapping:**
+| Test File | Source File | Tests |
+|-----------|------------|-------|
+| mesh-generators.test.ts | mesh-generators.ts | 36 |
+| measure.test.ts | measure.ts | 22 |
+| io.test.ts | stl/obj/gltf/project | 25 |
+| db.test.ts | db.ts | 18 |
+| useKeyboardShortcuts.test.ts | useKeyboardShortcuts.ts | 23 |
+| crdt-store.test.ts | crdt-store.ts | 22 |
+| constraint-solver.test.ts | constraint-solver.ts | 14 |
+| snap-engine.test.ts | snap-engine.ts | 14 |
+| sketch-store.test.ts | sketch-store.ts | 18 |
+| dependency-graph.test.ts | dependency-graph.ts | 12 |
+| feature-registry.test.ts | feature-registry.ts | 12 |
+| feature-engine.test.ts | feature-engine.ts | 22 |
+| cad-store.test.ts | cad-store.ts | 8 |
+| view-store.test.ts | view-store.ts | 4 |
+| ui-store.test.ts | ui-store.ts | 4 |
+
+**Build Stats:**
+- 15 test suites, 254 tests, all passing
+- Clean TypeScript compilation
+
+---
 
 ### 2026-03-29 - Session 4: File I/O System
 
