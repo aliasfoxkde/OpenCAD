@@ -1,7 +1,7 @@
 import { useCADStore } from '../../stores/cad-store';
-import { useViewStore } from '../../stores/view-store';
 import { getDefaultParameters } from '../../cad/features';
 import { nanoid } from 'nanoid';
+import { DisplayModeToggle } from './DisplayModeToggle';
 import type { ToolType, FeatureType } from '../../types/cad';
 
 /** Map primitive ToolType to feature-registry type */
@@ -34,10 +34,6 @@ export function Toolbar() {
   const setActiveTool = useCADStore((s) => s.setActiveTool);
   const addFeatureAndSelect = useCADStore((s) => s.addFeatureAndSelect);
   const features = useCADStore((s) => s.features);
-  const showGrid = useViewStore((s) => s.showGrid);
-  const showAxes = useViewStore((s) => s.showAxes);
-  const toggleGrid = useViewStore((s) => s.toggleGrid);
-  const toggleAxes = useViewStore((s) => s.toggleAxes);
 
   const handleToolClick = (toolId: ToolType) => {
     if (primitiveTools.includes(toolId)) {
@@ -81,22 +77,7 @@ export function Toolbar() {
         ))}
       </div>
       <div style={styles.divider} />
-      <div style={styles.group}>
-        <button
-          style={{ ...styles.button, ...(showGrid ? styles.toggleOn : {}) }}
-          onClick={toggleGrid}
-          title="Toggle Grid (G)"
-        >
-          Grid
-        </button>
-        <button
-          style={{ ...styles.button, ...(showAxes ? styles.toggleOn : {}) }}
-          onClick={toggleAxes}
-          title="Toggle Axes"
-        >
-          Axes
-        </button>
-      </div>
+      <DisplayModeToggle />
     </div>
   );
 }
@@ -136,10 +117,5 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#3b82f6',
     color: '#ffffff',
     border: '1px solid #2563eb',
-  },
-  toggleOn: {
-    background: '#334155',
-    color: '#f1f5f9',
-    border: '1px solid #475569',
   },
 };

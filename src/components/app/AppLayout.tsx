@@ -9,6 +9,8 @@ import { SketchToolbar } from '../sketcher/SketchToolbar';
 import { CommandPalette } from '../ui/CommandPalette';
 import { DocumentDashboard } from '../ui/DocumentDashboard';
 import { ToastContainer } from '../ui/Toast';
+import { ContextMenu } from '../ui/ContextMenu';
+import type { ContextMenuItem } from '../ui/ContextMenu';
 import { useUIStore } from '../../stores/ui-store';
 import { useCADStore } from '../../stores/cad-store';
 import { useViewStore } from '../../stores/view-store';
@@ -17,6 +19,7 @@ import { handleKeyEvent, registerStandardCommands } from '../../hooks/useKeyboar
 import { getDefaultParameters } from '../../cad/features';
 import { nanoid } from 'nanoid';
 import { handleNewDocument, handleOpenDocument, handleSaveDocument, handleExport, handleImportFile } from '../../lib/file-actions';
+import { copyFeatures, pasteFeatures, cutFeatures, hasClipboardContent } from '../../lib/clipboard';
 import { zoomCamera } from '../viewport/CameraController';
 import type { ToolType, FeatureType } from '../../types/cad';
 
@@ -47,6 +50,74 @@ export function AppLayout() {
   const clearSelection = useCADStore((s) => s.clearSelection);
   const removeFeature = useCADStore((s) => s.removeFeature);
   const setSketchMode = useCADStore((s) => s.setSketchMode);
+
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: (ContextMenuItem | 'divider')[] } | null>(null);
+  const [aboutOpen, setAboutOpen] = useState(false);
+
+  const closeContextMenu = useCallback(() => setContextMenu(null), []);
+
+  const openViewportContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const state = useCADStore.getState();
+    const hasSelection = state.selectedIds.length > 0;
+    const items: (ContextMenuItem | 'divider')[] = [];
+
+    if (hasSelection) {
+      items.push(
+        { id: 'cut', label: 'Cut', shortcut: 'Ctrl+X', action: () => {
+          const selected = state.features.filter((f) => state.selectedIds.includes(f.id));
+          if (selected.length > 0) {
+            cutFeatures(selected);
+            for (const f of selected) state.removeFeature(f.id);
+            state.clearSelection();
+          }
+        }},
+        { id: 'copy', label: 'Copy', shortcut: 'Ctrl+C', action: () => {
+          const selected = state.features.filter((f) => state.selectedIds.includes(f.id));
+          if (selected.length > 0) copyFeatures(selected);
+        }},
+      );
+    }
+
+    if (hasClipboardContent()) {
+      items.push(
+        { id: 'paste', label: 'Paste', shortcut: 'Ctrl+V', action: () => {
+          const pasted = pasteFeatures();
+          for (const f of pasted) state.addFeatureAndSelect(f);
+        }},
+      );
+    }
+
+    if (hasSelection) {
+      items.push(
+        { id: 'duplicate', label: 'Duplicate', shortcut: 'Ctrl+D', action: () => {
+          for (const id of state.selectedIds) state.duplicateFeature(id);
+        }},
+        'divider',
+        { id: 'delete', label: 'Delete', shortcut: 'Del', danger: true, action: () => {
+          for (const id of state.selectedIds) state.removeFeature(id);
+          state.clearSelection();
+        }},
+      );
+    }
+
+    if (items.length > 0) items.push('divider');
+
+    items.push(
+      { id: 'select_all', label: 'Select All', shortcut: 'Ctrl+A', action: () => {
+        const feats = useCADStore.getState().features;
+        useCADStore.getState().select(feats.map((f) => f.id));
+      }},
+      { id: 'fit_view', label: 'Fit View', shortcut: 'F', action: () => useViewStore.getState().requestFitView() },
+      'divider',
+      { id: 'toggle_grid', label: 'Toggle Grid', shortcut: 'G', action: () => useViewStore.getState().toggleGrid() },
+      { id: 'toggle_wireframe', label: 'Toggle Wireframe', shortcut: 'W', action: () => useViewStore.getState().toggleWireframe() },
+      { id: 'toggle_shadows', label: 'Toggle Shadows', action: () => useViewStore.getState().toggleShadows() },
+    );
+
+    setContextMenu({ x: e.clientX, y: e.clientY, items });
+  }, []);
 
   const handleDuplicate = useCallback(() => {
     const state = useCADStore.getState();
@@ -111,8 +182,26 @@ export function AppLayout() {
         clearSelection();
       },
       selectAll: handleSelectAll,
-      copy: () => {},
-      paste: () => {},
+      copy: () => {
+        const state = useCADStore.getState();
+        const selected = state.features.filter((f) => state.selectedIds.includes(f.id));
+        if (selected.length > 0) copyFeatures(selected);
+      },
+      cut: () => {
+        const state = useCADStore.getState();
+        const selected = state.features.filter((f) => state.selectedIds.includes(f.id));
+        if (selected.length > 0) {
+          cutFeatures(selected);
+          for (const f of selected) state.removeFeature(f.id);
+          state.clearSelection();
+        }
+      },
+      paste: () => {
+        const pasted = pasteFeatures();
+        for (const f of pasted) {
+          useCADStore.getState().addFeatureAndSelect(f);
+        }
+      },
       duplicate: handleDuplicate,
       escape: () => {
         setSketchMode(false);
@@ -147,6 +236,7 @@ export function AppLayout() {
       <MenuBar
         onInsert={handleInsertPrimitive}
         onSetCamera={handleSetCamera}
+        onAbout={() => setAboutOpen(true)}
       />
       <Toolbar />
 
@@ -162,7 +252,7 @@ export function AppLayout() {
           </>
         )}
 
-        <DropZone>
+        <DropZone onContextMenu={openViewportContextMenu}>
           <Viewport />
           {sketchActive && <SketchCanvas />}
           <SketchToolbar />
@@ -183,6 +273,32 @@ export function AppLayout() {
       <StatusBar />
       <CommandPalette />
       <ToastContainer />
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={contextMenu.items}
+          onClose={closeContextMenu}
+        />
+      )}
+      {aboutOpen && (
+        <div style={aboutOverlayStyle} onClick={() => setAboutOpen(false)}>
+          <div style={aboutDialogStyle} onClick={(e) => e.stopPropagation()}>
+            <div style={aboutTitleStyle}>OpenCAD</div>
+            <div style={aboutVersionStyle}>Version 0.1.0</div>
+            <div style={aboutDescStyle}>
+              Open-source, web-native parametric 3D CAD platform.
+              Built with React, Three.js, and TypeScript.
+            </div>
+            <button
+              style={aboutCloseBtnStyle}
+              onClick={() => setAboutOpen(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -242,7 +358,7 @@ const resizeHandleStyle: React.CSSProperties = {
 // Drop Zone for file import
 // ============================================================
 
-function DropZone({ children }: { children: React.ReactNode }) {
+function DropZone({ children, onContextMenu }: { children: React.ReactNode; onContextMenu?: (e: React.MouseEvent) => void }) {
   const [dragging, setDragging] = useState(false);
   const dragCount = useRef(0);
 
@@ -317,6 +433,7 @@ function DropZone({ children }: { children: React.ReactNode }) {
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}
       onDrop={onDrop}
+      onContextMenu={onContextMenu}
     >
       {children}
       {dragging && (
@@ -345,9 +462,11 @@ function DropZone({ children }: { children: React.ReactNode }) {
 function MenuBar({
   onInsert,
   onSetCamera,
+  onAbout,
 }: {
   onInsert: (toolType: ToolType) => void;
   onSetCamera: (preset: string) => void;
+  onAbout: () => void;
 }) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
@@ -374,9 +493,26 @@ function MenuBar({
         { type: 'item', label: 'Undo', shortcut: 'Ctrl+Z', action: () => useCADStore.getState().undo() },
         { type: 'item', label: 'Redo', shortcut: 'Ctrl+Shift+Z', action: () => useCADStore.getState().redo() },
         { type: 'separator' },
-        { type: 'item', label: 'Cut', shortcut: 'Ctrl+X', action: () => {} },
-        { type: 'item', label: 'Copy', shortcut: 'Ctrl+C', action: () => {} },
-        { type: 'item', label: 'Paste', shortcut: 'Ctrl+V', action: () => {} },
+        { type: 'item', label: 'Cut', shortcut: 'Ctrl+X', action: () => {
+          const state = useCADStore.getState();
+          const selected = state.features.filter((f) => state.selectedIds.includes(f.id));
+          if (selected.length > 0) {
+            cutFeatures(selected);
+            for (const f of selected) state.removeFeature(f.id);
+            state.clearSelection();
+          }
+        }},
+        { type: 'item', label: 'Copy', shortcut: 'Ctrl+C', action: () => {
+          const state = useCADStore.getState();
+          const selected = state.features.filter((f) => state.selectedIds.includes(f.id));
+          if (selected.length > 0) copyFeatures(selected);
+        }},
+        { type: 'item', label: 'Paste', shortcut: 'Ctrl+V', action: () => {
+          const pasted = pasteFeatures();
+          for (const f of pasted) {
+            useCADStore.getState().addFeatureAndSelect(f);
+          }
+        }},
         { type: 'item', label: 'Duplicate', shortcut: 'Ctrl+D', action: () => {
           const state = useCADStore.getState();
           for (const id of state.selectedIds) {
@@ -408,6 +544,10 @@ function MenuBar({
         { type: 'item', label: 'Left', shortcut: '6', action: () => onSetCamera('left') },
         { type: 'item', label: 'Isometric', shortcut: '0', action: () => onSetCamera('iso') },
         { type: 'separator' },
+        { type: 'item', label: 'Wireframe', action: () => useViewStore.getState().setDisplayMode('wireframe') },
+        { type: 'item', label: 'Shaded', action: () => useViewStore.getState().setDisplayMode('shaded') },
+        { type: 'item', label: 'Shaded + Edges', action: () => useViewStore.getState().setDisplayMode('shaded_edges') },
+        { type: 'separator' },
         { type: 'item', label: 'Toggle Grid', shortcut: 'G', action: () => useViewStore.getState().toggleGrid() },
         { type: 'item', label: 'Toggle Wireframe', shortcut: 'W', action: () => useViewStore.getState().toggleWireframe() },
         { type: 'item', label: 'Toggle Shadows', action: () => useViewStore.getState().toggleShadows() },
@@ -437,7 +577,7 @@ function MenuBar({
       label: 'Help',
       items: [
         { type: 'item', label: 'Keyboard Shortcuts', shortcut: 'Ctrl+K', action: () => useUIStore.getState().toggleCommandPalette() },
-        { type: 'item', label: 'About OpenCAD', action: () => {} },
+        { type: 'item', label: 'About OpenCAD', action: onAbout },
       ],
     },
   ];
@@ -640,4 +780,53 @@ const dropContentStyle: React.CSSProperties = {
 
 const dropIconStyle: React.CSSProperties = {
   marginBottom: 8,
+};
+
+const aboutOverlayStyle: React.CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  background: 'rgba(0,0,0,0.6)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 2000,
+};
+
+const aboutDialogStyle: React.CSSProperties = {
+  background: '#1e293b',
+  border: '1px solid #334155',
+  borderRadius: 8,
+  padding: '24px 32px',
+  maxWidth: 360,
+  textAlign: 'center',
+};
+
+const aboutTitleStyle: React.CSSProperties = {
+  fontSize: 20,
+  fontWeight: 700,
+  color: '#3b82f6',
+  marginBottom: 4,
+};
+
+const aboutVersionStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: '#64748b',
+  marginBottom: 16,
+};
+
+const aboutDescStyle: React.CSSProperties = {
+  fontSize: 13,
+  color: '#94a3b8',
+  lineHeight: 1.5,
+  marginBottom: 20,
+};
+
+const aboutCloseBtnStyle: React.CSSProperties = {
+  padding: '6px 20px',
+  fontSize: 12,
+  color: '#e2e8f0',
+  background: '#334155',
+  border: '1px solid #475569',
+  borderRadius: 4,
+  cursor: 'pointer',
 };

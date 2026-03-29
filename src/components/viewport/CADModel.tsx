@@ -1,4 +1,5 @@
 import { useCADStore } from '../../stores/cad-store';
+import { useViewStore } from '../../stores/view-store';
 import { useMemo } from 'react';
 import * as THREE from 'three';
 
@@ -34,6 +35,8 @@ interface FeatureMeshProps {
 }
 
 function FeatureMesh({ type, params, selected, suppressed }: FeatureMeshProps) {
+  const displayMode = useViewStore((s) => s.displayMode);
+
   if (suppressed) return null;
 
   // Serialize params for stable dependency
@@ -47,14 +50,27 @@ function FeatureMesh({ type, params, selected, suppressed }: FeatureMeshProps) {
   const posY = (params.originY as number) ?? 0;
   const posZ = (params.originZ as number) ?? 0;
 
+  const isWireframe = displayMode === 'wireframe';
+  const showEdges = displayMode === 'shaded_edges';
+
   return (
     <mesh geometry={geometry} position={[posX, posY, posZ]} castShadow receiveShadow>
       <meshStandardMaterial
         color={selected ? '#3b82f6' : '#64748b'}
         transparent={selected}
         opacity={selected ? 0.85 : 1}
+        wireframe={isWireframe}
         side={THREE.DoubleSide}
       />
+      {showEdges && (
+        <meshBasicMaterial
+          color={selected ? '#60a5fa' : '#475569'}
+          wireframe
+          transparent
+          opacity={0.3}
+          side={THREE.DoubleSide}
+        />
+      )}
     </mesh>
   );
 }

@@ -161,6 +161,7 @@ export interface CommandActions {
   toggleCommandPalette?: () => void;
   selectAll?: () => void;
   copy?: () => void;
+  cut?: () => void;
   paste?: () => void;
   duplicate?: () => void;
   enterSketch?: () => void;
@@ -184,6 +185,7 @@ export function registerStandardCommands(actions: CommandActions): void {
     ['edit.delete', 'Delete', 'edit', 'Delete', actions.delete],
     ['edit.select_all', 'Select All', 'edit', 'Ctrl+A', actions.selectAll],
     ['edit.copy', 'Copy', 'edit', 'Ctrl+C', actions.copy],
+    ['edit.cut', 'Cut', 'edit', 'Ctrl+X', actions.cut],
     ['edit.paste', 'Paste', 'edit', 'Ctrl+V', actions.paste],
     ['edit.duplicate', 'Duplicate', 'edit', 'Ctrl+D', actions.duplicate],
     ['view.toggle_grid', 'Toggle Grid', 'view', 'G', actions.toggleGrid],

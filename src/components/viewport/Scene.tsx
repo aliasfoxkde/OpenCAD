@@ -2,8 +2,11 @@ import { useMemo } from 'react';
 import * as THREE from 'three';
 import { CADModel } from './CADModel';
 import { Line } from '@react-three/drei';
+import { useViewStore } from '../../stores/view-store';
 
 export function Scene() {
+  const showAxes = useViewStore((s) => s.showAxes);
+
   return (
     <>
       {/* Lighting */}
@@ -16,9 +19,13 @@ export function Scene() {
       <directionalLight position={[-5, 5, -5]} intensity={0.2} />
 
       {/* Origin axis lines */}
-      <AxisLine end={[5, 0, 0]} color="#ef4444" />
-      <AxisLine end={[0, 5, 0]} color="#22c55e" />
-      <AxisLine end={[0, 0, 5]} color="#3b82f6" />
+      {showAxes && (
+        <>
+          <AxisLine end={[5, 0, 0]} color="#ef4444" />
+          <AxisLine end={[0, 5, 0]} color="#22c55e" />
+          <AxisLine end={[0, 0, 5]} color="#3b82f6" />
+        </>
+      )}
 
       {/* CAD model rendering */}
       <CADModel />
