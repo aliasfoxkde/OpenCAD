@@ -13,6 +13,7 @@ export interface CADStoreState {
 export interface CADStoreActions {
   setDocument: (id: string, name: string) => void;
   addFeature: (feature: FeatureNode) => void;
+  addFeatureAndSelect: (feature: FeatureNode) => void;
   removeFeature: (id: string) => void;
   updateFeature: (id: string, updates: Partial<FeatureNode>) => void;
   select: (ids: string[], target?: SelectionTarget) => void;

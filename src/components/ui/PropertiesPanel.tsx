@@ -26,7 +26,7 @@ export function PropertiesPanel() {
   const selectedIds = useCADStore((s) => s.selectedIds);
   const features = useCADStore((s) => s.features);
   const updateFeature = useCADStore((s) => s.updateFeature);
-  const addFeature = useCADStore((s) => s.addFeature);
+  const addFeatureAndSelect = useCADStore((s) => s.addFeatureAndSelect);
 
   const selectedFeature = features.find((f) => selectedIds.includes(f.id));
   const featureDef = selectedFeature ? getFeatureDefinition(selectedFeature.type) : undefined;
@@ -36,7 +36,7 @@ export function PropertiesPanel() {
     if (!featureType) return;
 
     const defaults = getDefaultParameters(featureType);
-    addFeature({
+    addFeatureAndSelect({
       id: nanoid(),
       type: featureType,
       name: `${primitiveType.charAt(0).toUpperCase() + primitiveType.slice(1)} ${features.length + 1}`,

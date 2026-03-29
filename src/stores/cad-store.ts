@@ -13,8 +13,16 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
   setDocument: (id, name) => set({ documentId: id, documentName: name }),
   addFeature: (feature) =>
     set((state) => ({ features: [...state.features, feature] })),
+  addFeatureAndSelect: (feature) =>
+    set((state) => ({
+      features: [...state.features, feature],
+      selectedIds: [feature.id],
+    })),
   removeFeature: (id) =>
-    set((state) => ({ features: state.features.filter((f) => f.id !== id) })),
+    set((state) => ({
+      features: state.features.filter((f) => f.id !== id),
+      selectedIds: state.selectedIds.filter((sid) => sid !== id),
+    })),
   updateFeature: (id, updates) =>
     set((state) => ({
       features: state.features.map((f) =>

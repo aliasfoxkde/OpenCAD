@@ -124,6 +124,43 @@ describe('CADStore', () => {
     expect(useCADStore.getState().features.map((f) => f.id)).toEqual(['f2', 'f1']);
   });
 
+  it('should add feature and select it', () => {
+    const feature: FeatureNode = {
+      id: 'test-addsel',
+      type: 'sphere',
+      name: 'Sphere 1',
+      parameters: { radius: 3 },
+      dependencies: [],
+      children: [],
+      suppressed: false,
+    };
+
+    useCADStore.getState().addFeatureAndSelect(feature);
+    const state = useCADStore.getState();
+    expect(state.features).toHaveLength(1);
+    expect(state.selectedIds).toEqual(['test-addsel']);
+  });
+
+  it('should remove selected feature from selection on delete', () => {
+    const f1: FeatureNode = {
+      id: 'del-1', type: 'extrude', name: 'Box1',
+      parameters: {}, dependencies: [], children: [], suppressed: false,
+    };
+    const f2: FeatureNode = {
+      id: 'del-2', type: 'sphere', name: 'Sphere1',
+      parameters: {}, dependencies: [], children: [], suppressed: false,
+    };
+
+    useCADStore.getState().addFeatureAndSelect(f1);
+    useCADStore.getState().addFeatureAndSelect(f2);
+    useCADStore.getState().select(['del-1', 'del-2']);
+
+    useCADStore.getState().removeFeature('del-1');
+    const state = useCADStore.getState();
+    expect(state.selectedIds).toEqual(['del-2']);
+    expect(state.features).toHaveLength(1);
+  });
+
   it('should suppress and unsuppress features', () => {
     const feature: FeatureNode = {
       id: 'test-supp', type: 'extrude', name: 'Box',

@@ -1,6 +1,20 @@
 import { useCADStore } from '../../stores/cad-store';
 import { useViewStore } from '../../stores/view-store';
-import type { ToolType } from '../../types/cad';
+import { getDefaultParameters } from '../../cad/features';
+import { nanoid } from 'nanoid';
+import type { ToolType, FeatureType } from '../../types/cad';
+
+/** Map primitive ToolType to feature-registry type */
+const primitiveTypeMap: Partial<Record<ToolType, FeatureType>> = {
+  box: 'extrude',
+  cylinder: 'revolve',
+  sphere: 'sphere',
+  cone: 'cone',
+  torus: 'torus',
+};
+
+/** Primitives that create features immediately */
+const primitiveTools: ToolType[] = ['box', 'cylinder', 'sphere', 'cone', 'torus'];
 
 const tools: { id: ToolType; label: string; shortcut: string }[] = [
   { id: 'select', label: 'Select', shortcut: 'V' },
@@ -18,10 +32,36 @@ const tools: { id: ToolType; label: string; shortcut: string }[] = [
 export function Toolbar() {
   const activeTool = useCADStore((s) => s.activeTool);
   const setActiveTool = useCADStore((s) => s.setActiveTool);
+  const addFeatureAndSelect = useCADStore((s) => s.addFeatureAndSelect);
+  const features = useCADStore((s) => s.features);
   const showGrid = useViewStore((s) => s.showGrid);
   const showAxes = useViewStore((s) => s.showAxes);
   const toggleGrid = useViewStore((s) => s.toggleGrid);
   const toggleAxes = useViewStore((s) => s.toggleAxes);
+
+  const handleToolClick = (toolId: ToolType) => {
+    if (primitiveTools.includes(toolId)) {
+      const featureType = primitiveTypeMap[toolId];
+      if (!featureType) return;
+
+      const defaults = getDefaultParameters(featureType);
+      const id = nanoid();
+      const name = `${toolId.charAt(0).toUpperCase() + toolId.slice(1)} ${features.length + 1}`;
+
+      addFeatureAndSelect({
+        id,
+        type: featureType,
+        name,
+        parameters: defaults,
+        dependencies: [],
+        children: [],
+        suppressed: false,
+      });
+      setActiveTool('select');
+    } else {
+      setActiveTool(toolId);
+    }
+  };
 
   return (
     <div style={styles.toolbar}>
@@ -33,7 +73,7 @@ export function Toolbar() {
               ...styles.button,
               ...(activeTool === tool.id ? styles.active : {}),
             }}
-            onClick={() => setActiveTool(tool.id)}
+            onClick={() => handleToolClick(tool.id)}
             title={tool.shortcut ? `${tool.label} (${tool.shortcut})` : tool.label}
           >
             {tool.label}

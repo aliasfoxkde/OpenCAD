@@ -36,12 +36,19 @@ interface FeatureMeshProps {
 function FeatureMesh({ type, params, selected, suppressed }: FeatureMeshProps) {
   if (suppressed) return null;
 
-  const geometry = useMemo(() => createGeometry(type, params), [type, params]);
+  // Serialize params for stable dependency
+  const paramsKey = JSON.stringify(params);
+  const geometry = useMemo(() => createGeometry(type, params), [type, paramsKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 
   if (!geometry) return null;
 
+  const posX = (params.originX as number) ?? 0;
+  const posY = (params.originY as number) ?? 0;
+  const posZ = (params.originZ as number) ?? 0;
+
   return (
-    <mesh geometry={geometry} castShadow receiveShadow>
+    <mesh geometry={geometry} position={[posX, posY, posZ]} castShadow receiveShadow>
       <meshStandardMaterial
         color={selected ? '#3b82f6' : '#64748b'}
         transparent={selected}

@@ -21,6 +21,7 @@ export function AppLayout() {
   const documentId = useCADStore((s) => s.documentId);
   const toggleCommandPalette = useUIStore((s) => s.toggleCommandPalette);
   const clearSelection = useCADStore((s) => s.clearSelection);
+  const removeFeature = useCADStore((s) => s.removeFeature);
   const setSketchMode = useCADStore((s) => s.setSketchMode);
 
   // Register keyboard shortcuts on mount
@@ -37,7 +38,13 @@ export function AppLayout() {
       redo: () => {},
       newDocument: () => {},
       openDocument: () => {},
-      delete: () => clearSelection(),
+      delete: () => {
+        const state = useCADStore.getState();
+        for (const id of state.selectedIds) {
+          removeFeature(id);
+        }
+        clearSelection();
+      },
       selectAll: () => {},
       copy: () => {},
       paste: () => {},
