@@ -8,8 +8,10 @@ export function FeatureTree() {
   const select = useCADStore((s) => s.select);
   const updateFeature = useCADStore((s) => s.updateFeature);
   const removeFeature = useCADStore((s) => s.removeFeature);
+  const reorderFeature = useCADStore((s) => s.reorderFeature);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
 
   const startEditing = useCallback((featureId: string, currentName: string) => {
@@ -36,6 +38,33 @@ export function FeatureTree() {
     }
   }, [editingId]);
 
+  const handleDragStart = useCallback((e: React.DragEvent, featureId: string) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', featureId);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverIndex(null);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    setDragOverIndex(null);
+    const draggedId = e.dataTransfer.getData('text/plain');
+    if (!draggedId) return;
+    reorderFeature(draggedId, targetIndex);
+  }, [reorderFeature]);
+
+  const handleDragEnd = useCallback(() => {
+    setDragOverIndex(null);
+  }, []);
+
   return (
     <div style={styles.panel}>
       <div style={styles.header}>
@@ -51,13 +80,21 @@ export function FeatureTree() {
         {features.map((feature, index) => (
           <div
             key={feature.id}
+            draggable
             style={{
               ...styles.item,
               ...(selectedIds.includes(feature.id) ? styles.selected : {}),
+              ...(dragOverIndex === index ? styles.dragOver : {}),
             }}
             onClick={() => select([feature.id])}
             onDoubleClick={() => startEditing(feature.id, feature.name)}
+            onDragStart={(e) => handleDragStart(e, feature.id)}
+            onDragOver={(e) => handleDragOver(e, index)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, index)}
+            onDragEnd={handleDragEnd}
           >
+            <span style={styles.dragHandle} title="Drag to reorder">&#x2261;</span>
             <span style={styles.index}>{index + 1}</span>
             <span style={styles.icon}>{getFeatureIcon(feature.type)}</span>
             {editingId === feature.id ? (
@@ -158,10 +195,22 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     fontSize: 12,
     color: '#94a3b8',
+    userSelect: 'none',
   },
   selected: {
     background: '#334155',
     color: '#f1f5f9',
+  },
+  dragOver: {
+    borderTop: '2px solid #3b82f6',
+  },
+  dragHandle: {
+    fontSize: 12,
+    color: '#475569',
+    cursor: 'grab',
+    width: 10,
+    textAlign: 'center',
+    flexShrink: 0,
   },
   index: {
     width: 16,
