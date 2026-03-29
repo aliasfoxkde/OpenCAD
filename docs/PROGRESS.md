@@ -1,8 +1,8 @@
 # OpenCAD - Progress Tracking
 
 **Last Updated**: 2026-03-29
-**Current Phase**: Phase 1 Foundation (mostly complete), starting Phase 2
-**Overall Progress**: 15%
+**Current Phase**: Phase 2 CAD Kernel + Phase 4 Parametric Features (in progress)
+**Overall Progress**: 20%
 
 ---
 
@@ -10,10 +10,10 @@
 
 | Phase | Status | Progress |
 |-------|--------|----------|
-| Phase 1: Foundation | MOSTLY COMPLETE | 80% |
-| Phase 2: CAD Kernel | IN PROGRESS | 10% |
+| Phase 1: Foundation | COMPLETE | 90% |
+| Phase 2: CAD Kernel | IN PROGRESS | 15% |
 | Phase 3: Sketcher | PENDING | 0% |
-| Phase 4: Parametric Features | PENDING | 0% |
+| Phase 4: Parametric Features | IN PROGRESS | 30% |
 | Phase 5: Professional UI | PENDING | 0% |
 | Phase 6: File I/O | PENDING | 0% |
 | Phase 7: Collaboration | PENDING | 0% |
@@ -24,6 +24,32 @@
 ---
 
 ## Session Log
+
+### 2026-03-29 - Session 2: Parametric Feature System
+
+**Completed:**
+- [x] Feature registry with parameter schemas for 20+ feature types
+  - Primitives: extrude, revolve, sphere, cone, torus
+  - Sketch-based: extrude_sketch, revolve_sketch, cut, sweep, loft, shell, hole
+  - Edges: fillet, chamfer
+  - Boolean: union, subtract, intersect
+  - Patterns: linear, circular, mirror
+- [x] Dependency graph (DAG) with topological sort, cycle detection, ancestor/descendant queries
+- [x] Feature engine with parametric evaluation, validation, and bounds computation
+- [x] Fixed PropertiesPanel bug: was creating all primitives as type 'extrude'
+- [x] Updated PropertiesPanel to use feature registry for dynamic parameter UI
+- [x] Updated FeatureTree to use registry icons
+- [x] Added sphere, cone, torus, extrude_sketch, revolve_sketch to FeatureType union
+- [x] Fixed vitest config (removed jsdom default causing worker timeouts)
+- [x] 63 tests passing across 6 test files (46 new feature system tests)
+- [x] 1 commit pushed to main
+
+**Build Stats:**
+- Production build: 1m 25s (Rolldown)
+- Total gzipped: ~312KB
+- 6 test suites, 63 tests, all passing
+
+---
 
 ### 2026-03-29 - Session 1: Planning + Foundation + Kernel Start
 
