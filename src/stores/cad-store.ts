@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { CADStoreState, CADStoreActions } from '../types/store';
+import { pushState, undo, redo, canUndo, canRedo } from '../lib/undo-history';
 
 export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
   documentId: null,
@@ -12,23 +13,50 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
 
   setDocument: (id, name) => set({ documentId: id, documentName: name }),
   addFeature: (feature) =>
-    set((state) => ({ features: [...state.features, feature] })),
+    set((state) => {
+      pushState(state.features);
+      return { features: [...state.features, feature] };
+    }),
   addFeatureAndSelect: (feature) =>
-    set((state) => ({
-      features: [...state.features, feature],
-      selectedIds: [feature.id],
-    })),
+    set((state) => {
+      pushState(state.features);
+      return {
+        features: [...state.features, feature],
+        selectedIds: [feature.id],
+      };
+    }),
   removeFeature: (id) =>
-    set((state) => ({
-      features: state.features.filter((f) => f.id !== id),
-      selectedIds: state.selectedIds.filter((sid) => sid !== id),
-    })),
+    set((state) => {
+      pushState(state.features);
+      return {
+        features: state.features.filter((f) => f.id !== id),
+        selectedIds: state.selectedIds.filter((sid) => sid !== id),
+      };
+    }),
   updateFeature: (id, updates) =>
-    set((state) => ({
-      features: state.features.map((f) =>
-        f.id === id ? { ...f, ...updates } : f,
-      ),
-    })),
+    set((state) => {
+      pushState(state.features);
+      return {
+        features: state.features.map((f) =>
+          f.id === id ? { ...f, ...updates } : f,
+        ),
+      };
+    }),
+  duplicateFeature: (id) =>
+    set((state) => {
+      const source = state.features.find((f) => f.id === id);
+      if (!source) return state;
+      const clone = structuredClone(source);
+      clone.id = crypto.randomUUID();
+      clone.name = `${source.name} (copy)`;
+      if (typeof clone.parameters.originX === 'number') {
+        clone.parameters.originX = (clone.parameters.originX as number) + 1;
+      }
+      return {
+        features: [...state.features, clone],
+        selectedIds: [clone.id],
+      };
+    }),
   select: (ids, target) =>
     set({ selectedIds: ids, selectionTarget: target ?? null }),
   clearSelection: () => set({ selectedIds: [], selectionTarget: null }),
@@ -39,12 +67,27 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
       const features = [...state.features];
       const oldIndex = features.findIndex((f) => f.id === id);
       if (oldIndex === -1) return state;
+      pushState(state.features);
       const removed = features.splice(oldIndex, 1);
       features.splice(newIndex, 0, removed[0]!);
       return { features };
     }),
-  loadFeatures: (features) =>
-    set({ features, selectedIds: [], selectionTarget: null }),
+  loadFeatures: (features) => {
+    pushState(useCADStore.getState().features);
+    set({ features, selectedIds: [], selectionTarget: null });
+  },
+  undo: () =>
+    set((state) => {
+      const prev = undo(state.features);
+      if (!prev) return state;
+      return { features: prev, selectedIds: [] };
+    }),
+  redo: () =>
+    set((state) => {
+      const next = redo(state.features);
+      if (!next) return state;
+      return { features: next, selectedIds: [] };
+    }),
 }));
 
 // Selector hooks for performance
@@ -52,3 +95,10 @@ export const useActiveTool = () => useCADStore((s) => s.activeTool);
 export const useFeatures = () => useCADStore((s) => s.features);
 export const useSelection = () => useCADStore((s) => s.selectedIds);
 export const useIsSketchMode = () => useCADStore((s) => s.isSketchMode);
+export const useCanUndoRedo = () =>
+  useCADStore((state) => ({
+    // Depend on features length so component re-renders after undo/redo
+    _trigger: state.features.length,
+    canUndo: canUndo(),
+    canRedo: canRedo(),
+  }));

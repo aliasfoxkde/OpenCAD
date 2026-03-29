@@ -8,6 +8,7 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
   showAxes: true,
   showWireframe: false,
   showShadows: false,
+  cameraPreset: null,
 
   setDisplayMode: (mode) => set({ displayMode: mode }),
   setViewportLayout: (layout) => set({ viewportLayout: layout }),
@@ -15,4 +16,5 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
   toggleAxes: () => set((s) => ({ showAxes: !s.showAxes })),
   toggleWireframe: () => set((s) => ({ showWireframe: !s.showWireframe })),
   toggleShadows: () => set((s) => ({ showShadows: !s.showShadows })),
+  setCameraPreset: (name) => set({ cameraPreset: name }),
 }));

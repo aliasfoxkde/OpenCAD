@@ -1,6 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import { Scene } from './Scene';
+import { CameraController } from './CameraController';
 
 export function Viewport() {
   return (
@@ -12,6 +13,7 @@ export function Viewport() {
         gl.setClearColor('#0f172a');
       }}
     >
+      <CameraController />
       <Scene />
       <OrbitControls makeDefault />
       <Grid

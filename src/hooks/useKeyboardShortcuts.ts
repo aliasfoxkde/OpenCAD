@@ -162,7 +162,15 @@ export interface CommandActions {
   selectAll?: () => void;
   copy?: () => void;
   paste?: () => void;
+  duplicate?: () => void;
   enterSketch?: () => void;
+  cameraFront?: () => void;
+  cameraBack?: () => void;
+  cameraTop?: () => void;
+  cameraBottom?: () => void;
+  cameraRight?: () => void;
+  cameraLeft?: () => void;
+  cameraIso?: () => void;
 }
 
 /** Register all standard CAD commands */
@@ -177,6 +185,7 @@ export function registerStandardCommands(actions: CommandActions): void {
     ['edit.select_all', 'Select All', 'edit', 'Ctrl+A', actions.selectAll],
     ['edit.copy', 'Copy', 'edit', 'Ctrl+C', actions.copy],
     ['edit.paste', 'Paste', 'edit', 'Ctrl+V', actions.paste],
+    ['edit.duplicate', 'Duplicate', 'edit', 'Ctrl+D', actions.duplicate],
     ['view.toggle_grid', 'Toggle Grid', 'view', 'G', actions.toggleGrid],
     ['view.toggle_wireframe', 'Toggle Wireframe', 'view', 'W', actions.toggleWireframe],
     ['view.fit', 'Fit View', 'view', 'F', actions.fitView],
@@ -184,6 +193,13 @@ export function registerStandardCommands(actions: CommandActions): void {
     ['view.zoom_out', 'Zoom Out', 'view', 'Ctrl+-', actions.zoomOut],
     ['tools.command_palette', 'Command Palette', 'tools', 'Ctrl+K', actions.toggleCommandPalette],
     ['tools.enter_sketch', 'Enter Sketch Mode', 'sketch', 'S', actions.enterSketch],
+    ['view.camera_front', 'Front View', 'view', '1', actions.cameraFront],
+    ['view.camera_back', 'Back View', 'view', '4', actions.cameraBack],
+    ['view.camera_top', 'Top View', 'view', '2', actions.cameraTop],
+    ['view.camera_bottom', 'Bottom View', 'view', '5', actions.cameraBottom],
+    ['view.camera_right', 'Right View', 'view', '3', actions.cameraRight],
+    ['view.camera_left', 'Left View', 'view', '6', actions.cameraLeft],
+    ['view.camera_iso', 'Isometric View', 'view', '0', actions.cameraIso],
     ['general.escape', 'Cancel / Escape', 'help', 'Escape', actions.escape],
   ];
 

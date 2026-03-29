@@ -22,6 +22,9 @@ export interface CADStoreActions {
   setSketchMode: (active: boolean) => void;
   reorderFeature: (id: string, newIndex: number) => void;
   loadFeatures: (features: FeatureNode[]) => void;
+  duplicateFeature: (id: string) => void;
+  undo: () => void;
+  redo: () => void;
 }
 
 export interface ViewStoreState {
@@ -31,6 +34,7 @@ export interface ViewStoreState {
   showAxes: boolean;
   showWireframe: boolean;
   showShadows: boolean;
+  cameraPreset: string | null;
 }
 
 export interface ViewStoreActions {
@@ -40,6 +44,7 @@ export interface ViewStoreActions {
   toggleAxes: () => void;
   toggleWireframe: () => void;
   toggleShadows: () => void;
+  setCameraPreset: (name: string) => void;
 }
 
 export interface UIStoreState {
