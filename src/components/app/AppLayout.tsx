@@ -16,6 +16,7 @@ import { useSketchStore } from '../../stores/sketch-store';
 import { handleKeyEvent, registerStandardCommands } from '../../hooks/useKeyboardShortcuts';
 import { getDefaultParameters } from '../../cad/features';
 import { nanoid } from 'nanoid';
+import { handleNewDocument, handleOpenDocument, handleSaveDocument, handleExport, handleImportFile } from '../../lib/file-actions';
 import type { ToolType, FeatureType } from '../../types/cad';
 
 const primitiveTypeMap: Partial<Record<ToolType, FeatureType>> = {
@@ -81,11 +82,11 @@ export function AppLayout() {
       fitView: () => {},
       zoomIn: () => {},
       zoomOut: () => {},
-      save: () => {},
+      save: () => { handleSaveDocument(); },
       undo: () => useCADStore.getState().undo(),
       redo: () => useCADStore.getState().redo(),
-      newDocument: () => {},
-      openDocument: () => {},
+      newDocument: () => { handleNewDocument(); },
+      openDocument: () => { handleOpenDocument(); },
       delete: () => {
         const state = useCADStore.getState();
         for (const id of state.selectedIds) {
@@ -140,11 +141,11 @@ export function AppLayout() {
           </div>
         )}
 
-        <div style={styles.viewport}>
+        <DropZone>
           <Viewport />
           {sketchActive && <SketchCanvas />}
           <SketchToolbar />
-        </div>
+        </DropZone>
 
         {rightPanelOpen && (
           <div style={styles.rightPanel}>
@@ -156,6 +157,106 @@ export function AppLayout() {
       <StatusBar />
       <CommandPalette />
       <ToastContainer />
+    </div>
+  );
+}
+
+// ============================================================
+// Drop Zone for file import
+// ============================================================
+
+function DropZone({ children }: { children: React.ReactNode }) {
+  const [dragging, setDragging] = useState(false);
+  const dragCount = useRef(0);
+
+  const onDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCount.current++;
+    if (e.dataTransfer.types.includes('Files')) {
+      setDragging(true);
+    }
+  }, []);
+
+  const onDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCount.current--;
+    if (dragCount.current === 0) {
+      setDragging(false);
+    }
+  }, []);
+
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const onDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCount.current = 0;
+    setDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    for (const file of files) {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (ext === 'stl') {
+        const buffer = await file.arrayBuffer();
+        const { importSTL } = await import('../../cad/io/stl-importer');
+        importSTL(buffer, file.name);
+        const feature = {
+          id: crypto.randomUUID(),
+          type: 'extrude' as const,
+          name: file.name.replace(/\.[^.]+$/, ''),
+          parameters: {},
+          dependencies: [] as string[],
+          children: [] as string[],
+          suppressed: false,
+        };
+        useCADStore.getState().addFeatureAndSelect(feature);
+      } else if (ext === 'obj') {
+        const text = await file.text();
+        const { importOBJ } = await import('../../cad/io/obj-importer');
+        importOBJ(text, file.name);
+        const feature = {
+          id: crypto.randomUUID(),
+          type: 'extrude' as const,
+          name: file.name.replace(/\.[^.]+$/, ''),
+          parameters: {},
+          dependencies: [] as string[],
+          children: [] as string[],
+          suppressed: false,
+        };
+        useCADStore.getState().addFeatureAndSelect(feature);
+      }
+    }
+  }, []);
+
+  return (
+    <div
+      style={{ ...styles.viewport, position: 'relative' }}
+      onDragEnter={onDragEnter}
+      onDragLeave={onDragLeave}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
+      {children}
+      {dragging && (
+        <div style={dropOverlayStyle}>
+          <div style={dropContentStyle}>
+            <div style={dropIconStyle}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="1.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </div>
+            <div style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 600 }}>Drop STL or OBJ file</div>
+            <div style={{ color: '#64748b', fontSize: 12, marginTop: 4 }}>File will be imported as a new feature</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -178,13 +279,16 @@ function MenuBar({
     {
       label: 'File',
       items: [
-        { type: 'item', label: 'New', shortcut: 'Ctrl+N', action: () => {} },
-        { type: 'item', label: 'Open', shortcut: 'Ctrl+O', action: () => {} },
-        { type: 'item', label: 'Save', shortcut: 'Ctrl+S', action: () => {} },
+        { type: 'item', label: 'New', shortcut: 'Ctrl+N', action: () => { handleNewDocument(); } },
+        { type: 'item', label: 'Open', shortcut: 'Ctrl+O', action: () => { handleOpenDocument(); } },
+        { type: 'item', label: 'Save', shortcut: 'Ctrl+S', action: () => { handleSaveDocument(); } },
         { type: 'separator' },
-        { type: 'item', label: 'Export STL', action: () => {} },
-        { type: 'item', label: 'Export OBJ', action: () => {} },
-        { type: 'item', label: 'Export GLB', action: () => {} },
+        { type: 'item', label: 'Export STL', action: () => { handleExport('stl'); } },
+        { type: 'item', label: 'Export OBJ', action: () => { handleExport('obj'); } },
+        { type: 'item', label: 'Export GLB', action: () => { handleExport('glb'); } },
+        { type: 'separator' },
+        { type: 'item', label: 'Export .ocad', action: () => { handleExport('ocad'); } },
+        { type: 'item', label: 'Import STL/OBJ', action: () => { handleImportFile(); } },
       ],
     },
     {
@@ -441,4 +545,28 @@ const menuStyles: Record<string, React.CSSProperties> = {
     color: '#64748b',
     marginLeft: 24,
   },
+};
+
+const dropOverlayStyle: React.CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  background: 'rgba(15, 23, 42, 0.85)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 50,
+  border: '2px dashed #3b82f6',
+  borderRadius: 4,
+  pointerEvents: 'none',
+};
+
+const dropContentStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: 4,
+};
+
+const dropIconStyle: React.CSSProperties = {
+  marginBottom: 8,
 };
