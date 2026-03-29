@@ -3,6 +3,7 @@
  * Shows drawing tools, constraint tools, and sketch actions.
  */
 
+import { useState } from 'react';
 import { useSketchStore } from '../../stores/sketch-store';
 import type { SketchToolType } from '../../stores/sketch-store';
 import type { ConstraintType } from '../../types/cad';
@@ -35,12 +36,27 @@ const constraintTools: { type: ConstraintType; label: string; icon: string }[] =
 export function SketchToolbar() {
   const active = useSketchStore((s) => s.active);
   const tool = useSketchStore((s) => s.tool);
+  const elements = useSketchStore((s) => s.elements);
   const setTool = useSketchStore((s) => s.setTool);
   const setPendingConstraintType = useSketchStore((s) => s.setPendingConstraintType);
   const pendingConstraintType = useSketchStore((s) => s.pendingConstraintType);
   const exitSketch = useSketchStore((s) => s.exitSketch);
   const isFullyConstrained = useSketchStore((s) => s.isFullyConstrained);
   const degreesOfFreedom = useSketchStore((s) => s.degreesOfFreedom);
+  const [confirmExit, setConfirmExit] = useState(false);
+
+  const handleExit = () => {
+    if (elements.length > 0) {
+      setConfirmExit(true);
+    } else {
+      exitSketch();
+    }
+  };
+
+  const confirmDiscard = () => {
+    setConfirmExit(false);
+    exitSketch();
+  };
 
   if (!active) return null;
 
@@ -99,9 +115,19 @@ export function SketchToolbar() {
       </div>
 
       <div style={styles.actions}>
-        <button style={styles.exitBtn} onClick={exitSketch}>
-          Exit Sketch
-        </button>
+        {confirmExit ? (
+          <div style={styles.confirmDialog}>
+            <div style={styles.confirmText}>Discard sketch?</div>
+            <div style={styles.confirmButtons}>
+              <button style={styles.confirmYes} onClick={confirmDiscard}>Discard</button>
+              <button style={styles.confirmNo} onClick={() => setConfirmExit(false)}>Keep</button>
+            </div>
+          </div>
+        ) : (
+          <button style={styles.exitBtn} onClick={handleExit}>
+            Exit Sketch
+          </button>
+        )}
       </div>
     </div>
   );
@@ -181,6 +207,39 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 4,
     fontSize: 11,
     fontWeight: 600,
+    color: '#94a3b8',
+    background: '#334155',
+    border: '1px solid #475569',
+    cursor: 'pointer',
+  },
+  confirmDialog: {
+    padding: '4px',
+    textAlign: 'center' as const,
+  },
+  confirmText: {
+    fontSize: 10,
+    color: '#fbbf24',
+    marginBottom: 4,
+  },
+  confirmButtons: {
+    display: 'flex',
+    gap: 4,
+  },
+  confirmYes: {
+    flex: 1,
+    padding: '4px',
+    borderRadius: 3,
+    fontSize: 10,
+    color: '#fca5a5',
+    background: '#7f1d1d',
+    border: '1px solid #991b1b',
+    cursor: 'pointer',
+  },
+  confirmNo: {
+    flex: 1,
+    padding: '4px',
+    borderRadius: 3,
+    fontSize: 10,
     color: '#94a3b8',
     background: '#334155',
     border: '1px solid #475569',

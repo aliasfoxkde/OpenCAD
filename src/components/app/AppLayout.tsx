@@ -12,6 +12,7 @@ import { ToastContainer } from '../ui/Toast';
 import { ContextMenu } from '../ui/ContextMenu';
 import type { ContextMenuItem } from '../ui/ContextMenu';
 import { MeasurementOverlay } from '../ui/MeasurementOverlay';
+import { CollabPanel } from '../ui/CollabPanel';
 import { useUIStore } from '../../stores/ui-store';
 import { useCADStore } from '../../stores/cad-store';
 import { useViewStore } from '../../stores/view-store';
@@ -265,8 +266,9 @@ export function AppLayout() {
             <ResizeHandle
               onResize={(delta) => setRightPanelWidth(Math.max(200, Math.min(450, rightPanelWidth - delta)))}
             />
-            <div style={{ ...styles.rightPanel, width: rightPanelWidth }}>
+            <div style={{ ...styles.rightPanel, width: rightPanelWidth, overflow: 'auto' }}>
               <PropertiesPanel />
+              <CollabPanel />
             </div>
           </>
         )}
@@ -573,6 +575,12 @@ function MenuBar({
         { type: 'item', label: 'Section', action: () => useCADStore.getState().setActiveTool('section') },
         { type: 'separator' },
         { type: 'item', label: 'Command Palette', shortcut: 'Ctrl+K', action: () => useUIStore.getState().toggleCommandPalette() },
+        { type: 'separator' },
+        { type: 'item', label: 'Share Session', action: () => {
+          // Toggle right panel to show collab panel
+          const state = useUIStore.getState();
+          if (!state.rightPanelOpen) state.toggleRightPanel();
+        }},
       ],
     },
     {

@@ -8,10 +8,27 @@ import { useRef, useEffect, useCallback } from 'react';
 import { useSketchStore } from '../../stores/sketch-store';
 import { findSnap } from '../../cad/sketcher/snap-engine';
 import type { Point2D } from '../../stores/sketch-store';
-import type { SketchElement, SketchConstraint } from '../../types/cad';
+import type { SketchElement, SketchConstraint, ConstraintType } from '../../types/cad';
 
 const GRID_SIZE = 10;
 const GRID_SUBDIVISIONS = 5;
+
+/** Number of elements required for each constraint type */
+const CONSTRAINT_ELEMENT_COUNT: Partial<Record<ConstraintType, number>> = {
+  coincident: 2,
+  parallel: 2,
+  perpendicular: 2,
+  tangent: 2,
+  equal: 2,
+  distance: 2,
+  angle: 2,
+  horizontal: 1,
+  vertical: 1,
+  fix: 1,
+  midpoint: 2,
+  radius: 1,
+  diameter: 1,
+};
 const COLORS = {
   grid: '#1e3a5f',
   gridSub: '#172a45',
@@ -45,6 +62,7 @@ export function SketchCanvas() {
   const cursor = useSketchStore((s) => s.cursor);
   const snap = useSketchStore((s) => s.snap);
   const drawing = useSketchStore((s) => s.drawing);
+  const pendingConstraintType = useSketchStore((s) => s.pendingConstraintType);
 
   const setCursor = useSketchStore((s) => s.setCursor);
   const setSnap = useSketchStore((s) => s.setSnap);
@@ -54,6 +72,8 @@ export function SketchCanvas() {
   const continueDrawing = useSketchStore((s) => s.continueDrawing);
   const finishDrawing = useSketchStore((s) => s.finishDrawing);
   const cancelDrawing = useSketchStore((s) => s.cancelDrawing);
+  const addConstraint = useSketchStore((s) => s.addConstraint);
+  const setPendingConstraintType = useSketchStore((s) => s.setPendingConstraintType);
 
   // Render loop
   useEffect(() => {
@@ -142,6 +162,24 @@ export function SketchCanvas() {
         select(hit ? [hit] : []);
         break;
       }
+      case 'constraint': {
+        if (!pendingConstraintType) break;
+        const hit = hitTest(point, elements);
+        if (!hit) break;
+        const requiredCount = CONSTRAINT_ELEMENT_COUNT[pendingConstraintType] ?? 2;
+        const newSelection = [...selectedIds, hit];
+        if (newSelection.length >= requiredCount) {
+          addConstraint({
+            type: pendingConstraintType,
+            elements: newSelection.slice(0, requiredCount),
+          });
+          select([]);
+          setPendingConstraintType(null);
+        } else {
+          select(newSelection);
+        }
+        break;
+      }
       case 'line':
       case 'circle':
       case 'arc':
@@ -169,7 +207,7 @@ export function SketchCanvas() {
         break;
       }
     }
-  }, [tool, cursor, snap, drawing, elements]);
+  }, [tool, cursor, snap, drawing, elements, selectedIds, pendingConstraintType]);
 
   const handleDblClick = useCallback(() => {
     // Finish spline or multi-point shapes
@@ -533,21 +571,69 @@ function drawSnapIndicator(
 function drawConstraint(
   ctx: CanvasRenderingContext2D,
   constraint: SketchConstraint,
-  _elements: SketchElement[],
+  elements: SketchElement[],
 ) {
-  // Simplified constraint visualization — just render a small icon
-  // Full implementation would show dimension values, constraint symbols, etc.
   const canvas = ctx.canvas;
   const cx = canvas.width / 2;
   const cy = canvas.height / 2;
 
-  // For dimensional constraints, we'd draw the value
-  if (constraint.value !== undefined) {
-    ctx.fillStyle = COLORS.dimension;
-    ctx.font = '11px monospace';
-    // Position at midpoint of constrained elements (simplified)
-    ctx.fillText(`${constraint.value}`, cx + 5, cy - 5);
+  // Find positions of constrained elements for visualization
+  const positions: Point2D[] = [];
+  for (const elId of constraint.elements) {
+    const el = elements.find((e) => e.id === elId);
+    if (!el) continue;
+    const g = el.geometry;
+    switch (el.type) {
+      case 'line':
+        positions.push({ x: ((g.x1 as number) + (g.x2 as number)) / 2, y: ((g.y1 as number) + (g.y2 as number)) / 2 });
+        break;
+      case 'circle':
+        positions.push({ x: g.cx as number, y: g.cy as number });
+        break;
+      case 'point':
+        positions.push({ x: g.x as number, y: g.y as number });
+        break;
+      case 'rectangle':
+        positions.push({ x: (g.x as number) + (g.width as number) / 2, y: (g.y as number) + (g.height as number) / 2 });
+        break;
+      default:
+        positions.push({ x: 0, y: 0 });
+    }
   }
+
+  if (positions.length === 0) return;
+
+  // Compute midpoint for label placement
+  const midX = positions.reduce((s, p) => s + p.x, 0) / positions.length;
+  const midY = positions.reduce((s, p) => s + p.y, 0) / positions.length;
+
+  // Draw constraint symbol
+  const symbols: Partial<Record<ConstraintType, string>> = {
+    horizontal: '\u2194',
+    vertical: '\u2195',
+    parallel: '//',
+    perpendicular: '\u22A5',
+    tangent: '\u25CB',
+    coincident: '\u2295',
+    equal: '=',
+    fix: '\u2605',
+    distance: '\u2194',
+    angle: '\u2220',
+    radius: 'R',
+    midpoint: '\u00D7',
+  };
+
+  ctx.fillStyle = COLORS.constraint;
+  ctx.font = 'bold 11px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const symbol = symbols[constraint.type] ?? constraint.type;
+  const label = constraint.value !== undefined ? `${symbol} ${constraint.value}` : symbol;
+  ctx.fillText(label, cx + midX, cy - midY - 10);
+
+  ctx.textAlign = 'start';
+  ctx.textBaseline = 'alphabetic';
 }
 
 // === Hit testing ===
