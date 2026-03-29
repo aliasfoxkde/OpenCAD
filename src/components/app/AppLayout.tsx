@@ -3,11 +3,15 @@ import { Toolbar } from '../ui/Toolbar';
 import { FeatureTree } from '../ui/FeatureTree';
 import { PropertiesPanel } from '../ui/PropertiesPanel';
 import { StatusBar } from '../ui/StatusBar';
+import { SketchCanvas } from '../sketcher/SketchCanvas';
+import { SketchToolbar } from '../sketcher/SketchToolbar';
 import { useUIStore } from '../../stores/ui-store';
+import { useSketchStore } from '../../stores/sketch-store';
 
 export function AppLayout() {
   const leftPanelOpen = useUIStore((s) => s.leftPanelOpen);
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
+  const sketchActive = useSketchStore((s) => s.active);
 
   return (
     <div style={styles.root}>
@@ -26,9 +30,11 @@ export function AppLayout() {
           </div>
         )}
 
-        {/* 3D Viewport */}
+        {/* 3D Viewport + Sketch Overlay */}
         <div style={styles.viewport}>
           <Viewport />
+          {sketchActive && <SketchCanvas />}
+          <SketchToolbar />
         </div>
 
         {/* Right panel - Properties */}
