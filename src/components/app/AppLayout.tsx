@@ -11,6 +11,7 @@ import { DocumentDashboard } from '../ui/DocumentDashboard';
 import { ToastContainer } from '../ui/Toast';
 import { ContextMenu } from '../ui/ContextMenu';
 import type { ContextMenuItem } from '../ui/ContextMenu';
+import { MeasurementOverlay } from '../ui/MeasurementOverlay';
 import { useUIStore } from '../../stores/ui-store';
 import { useCADStore } from '../../stores/cad-store';
 import { useViewStore } from '../../stores/view-store';
@@ -256,6 +257,7 @@ export function AppLayout() {
           <Viewport />
           {sketchActive && <SketchCanvas />}
           <SketchToolbar />
+          <MeasurementOverlay />
         </DropZone>
 
         {rightPanelOpen && (

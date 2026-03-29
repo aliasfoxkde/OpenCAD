@@ -36,6 +36,8 @@ export function SketchToolbar() {
   const active = useSketchStore((s) => s.active);
   const tool = useSketchStore((s) => s.tool);
   const setTool = useSketchStore((s) => s.setTool);
+  const setPendingConstraintType = useSketchStore((s) => s.setPendingConstraintType);
+  const pendingConstraintType = useSketchStore((s) => s.pendingConstraintType);
   const exitSketch = useSketchStore((s) => s.exitSketch);
   const isFullyConstrained = useSketchStore((s) => s.isFullyConstrained);
   const degreesOfFreedom = useSketchStore((s) => s.degreesOfFreedom);
@@ -70,10 +72,13 @@ export function SketchToolbar() {
           {constraintTools.map((c) => (
             <button
               key={c.type}
-              style={styles.toolBtn}
+              style={{
+                ...styles.toolBtn,
+                ...(tool === 'constraint' && pendingConstraintType === c.type ? styles.toolBtnActive : {}),
+              }}
               onClick={() => {
                 setTool('constraint');
-                // pendingConstraintType would be set here
+                setPendingConstraintType(c.type);
               }}
               title={c.label}
             >

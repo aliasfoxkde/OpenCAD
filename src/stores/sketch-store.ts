@@ -76,6 +76,7 @@ export interface SketchActions {
   enterSketch: (plane: 'xy' | 'xz' | 'yz') => void;
   exitSketch: () => void;
   setTool: (tool: SketchToolType) => void;
+  setPendingConstraintType: (type: ConstraintType | null) => void;
   setCursor: (pos: Point2D | null) => void;
   setSnap: (snap: SnapResult | null) => void;
   setHovered: (id: string | null) => void;
@@ -136,6 +137,8 @@ export const useSketchStore = create<SketchState & SketchActions>((set, get) => 
   exitSketch: () => set({ ...initialState }),
 
   setTool: (tool) => set({ tool, drawing: null }),
+
+  setPendingConstraintType: (type) => set({ pendingConstraintType: type }),
 
   setCursor: (pos) => set({ cursor: pos }),
   setSnap: (snap) => set({ snap }),

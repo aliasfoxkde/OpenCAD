@@ -6,10 +6,12 @@ import { useViewStore } from '../../stores/view-store';
 
 export function Viewport() {
   const showGrid = useViewStore((s) => s.showGrid);
+  const showShadows = useViewStore((s) => s.showShadows);
 
   return (
     <Canvas
       camera={{ position: [10, 8, 10], fov: 50, near: 0.01, far: 10000 }}
+      shadows={showShadows}
       gl={{ antialias: true, alpha: false }}
       style={{ width: '100%', height: '100%' }}
       onCreated={({ gl }) => {
