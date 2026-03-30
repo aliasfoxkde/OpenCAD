@@ -122,7 +122,8 @@ export type ToolType =
   | 'fillet'
   | 'chamfer'
   | 'measure'
-  | 'section';
+  | 'section'
+  | 'hole';
 
 /** Display mode for the viewport */
 export type DisplayMode = 'wireframe' | 'shaded' | 'shaded_edges';

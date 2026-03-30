@@ -12,10 +12,11 @@ const primitiveTypeMap: Partial<Record<ToolType, FeatureType>> = {
   sphere: 'sphere',
   cone: 'cone',
   torus: 'torus',
+  hole: 'hole',
 };
 
 /** Primitives that create features immediately */
-const primitiveTools: ToolType[] = ['box', 'cylinder', 'sphere', 'cone', 'torus'];
+const primitiveTools: ToolType[] = ['box', 'cylinder', 'sphere', 'cone', 'torus', 'hole'];
 
 const tools: { id: ToolType; label: string; shortcut: string }[] = [
   { id: 'select', label: 'Select', shortcut: 'V' },
@@ -24,6 +25,7 @@ const tools: { id: ToolType; label: string; shortcut: string }[] = [
   { id: 'sphere', label: 'Sphere', shortcut: 'S' },
   { id: 'cone', label: 'Cone', shortcut: '' },
   { id: 'torus', label: 'Torus', shortcut: '' },
+  { id: 'hole', label: 'Hole', shortcut: 'H' },
   { id: 'fillet', label: 'Fillet', shortcut: '' },
   { id: 'chamfer', label: 'Chamfer', shortcut: '' },
   { id: 'measure', label: 'Measure', shortcut: 'M' },
