@@ -148,11 +148,16 @@ export function AppLayout() {
     state.setActiveTool('select');
   }, []);
 
-  const handleInsertPattern = useCallback((patternType: 'pattern_linear' | 'pattern_circular') => {
+  const handleInsertPattern = useCallback((patternType: 'pattern_linear' | 'pattern_circular' | 'mirror') => {
     const state = useCADStore.getState();
     const defaults = getDefaultParameters(patternType);
     const id = nanoid();
-    const label = patternType === 'pattern_linear' ? 'Linear Pattern' : 'Circular Pattern';
+    const labels: Record<string, string> = {
+      pattern_linear: 'Linear Pattern',
+      pattern_circular: 'Circular Pattern',
+      mirror: 'Mirror',
+    };
+    const label = labels[patternType] ?? patternType;
     const name = `${label} ${state.features.length + 1}`;
 
     // Reference the first selected feature, if any
@@ -497,7 +502,7 @@ function MenuBar({
   onAbout,
 }: {
   onInsert: (toolType: ToolType) => void;
-  onInsertPattern: (patternType: 'pattern_linear' | 'pattern_circular') => void;
+  onInsertPattern: (patternType: 'pattern_linear' | 'pattern_circular' | 'mirror') => void;
   onSetCamera: (preset: string) => void;
   onAbout: () => void;
 }) {
@@ -600,6 +605,7 @@ function MenuBar({
         { type: 'separator' },
         { type: 'item', label: 'Linear Pattern', action: () => onInsertPattern('pattern_linear') },
         { type: 'item', label: 'Circular Pattern', action: () => onInsertPattern('pattern_circular') },
+        { type: 'item', label: 'Mirror', action: () => onInsertPattern('mirror') },
       ],
     },
     {

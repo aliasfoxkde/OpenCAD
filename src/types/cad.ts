@@ -125,7 +125,8 @@ export type ToolType =
   | 'section'
   | 'hole'
   | 'pattern_linear'
-  | 'pattern_circular';
+  | 'pattern_circular'
+  | 'mirror';
 
 /** Display mode for the viewport */
 export type DisplayMode = 'wireframe' | 'shaded' | 'shaded_edges';

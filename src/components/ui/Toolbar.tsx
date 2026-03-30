@@ -31,6 +31,7 @@ const tools: { id: ToolType; label: string; shortcut: string }[] = [
   { id: 'chamfer', label: 'Chamfer', shortcut: '' },
   { id: 'pattern_linear', label: 'Lin Pattern', shortcut: '' },
   { id: 'pattern_circular', label: 'Circ Pattern', shortcut: '' },
+  { id: 'mirror', label: 'Mirror', shortcut: '' },
   { id: 'measure', label: 'Measure', shortcut: 'M' },
   { id: 'section', label: 'Section', shortcut: '' },
 ];
@@ -48,10 +49,15 @@ export function Toolbar() {
       return;
     }
 
-    if (toolId === 'pattern_linear' || toolId === 'pattern_circular') {
+    if (toolId === 'pattern_linear' || toolId === 'pattern_circular' || toolId === 'mirror') {
       const defaults = getDefaultParameters(toolId);
       const id = nanoid();
-      const label = toolId === 'pattern_linear' ? 'Linear Pattern' : 'Circular Pattern';
+      const labels: Record<string, string> = {
+        pattern_linear: 'Linear Pattern',
+        pattern_circular: 'Circular Pattern',
+        mirror: 'Mirror',
+      };
+      const label = labels[toolId] ?? toolId;
       const name = `${label} ${features.length + 1}`;
       const selectedId = useCADStore.getState().selectedIds[0];
       if (selectedId) {

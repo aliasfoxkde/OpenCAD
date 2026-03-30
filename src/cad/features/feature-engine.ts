@@ -223,6 +223,9 @@ export class FeatureEngine {
         if ((p.angle as number) <= 0) return 'Total angle must be positive';
         return null;
       }
+      case 'mirror': {
+        return null; // No param validation beyond required featureRef
+      }
       default:
         return null;
     }
@@ -326,6 +329,13 @@ export class FeatureEngine {
         return {
           minX: ox - r, minY: oy - r, minZ: oz - r,
           maxX: ox + r, maxY: oy + r, maxZ: oz + r,
+        };
+      }
+      case 'mirror': {
+        // Mirror reflects across a plane — symmetric bounds around origin
+        return {
+          minX: ox - 1, minY: oy - 1, minZ: oz - 1,
+          maxX: ox + 1, maxY: oy + 1, maxZ: oz + 1,
         };
       }
       default:

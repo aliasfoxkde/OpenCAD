@@ -63,6 +63,15 @@ function rotationMatrix(axis: 'x' | 'y' | 'z', angle: number): number[] {
   }
 }
 
+/** Build reflection matrix across a plane */
+function reflectionMatrix(plane: string): number[] {
+  switch (plane) {
+    case 'xz': return [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0];
+    case 'xy': return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0];
+    default:  return [-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]; // 'yz'
+  }
+}
+
 /** Convert a single feature to MeshData, or null if unsupported */
 export function featureToMesh(feature: FeatureNode, allFeatures?: FeatureNode[]): MeshData | null {
   switch (feature.type) {
@@ -186,6 +195,21 @@ export function featureToMesh(feature: FeatureNode, allFeatures?: FeatureNode[])
         indices: new Uint32Array(allIndices),
         featureId: feature.id,
       };
+    }
+    case 'mirror': {
+      if (!allFeatures) return null;
+      const refId = feature.parameters.featureRef as string;
+      const refFeature = allFeatures.find((f) => f.id === refId);
+      if (!refFeature || refFeature.suppressed) return null;
+
+      const baseMesh = featureToMesh(refFeature);
+      if (!baseMesh) return null;
+
+      const plane = (feature.parameters.plane as string) ?? 'yz';
+      const m = reflectionMatrix(plane);
+      const mesh = transformMesh(baseMesh, m);
+      mesh.featureId = feature.id;
+      return mesh;
     }
     default:
       return null;

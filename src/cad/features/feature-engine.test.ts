@@ -270,6 +270,18 @@ describe('FeatureEngine', () => {
       expect(bounds!.minX).toBeLessThan(0);
       expect(bounds!.maxX).toBeGreaterThan(0);
     });
+
+    it('should compute mirror bounds', () => {
+      const features = [
+        makeFeature('f1', 'extrude', { width: 2, height: 2, depth: 2 }),
+        makeFeature('m1', 'mirror', { featureRef: 'f1', plane: 'yz' }, ['f1']),
+      ];
+      const result = engine.rebuildAll(features);
+      const bounds = result.results.get('m1')?.bounds;
+      expect(bounds).toBeDefined();
+      expect(bounds!.minX).toBeLessThan(0);
+      expect(bounds!.maxX).toBeGreaterThan(0);
+    });
   });
 
   describe('rebuildFrom', () => {
@@ -383,6 +395,25 @@ describe('FeatureEngine', () => {
       ];
       const result = engine.rebuildAll(features);
       expect(result.errors[0]).toContain('Count must be at least 1');
+    });
+
+    it('should validate mirror with missing required featureRef', () => {
+      const features = [
+        makeFeature('f1', 'mirror', { featureRef: '', plane: 'yz' }),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors[0]).toContain('Missing required parameter');
+    });
+
+    it('should evaluate mirror with valid featureRef', () => {
+      const features = [
+        makeFeature('f1', 'extrude', { width: 2, height: 2, depth: 2 }),
+        makeFeature('m1', 'mirror', { featureRef: 'f1', plane: 'yz' }, ['f1']),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors).toEqual([]);
+      const bounds = result.results.get('m1')?.bounds;
+      expect(bounds).toBeDefined();
     });
   });
 });

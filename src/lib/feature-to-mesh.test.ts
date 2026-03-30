@@ -196,4 +196,97 @@ describe('feature-to-mesh', () => {
       expect(mesh).toBeNull();
     });
   });
+
+  describe('mirror', () => {
+    it('should return null when no allFeatures provided', () => {
+      const mesh = featureToMesh(makeFeature({
+        id: 'm1',
+        type: 'mirror',
+        parameters: { featureRef: 'box1', plane: 'yz' },
+      }));
+      expect(mesh).toBeNull();
+    });
+
+    it('should return null when referenced feature not found', () => {
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'm1',
+          type: 'mirror',
+          parameters: { featureRef: 'missing', plane: 'yz' },
+        }),
+        [],
+      );
+      expect(mesh).toBeNull();
+    });
+
+    it('should mirror vertices across YZ plane (negate X)', () => {
+      const refBox = makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2, originX: 3 } });
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'm1',
+          type: 'mirror',
+          parameters: { featureRef: 'box1', plane: 'yz' },
+        }),
+        [refBox],
+      );
+
+      expect(mesh).not.toBeNull();
+      expect(mesh!.featureId).toBe('m1');
+      // Mirror across YZ negates X — check that mirrored vertices have flipped X
+      const v = mesh!.vertices;
+      const baseV = featureToMesh(refBox)!.vertices;
+      expect(v.length).toBe(baseV.length);
+      // First vertex x should be negated
+      expect(Math.abs(v[0]! + baseV[0]!)).toBeLessThan(0.01);
+    });
+
+    it('should mirror vertices across XZ plane (negate Y)', () => {
+      const refBox = makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2, originY: 4 } });
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'm1',
+          type: 'mirror',
+          parameters: { featureRef: 'box1', plane: 'xz' },
+        }),
+        [refBox],
+      );
+
+      expect(mesh).not.toBeNull();
+      const v = mesh!.vertices;
+      const baseV = featureToMesh(refBox)!.vertices;
+      // First vertex y should be negated
+      expect(Math.abs(v[1]! + baseV[1]!)).toBeLessThan(0.01);
+    });
+
+    it('should mirror vertices across XY plane (negate Z)', () => {
+      const refBox = makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2, originZ: 5 } });
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'm1',
+          type: 'mirror',
+          parameters: { featureRef: 'box1', plane: 'xy' },
+        }),
+        [refBox],
+      );
+
+      expect(mesh).not.toBeNull();
+      const v = mesh!.vertices;
+      const baseV = featureToMesh(refBox)!.vertices;
+      // First vertex z should be negated
+      expect(Math.abs(v[2]! + baseV[2]!)).toBeLessThan(0.01);
+    });
+
+    it('should return null when referenced feature is suppressed', () => {
+      const refBox = makeFeature({ id: 'box1', suppressed: true });
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'm1',
+          type: 'mirror',
+          parameters: { featureRef: 'box1', plane: 'yz' },
+        }),
+        [refBox],
+      );
+      expect(mesh).toBeNull();
+    });
+  });
 });

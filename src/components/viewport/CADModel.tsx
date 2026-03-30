@@ -12,12 +12,12 @@ export function CADModel() {
   const features = useCADStore((s) => s.features);
   const selectedIds = useCADStore((s) => s.selectedIds);
 
-  // Separate simple features from pattern features
+  // Separate simple features from pattern/mirror features
   const { simpleFeatures, patternFeatures } = useMemo(() => {
     const simple: typeof features = [];
     const patterns: typeof features = [];
     for (const f of features) {
-      if (f.type === 'pattern_linear' || f.type === 'pattern_circular') {
+      if (f.type === 'pattern_linear' || f.type === 'pattern_circular' || f.type === 'mirror') {
         patterns.push(f);
       } else {
         simple.push(f);
@@ -190,6 +190,24 @@ function getCircularPatternTransforms(params: Record<string, unknown>): THREE.Ma
   return transforms;
 }
 
+/** Compute transform for a mirror (reflection across a plane) */
+function getMirrorTransform(params: Record<string, unknown>): THREE.Matrix4[] {
+  const plane = (params.plane as string) ?? 'yz';
+  const m = new THREE.Matrix4();
+  switch (plane) {
+    case 'xz':
+      m.makeScale(1, -1, 1);
+      break;
+    case 'xy':
+      m.makeScale(1, 1, -1);
+      break;
+    default: // 'yz' — mirror across YZ plane (negate X)
+      m.makeScale(-1, 1, 1);
+      break;
+  }
+  return [m];
+}
+
 interface PatternMeshesProps {
   feature: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean };
   allFeatures: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean }[];
@@ -213,10 +231,14 @@ function PatternMeshes({ feature, allFeatures, selected }: PatternMeshesProps) {
     const baseGeometry = createGeometry(refFeature.type, refFeature.parameters);
     if (!baseGeometry) return null;
 
-    const transforms =
-      feature.type === 'pattern_linear'
-        ? getLinearPatternTransforms(feature.parameters)
-        : getCircularPatternTransforms(feature.parameters);
+    let transforms: THREE.Matrix4[];
+    if (feature.type === 'pattern_linear') {
+      transforms = getLinearPatternTransforms(feature.parameters);
+    } else if (feature.type === 'pattern_circular') {
+      transforms = getCircularPatternTransforms(feature.parameters);
+    } else {
+      transforms = getMirrorTransform(feature.parameters);
+    }
 
     const refPosX = (refFeature.parameters.originX as number) ?? 0;
     const refPosY = (refFeature.parameters.originY as number) ?? 0;
