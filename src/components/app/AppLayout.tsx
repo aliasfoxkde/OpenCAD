@@ -381,6 +381,7 @@ export function AppLayout() {
         setSketchMode(false);
         useCADStore.getState().clearSelection();
         useCADStore.getState().setActiveTool('select');
+        useViewStore.getState().clearMeasurePoints();
         if (useUIStore.getState().commandPaletteOpen) {
           toggleCommandPalette();
         }

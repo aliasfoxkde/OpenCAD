@@ -196,6 +196,7 @@ export function registerStandardCommands(actions: CommandActions): void {
     ['view.zoom_in', 'Zoom In', 'view', 'Ctrl+=', actions.zoomIn],
     ['view.zoom_out', 'Zoom Out', 'view', 'Ctrl+-', actions.zoomOut],
     ['tools.command_palette', 'Command Palette', 'tools', 'Ctrl+K', actions.toggleCommandPalette],
+    ['tools.command_palette_shift', 'Command Palette', 'tools', 'Ctrl+Shift+P', actions.toggleCommandPalette],
     ['tools.enter_sketch', 'Enter Sketch Mode', 'sketch', 'S', actions.enterSketch],
     ['view.camera_front', 'Front View', 'view', '1', actions.cameraFront],
     ['view.camera_back', 'Back View', 'view', '4', actions.cameraBack],
