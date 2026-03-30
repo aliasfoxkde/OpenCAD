@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useViewStore } from '../../stores/view-store';
+import { useCADStore } from '../../stores/cad-store';
 import { getPreset } from '../../lib/camera-presets';
 
 const LERP_SPEED = 0.08;
@@ -20,6 +21,7 @@ const lastCameraState = {
 export function CameraController() {
   const cameraPreset = useViewStore((s) => s.cameraPreset);
   const fitViewRequested = useViewStore((s) => s.fitViewRequested);
+  const zoomToSelectionRequested = useViewStore((s) => s.zoomToSelectionRequested);
 
   // When preset changes, set animation targets
   if (cameraPreset) {
@@ -39,6 +41,12 @@ export function CameraController() {
     if (fitViewRequested > 0) {
       fitViewToScene(camera, scene);
       useViewStore.setState({ fitViewRequested: 0 });
+    }
+
+    // Handle zoom-to-selection request
+    if (zoomToSelectionRequested > 0) {
+      zoomToSelected(camera, scene);
+      useViewStore.setState({ zoomToSelectionRequested: 0 });
     }
 
     if (!animTarget.active) return;
@@ -101,6 +109,47 @@ function fitViewToScene(_camera: THREE.Camera, scene: THREE.Scene) {
     animTarget.pos.set(10, 8, 10);
     animTarget.lookAt.set(0, 0, 0);
     animTarget.active = true;
+    return;
+  }
+
+  const center = new THREE.Vector3();
+  const size = new THREE.Vector3();
+  box.getCenter(center);
+  box.getSize(size);
+
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const distance = Math.max(maxDim * 2, 2);
+
+  const dir = new THREE.Vector3(1, 0.8, 1).normalize();
+  animTarget.pos.copy(center).add(dir.multiplyScalar(distance));
+  animTarget.lookAt.copy(center);
+  animTarget.active = true;
+}
+
+/** Zoom camera to frame only the selected meshes */
+function zoomToSelected(camera: THREE.Camera, scene: THREE.Scene) {
+  const selectedIds = useCADStore.getState().selectedIds;
+  const box = new THREE.Box3();
+  let hasGeometry = false;
+
+  scene.traverse((obj) => {
+    if (!(obj instanceof THREE.Mesh) || !obj.geometry) return;
+    // Check if this mesh's userData matches a selected feature ID
+    const meshId = obj.userData?.featureId;
+    if (!meshId || !selectedIds.includes(meshId)) return;
+
+    obj.geometry.computeBoundingBox();
+    if (obj.geometry.boundingBox) {
+      const meshBox = obj.geometry.boundingBox.clone();
+      meshBox.applyMatrix4(obj.matrixWorld);
+      box.union(meshBox);
+      hasGeometry = true;
+    }
+  });
+
+  if (!hasGeometry) {
+    // Fall back to fit all
+    fitViewToScene(camera, scene);
     return;
   }
 

@@ -37,6 +37,7 @@ export interface ViewStoreState {
   showShadows: boolean;
   cameraPreset: string | null;
   fitViewRequested: number;
+  zoomToSelectionRequested: number;
   leftPanelWidth: number;
   rightPanelWidth: number;
 }
@@ -50,6 +51,7 @@ export interface ViewStoreActions {
   toggleShadows: () => void;
   setCameraPreset: (name: string) => void;
   requestFitView: () => void;
+  requestZoomToSelection: () => void;
   setLeftPanelWidth: (width: number) => void;
   setRightPanelWidth: (width: number) => void;
 }

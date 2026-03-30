@@ -10,6 +10,7 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
   showShadows: false,
   cameraPreset: null,
   fitViewRequested: 0,
+  zoomToSelectionRequested: 0,
   leftPanelWidth: 220,
   rightPanelWidth: 260,
 
@@ -21,6 +22,7 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
   toggleShadows: () => set((s) => ({ showShadows: !s.showShadows })),
   setCameraPreset: (name) => set({ cameraPreset: name }),
   requestFitView: () => set((s) => ({ fitViewRequested: s.fitViewRequested + 1 })),
+  requestZoomToSelection: () => set((s) => ({ zoomToSelectionRequested: s.zoomToSelectionRequested + 1 })),
   setLeftPanelWidth: (width) => set({ leftPanelWidth: width }),
   setRightPanelWidth: (width) => set({ rightPanelWidth: width }),
 }));

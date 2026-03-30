@@ -92,6 +92,7 @@ function FeatureMesh({ featureId, type, params, selected, suppressed }: FeatureM
       position={[posX, posY, posZ]}
       castShadow
       receiveShadow
+      userData={{ featureId }}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
     >

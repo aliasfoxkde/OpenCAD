@@ -37,4 +37,20 @@ describe('ViewStore', () => {
     useViewStore.getState().setDisplayMode('wireframe');
     expect(useViewStore.getState().displayMode).toBe('wireframe');
   });
+
+  it('should increment fitViewRequested counter', () => {
+    expect(useViewStore.getState().fitViewRequested).toBe(0);
+    useViewStore.getState().requestFitView();
+    expect(useViewStore.getState().fitViewRequested).toBe(1);
+    useViewStore.getState().requestFitView();
+    expect(useViewStore.getState().fitViewRequested).toBe(2);
+  });
+
+  it('should increment zoomToSelectionRequested counter', () => {
+    expect(useViewStore.getState().zoomToSelectionRequested).toBe(0);
+    useViewStore.getState().requestZoomToSelection();
+    expect(useViewStore.getState().zoomToSelectionRequested).toBe(1);
+    useViewStore.getState().requestZoomToSelection();
+    expect(useViewStore.getState().zoomToSelectionRequested).toBe(2);
+  });
 });

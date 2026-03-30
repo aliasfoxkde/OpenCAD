@@ -112,6 +112,7 @@ export function AppLayout() {
         useCADStore.getState().select(feats.map((f) => f.id));
       }},
       { id: 'fit_view', label: 'Fit View', shortcut: 'F', action: () => useViewStore.getState().requestFitView() },
+      { id: 'zoom_selection', label: 'Zoom to Selection', shortcut: 'Shift+F', action: () => useViewStore.getState().requestZoomToSelection() },
       'divider',
       { id: 'toggle_grid', label: 'Toggle Grid', shortcut: 'G', action: () => useViewStore.getState().toggleGrid() },
       { id: 'toggle_wireframe', label: 'Toggle Wireframe', shortcut: 'W', action: () => useViewStore.getState().toggleWireframe() },
@@ -556,6 +557,7 @@ function MenuBar({
         { type: 'item', label: 'Toggle Wireframe', shortcut: 'W', action: () => useViewStore.getState().toggleWireframe() },
         { type: 'item', label: 'Toggle Shadows', action: () => useViewStore.getState().toggleShadows() },
         { type: 'item', label: 'Fit View', shortcut: 'F', action: () => useViewStore.getState().requestFitView() },
+        { type: 'item', label: 'Zoom to Selection', shortcut: 'Shift+F', action: () => useViewStore.getState().requestZoomToSelection() },
       ],
     },
     {
@@ -566,6 +568,7 @@ function MenuBar({
         { type: 'item', label: 'Sphere', action: () => onInsert('sphere') },
         { type: 'item', label: 'Cone', action: () => onInsert('cone') },
         { type: 'item', label: 'Torus', action: () => onInsert('torus') },
+        { type: 'item', label: 'Hole', action: () => onInsert('hole') },
       ],
     },
     {
