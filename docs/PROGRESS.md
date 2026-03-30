@@ -1,8 +1,8 @@
 # OpenCAD - Progress Tracking
 
-**Last Updated**: 2026-03-29
-**Current Phase**: Phase 10 Ecosystem — API, MCP, SEO, Documentation
-**Overall Progress**: 65%
+**Last Updated**: 2026-03-30
+**Current Phase**: Enhancement Sprint — Viewport Polish Complete
+**Overall Progress**: 70%
 
 ---
 
@@ -11,19 +11,98 @@
 | Phase | Status | Progress |
 |-------|--------|----------|
 | Phase 1: Foundation | COMPLETE | 90% |
-| Phase 2: CAD Kernel | IN PROGRESS | 25% |
+| Phase 2: CAD Kernel | COMPLETE | 80% |
 | Phase 3: Sketcher | COMPLETE | 80% |
-| Phase 4: Parametric Features | COMPLETE | 60% |
+| Phase 4: Parametric Features | COMPLETE | 80% |
 | Phase 5: Professional UI | COMPLETE | 95% |
 | Phase 6: File I/O | COMPLETE | 85% |
-| Phase 7: Collaboration | IN PROGRESS | 50% |
+| Phase 7: Collaboration | COMPLETE | 80% |
 | Phase 8: Assemblies | PENDING | 0% |
 | Phase 9: Drawings | PENDING | 0% |
-| Phase 10: Plugins & AI | IN PROGRESS | 70% |
+| Phase 10: Plugins & AI | COMPLETE | 80% |
 
 ---
 
 ## Session Log
+
+### 2026-03-30 - Session 9: Comprehensive Enhancement Sprint (Phases 1-8 Plan)
+
+**Completed all 8 phases from the comprehensive enhancement plan:**
+
+**Phase 1: Feature Tree Multi-Select & Search**
+- [x] Ctrl+Click to toggle feature in selection (multi-select)
+- [x] Shift+Click to range-select from last clicked feature
+- [x] Search input at top of tree with name/type filtering
+- [x] Selected count shown in header when multi-selected
+- [x] 9 multi-select and search tests
+
+**Phase 2: Feature Health Display**
+- [x] useFeatureErrors React hook — computes validation via FeatureEngine useMemo (no store subscription, avoids CRDT feedback loop)
+- [x] Health icon per feature: checkmark (success) or warning triangle (error)
+- [x] Feature name color-coded red for errors
+- [x] Error message tooltip on hover
+- [x] 11 feature error detection tests (valid, negative/zero dims, missing dependency, unknown type, etc.)
+
+**Phase 3: 3D Transform Gizmo**
+- [x] TransformControls from drei in translate mode
+- [x] Invisible target mesh (0.001 size, transparent)
+- [x] Updates originX/Y/Z parameters on drag with 3-decimal rounding
+- [x] Only visible when single feature selected and tool is 'select'
+- [x] Wired into Viewport canvas
+
+**Phase 4: Mass Properties Panel**
+- [x] computeMeshProperties: signed tetrahedron volume, triangle area, bounding box, center of mass
+- [x] computeAllProperties: combined properties for all features
+- [x] computeFeatureProperties: single feature properties
+- [x] formatPropertyValue: smart number formatting with units
+- [x] Mass Properties section in PropertiesPanel (Volume, Surface Area, Bounding Box, Center, Triangles)
+- [x] 8 mass properties tests (unit cube, surface area, center of mass, etc.)
+
+**Phase 5: Grid Snapping for 3D Viewport**
+- [x] snapToGrid/gridSnapSize state in view store
+- [x] Snap applied in TransformGizmo via rounding during drag
+- [x] Shift+G keyboard shortcut for snap toggle
+- [x] Snap status indicator in StatusBar ("Snap: 0.5mm")
+- [x] Snap toggle in View menu
+
+**Phase 6: Dimension Annotations**
+- [x] annotations.ts: DimensionAnnotation type, factory functions (distance/radius/diameter), label/midpoint helpers
+- [x] DimensionAnnotation.tsx: R3F component with dashed leader lines + Html labels via drei
+- [x] Color-coded labels: cyan (distance), purple (radius), pink (diameter)
+- [x] Click label to remove annotation
+- [x] "Pin" button in MeasurementOverlay to persist point-to-point measurements
+- [x] Annotation state management in view store (add/remove/clear)
+- [x] 13 annotation tests
+
+**Phase 7: Units System**
+- [x] Unit type ('mm'|'cm'|'m'|'in'|'ft') in CAD store with conversion factors
+- [x] Click-to-cycle units display in StatusBar
+- [x] Parameter values converted to display units in PropertiesPanel
+- [x] Mass properties (volume, area, bbox, center) displayed in current units
+- [x] User input auto-converts back to mm for internal storage
+
+**Phase 8: Viewport Polish — Selection Glow & Bloom**
+- [x] useSelectionGlow hook with smooth emissive lerp transition (0.1 factor)
+- [x] Emissive highlight on all selected mesh types (FeatureMesh, PatternInstance, BooleanMesh, ShellMesh)
+- [x] @react-three/postprocessing installed
+- [x] Bloom post-processing effect (intensity 0.3, luminance threshold 0.6, mipmap blur)
+- [x] EffectComposer wired into Viewport canvas
+
+**New Test → Source File Mapping:**
+| Test File | Source File | Tests |
+|-----------|------------|-------|
+| FeatureTree.test.tsx | FeatureTree.tsx | 9 |
+| useFeatureErrors.test.ts | useFeatureErrors.ts | 11 |
+| mass-properties.test.ts | mass-properties.ts | 8 |
+| annotations.test.ts | annotations.ts | 13 |
+
+**Build Stats:**
+- 51 test suites, 742 tests, all passing
+- 0 TypeScript errors
+- Clean production build
+- New dependency: @react-three/postprocessing
+
+---
 
 ### 2026-03-29 - Session 8: Client API, MCP Server, SEO, Documentation
 
