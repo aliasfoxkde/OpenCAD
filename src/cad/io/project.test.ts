@@ -81,8 +81,8 @@ describe('deserializeProject', () => {
     expect(project.name).toBe('Round Trip');
     expect(project.units).toBe('mm');
     expect(project.features).toHaveLength(1);
-    expect(project.features[0].name).toBe('Cylinder');
-    expect(project.features[0].parameters.width).toBe(10);
+    expect(project.features[0]!.name).toBe('Cylinder');
+    expect(project.features[0]!.parameters.width).toBe(10);
   });
 
   it('round-trips complex features', () => {
@@ -98,9 +98,9 @@ describe('deserializeProject', () => {
     const json = serializeProject({ name: 'Shell Test', units: 'in', features, sketches: [] });
     const project = deserializeProject(json);
 
-    expect(project.features[1].type).toBe('shell');
-    expect(project.features[1].parameters.targetRef).toBe('a');
-    expect(project.features[1].parameters.thickness).toBe(0.5);
+    expect(project.features[1]!.type).toBe('shell');
+    expect(project.features[1]!.parameters.targetRef).toBe('a');
+    expect(project.features[1]!.parameters.thickness).toBe(0.5);
     expect(project.units).toBe('in');
   });
 
