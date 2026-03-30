@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeMeshProperties } from './mass-properties';
-import type { MeshData } from '../types/cad';
+import { computeMeshProperties, computeAllProperties, formatPropertyValue } from './mass-properties';
+import type { MeshData, FeatureNode } from '../types/cad';
 
 function makeMesh(vertices: number[], indices: number[], normals?: number[]): MeshData {
   return {
@@ -111,5 +111,61 @@ describe('computeMeshProperties', () => {
 
     const props = computeMeshProperties(mesh);
     expect(props.surfaceArea).toBeCloseTo((s * h) / 2, 0.001);
+  });
+});
+
+describe('computeAllProperties', () => {
+  it('should return zeros for empty features array', () => {
+    const props = computeAllProperties([]);
+    expect(props.volume).toBe(0);
+    expect(props.surfaceArea).toBe(0);
+    expect(props.boundingBox).toBeNull();
+    expect(props.centerOfMass).toBeNull();
+    expect(props.triangleCount).toBe(0);
+    expect(props.vertexCount).toBe(0);
+  });
+
+  it('should handle suppressed features', () => {
+    const features: FeatureNode[] = [
+      {
+        id: 'box1',
+        type: 'extrude',
+        name: 'Box',
+        parameters: { width: 10, height: 10, depth: 10 },
+        dependencies: [],
+        children: [],
+        suppressed: true,
+      },
+    ];
+    const props = computeAllProperties(features);
+    expect(props.volume).toBe(0);
+    expect(props.triangleCount).toBe(0);
+  });
+});
+
+describe('formatPropertyValue', () => {
+  it('should format zero values', () => {
+    expect(formatPropertyValue(0, 'mm')).toBe('0 mm');
+    expect(formatPropertyValue(0.0001, 'mm')).toBe('0 mm');
+  });
+
+  it('should format large values with no decimals', () => {
+    expect(formatPropertyValue(1500, 'mm³')).toBe('1500 mm³');
+  });
+
+  it('should format hundreds with one decimal', () => {
+    expect(formatPropertyValue(250, 'mm²')).toBe('250.0 mm²');
+  });
+
+  it('should format values >= 1 with two decimals', () => {
+    expect(formatPropertyValue(5.678, 'mm')).toBe('5.68 mm');
+  });
+
+  it('should format small values with three decimals', () => {
+    expect(formatPropertyValue(0.5, 'mm')).toBe('0.500 mm');
+  });
+
+  it('should handle negative values', () => {
+    expect(formatPropertyValue(-5, 'mm')).toBe('-5.00 mm');
   });
 });
