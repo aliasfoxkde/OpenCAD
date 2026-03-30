@@ -197,6 +197,145 @@ describe('feature-to-mesh', () => {
     });
   });
 
+  describe('boolean_union', () => {
+    it('should return null when no allFeatures provided', () => {
+      const mesh = featureToMesh(makeFeature({
+        id: 'b1',
+        type: 'boolean_union',
+        parameters: { bodyRefs: 'box1, box2' },
+      }));
+      expect(mesh).toBeNull();
+    });
+
+    it('should return null when fewer than 2 bodies', () => {
+      const box = makeFeature({ id: 'box1' });
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'b1',
+          type: 'boolean_union',
+          parameters: { bodyRefs: 'box1' },
+        }),
+        [box],
+      );
+      expect(mesh).toBeNull();
+    });
+
+    it('should produce mesh for union of two overlapping boxes', () => {
+      const box1 = makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2, originX: -0.5 } });
+      const box2 = makeFeature({ id: 'box2', parameters: { width: 2, height: 2, depth: 2, originX: 0.5 } });
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'b1',
+          type: 'boolean_union',
+          parameters: { bodyRefs: 'box1, box2' },
+        }),
+        [box1, box2],
+      );
+      expect(mesh).not.toBeNull();
+      expect(mesh!.featureId).toBe('b1');
+      expect(mesh!.vertices.length).toBeGreaterThan(0);
+    });
+
+    it('should return null when referenced feature is suppressed', () => {
+      const box1 = makeFeature({ id: 'box1', suppressed: true });
+      const box2 = makeFeature({ id: 'box2' });
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'b1',
+          type: 'boolean_union',
+          parameters: { bodyRefs: 'box1, box2' },
+        }),
+        [box1, box2],
+      );
+      expect(mesh).toBeNull();
+    });
+  });
+
+  describe('boolean_subtract', () => {
+    it('should return null when no allFeatures provided', () => {
+      const mesh = featureToMesh(makeFeature({
+        id: 'b1',
+        type: 'boolean_subtract',
+        parameters: { targetRef: 'box1', toolRef: 'box2' },
+      }));
+      expect(mesh).toBeNull();
+    });
+
+    it('should return null when target or tool missing', () => {
+      const box1 = makeFeature({ id: 'box1' });
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'b1',
+          type: 'boolean_subtract',
+          parameters: { targetRef: 'box1', toolRef: 'missing' },
+        }),
+        [box1],
+      );
+      expect(mesh).toBeNull();
+    });
+
+    it('should produce mesh for subtract of two boxes', () => {
+      const box1 = makeFeature({ id: 'box1', parameters: { width: 4, height: 4, depth: 4 } });
+      const box2 = makeFeature({ id: 'box2', parameters: { width: 2, height: 2, depth: 2, originX: 0, originY: 0, originZ: 0 } });
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'b1',
+          type: 'boolean_subtract',
+          parameters: { targetRef: 'box1', toolRef: 'box2' },
+        }),
+        [box1, box2],
+      );
+      expect(mesh).not.toBeNull();
+      expect(mesh!.featureId).toBe('b1');
+      expect(mesh!.vertices.length).toBeGreaterThan(0);
+    });
+
+    it('should return null when target suppressed', () => {
+      const box1 = makeFeature({ id: 'box1', suppressed: true });
+      const box2 = makeFeature({ id: 'box2' });
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'b1',
+          type: 'boolean_subtract',
+          parameters: { targetRef: 'box1', toolRef: 'box2' },
+        }),
+        [box1, box2],
+      );
+      expect(mesh).toBeNull();
+    });
+  });
+
+  describe('boolean_intersect', () => {
+    it('should return null when fewer than 2 bodies', () => {
+      const box1 = makeFeature({ id: 'box1' });
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'b1',
+          type: 'boolean_intersect',
+          parameters: { bodyRefs: 'box1' },
+        }),
+        [box1],
+      );
+      expect(mesh).toBeNull();
+    });
+
+    it('should produce mesh for intersect of two overlapping boxes', () => {
+      const box1 = makeFeature({ id: 'box1', parameters: { width: 4, height: 4, depth: 4, originX: -0.5 } });
+      const box2 = makeFeature({ id: 'box2', parameters: { width: 4, height: 4, depth: 4, originX: 0.5 } });
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'b1',
+          type: 'boolean_intersect',
+          parameters: { bodyRefs: 'box1, box2' },
+        }),
+        [box1, box2],
+      );
+      expect(mesh).not.toBeNull();
+      expect(mesh!.featureId).toBe('b1');
+      expect(mesh!.vertices.length).toBeGreaterThan(0);
+    });
+  });
+
   describe('mirror', () => {
     it('should return null when no allFeatures provided', () => {
       const mesh = featureToMesh(makeFeature({

@@ -126,7 +126,10 @@ export type ToolType =
   | 'hole'
   | 'pattern_linear'
   | 'pattern_circular'
-  | 'mirror';
+  | 'mirror'
+  | 'boolean_union'
+  | 'boolean_subtract'
+  | 'boolean_intersect';
 
 /** Display mode for the viewport */
 export type DisplayMode = 'wireframe' | 'shaded' | 'shaded_edges';

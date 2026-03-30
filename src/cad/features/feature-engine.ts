@@ -226,6 +226,22 @@ export class FeatureEngine {
       case 'mirror': {
         return null; // No param validation beyond required featureRef
       }
+      case 'boolean_union': {
+        const bodyRefs = (p.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+        if (bodyRefs.length < 2) return 'Union requires at least 2 body references';
+        return null;
+      }
+      case 'boolean_subtract': {
+        if (!(p.targetRef as string)) return 'Subtract requires a target body reference';
+        if (!(p.toolRef as string)) return 'Subtract requires a tool body reference';
+        if ((p.targetRef as string) === (p.toolRef as string)) return 'Target and tool must be different bodies';
+        return null;
+      }
+      case 'boolean_intersect': {
+        const bodyRefs = (p.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+        if (bodyRefs.length < 2) return 'Intersect requires at least 2 body references';
+        return null;
+      }
       default:
         return null;
     }
@@ -337,6 +353,56 @@ export class FeatureEngine {
           minX: ox - 1, minY: oy - 1, minZ: oz - 1,
           maxX: ox + 1, maxY: oy + 1, maxZ: oz + 1,
         };
+      }
+      case 'boolean_union': {
+        // Union bounds are the union of all referenced body bounds
+        const bodyRefs = (p.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+        if (bodyRefs.length === 0) return undefined;
+        let bounds: FeatureResult['bounds'] | undefined;
+        for (const refId of bodyRefs) {
+          const refResult = this.results.get(refId);
+          if (refResult?.bounds) {
+            if (!bounds) {
+              bounds = { ...refResult.bounds };
+            } else {
+              bounds.minX = Math.min(bounds.minX, refResult.bounds.minX);
+              bounds.minY = Math.min(bounds.minY, refResult.bounds.minY);
+              bounds.minZ = Math.min(bounds.minZ, refResult.bounds.minZ);
+              bounds.maxX = Math.max(bounds.maxX, refResult.bounds.maxX);
+              bounds.maxY = Math.max(bounds.maxY, refResult.bounds.maxY);
+              bounds.maxZ = Math.max(bounds.maxZ, refResult.bounds.maxZ);
+            }
+          }
+        }
+        return bounds;
+      }
+      case 'boolean_subtract': {
+        // Subtract bounds are the target body bounds
+        const targetRef = p.targetRef as string;
+        const targetResult = this.results.get(targetRef);
+        return targetResult?.bounds;
+      }
+      case 'boolean_intersect': {
+        // Intersect bounds are the intersection of all body bounds
+        const bodyRefs = (p.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+        if (bodyRefs.length === 0) return undefined;
+        let bounds: FeatureResult['bounds'] | undefined;
+        for (const refId of bodyRefs) {
+          const refResult = this.results.get(refId);
+          if (refResult?.bounds) {
+            if (!bounds) {
+              bounds = { ...refResult.bounds };
+            } else {
+              bounds.minX = Math.max(bounds.minX, refResult.bounds.minX);
+              bounds.minY = Math.max(bounds.minY, refResult.bounds.minY);
+              bounds.minZ = Math.max(bounds.minZ, refResult.bounds.minZ);
+              bounds.maxX = Math.min(bounds.maxX, refResult.bounds.maxX);
+              bounds.maxY = Math.min(bounds.maxY, refResult.bounds.maxY);
+              bounds.maxZ = Math.min(bounds.maxZ, refResult.bounds.maxZ);
+            }
+          }
+        }
+        return bounds;
       }
       default:
         return undefined;

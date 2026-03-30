@@ -3,6 +3,7 @@ import { useViewStore } from '../../stores/view-store';
 import { useMemo, useRef, useCallback } from 'react';
 import type { ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
+import { booleanTwo } from '../../cad/kernel/csg-boolean';
 
 /** Distance threshold (pixels) to distinguish click from drag */
 const CLICK_THRESHOLD = 5;
@@ -12,18 +13,21 @@ export function CADModel() {
   const features = useCADStore((s) => s.features);
   const selectedIds = useCADStore((s) => s.selectedIds);
 
-  // Separate simple features from pattern/mirror features
-  const { simpleFeatures, patternFeatures } = useMemo(() => {
+  // Separate simple features from pattern/mirror/boolean features
+  const { simpleFeatures, patternFeatures, booleanFeatures } = useMemo(() => {
     const simple: typeof features = [];
     const patterns: typeof features = [];
+    const booleans: typeof features = [];
     for (const f of features) {
       if (f.type === 'pattern_linear' || f.type === 'pattern_circular' || f.type === 'mirror') {
         patterns.push(f);
+      } else if (f.type === 'boolean_union' || f.type === 'boolean_subtract' || f.type === 'boolean_intersect') {
+        booleans.push(f);
       } else {
         simple.push(f);
       }
     }
-    return { simpleFeatures: simple, patternFeatures: patterns };
+    return { simpleFeatures: simple, patternFeatures: patterns, booleanFeatures: booleans };
   }, [features]);
 
   return (
@@ -40,6 +44,14 @@ export function CADModel() {
       ))}
       {patternFeatures.map((feature) => (
         <PatternMeshes
+          key={feature.id}
+          feature={feature}
+          allFeatures={features}
+          selected={selectedIds.includes(feature.id)}
+        />
+      ))}
+      {booleanFeatures.map((feature) => (
+        <BooleanMesh
           key={feature.id}
           feature={feature}
           allFeatures={features}
@@ -329,6 +341,168 @@ function PatternInstance({
       castShadow
       receiveShadow
       userData={{ featureId }}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+    >
+      <meshStandardMaterial
+        color={selected ? '#3b82f6' : '#64748b'}
+        transparent={selected}
+        opacity={selected ? 0.85 : 1}
+        wireframe={isWireframe}
+        side={THREE.DoubleSide}
+      />
+      {showEdges && (
+        <meshBasicMaterial
+          color={selected ? '#60a5fa' : '#475569'}
+          wireframe
+          transparent
+          opacity={0.3}
+          side={THREE.DoubleSide}
+        />
+      )}
+    </mesh>
+  );
+}
+
+interface BooleanMeshProps {
+  feature: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean };
+  allFeatures: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean }[];
+  selected: boolean;
+}
+
+/** Renders the result of a boolean operation on referenced features */
+function BooleanMesh({ feature, allFeatures, selected }: BooleanMeshProps) {
+  if (feature.suppressed) return null;
+
+  const paramsKey = JSON.stringify(feature.parameters);
+  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
+
+  const geometry = useMemo(() => {
+    if (feature.type === 'boolean_union') {
+      const bodyRefs = (feature.parameters.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+      const geos: THREE.BufferGeometry[] = [];
+      for (const refId of bodyRefs) {
+        const ref = allFeatures.find((f) => f.id === refId);
+        if (!ref || ref.suppressed) continue;
+        const g = createGeometry(ref.type, ref.parameters);
+        if (!g) continue;
+        const ox = (ref.parameters.originX as number) ?? 0;
+        const oy = (ref.parameters.originY as number) ?? 0;
+        const oz = (ref.parameters.originZ as number) ?? 0;
+        g.translate(ox, oy, oz);
+        geos.push(g);
+      }
+      if (geos.length === 0) return null;
+      if (geos.length === 1) return geos[0]!;
+
+      let result: THREE.BufferGeometry | null = geos[0]!;
+      for (let i = 1; i < geos.length; i++) {
+        const next = booleanTwo(result!, geos[i]!, 'union');
+        if (!next) return null;
+        result = next;
+      }
+      return result;
+    }
+
+    if (feature.type === 'boolean_subtract') {
+      const targetRef = feature.parameters.targetRef as string;
+      const toolRef = feature.parameters.toolRef as string;
+      if (!targetRef || !toolRef) return null;
+
+      const targetFeature = allFeatures.find((f) => f.id === targetRef);
+      const toolFeature = allFeatures.find((f) => f.id === toolRef);
+      if (!targetFeature || targetFeature.suppressed) return null;
+      if (!toolFeature || toolFeature.suppressed) return null;
+
+      const tGeo = createGeometry(targetFeature.type, targetFeature.parameters);
+      const uGeo = createGeometry(toolFeature.type, toolFeature.parameters);
+      if (!tGeo || !uGeo) return null;
+
+      const tox = (targetFeature.parameters.originX as number) ?? 0;
+      const toy = (targetFeature.parameters.originY as number) ?? 0;
+      const toz = (targetFeature.parameters.originZ as number) ?? 0;
+      tGeo.translate(tox, toy, toz);
+
+      const uox = (toolFeature.parameters.originX as number) ?? 0;
+      const uoy = (toolFeature.parameters.originY as number) ?? 0;
+      const uoz = (toolFeature.parameters.originZ as number) ?? 0;
+      uGeo.translate(uox, uoy, uoz);
+
+      const result = booleanTwo(tGeo, uGeo, 'subtract');
+      return result ?? null;
+    }
+
+    if (feature.type === 'boolean_intersect') {
+      const bodyRefs = (feature.parameters.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+      const geos: THREE.BufferGeometry[] = [];
+      for (const refId of bodyRefs) {
+        const ref = allFeatures.find((f) => f.id === refId);
+        if (!ref || ref.suppressed) continue;
+        const g = createGeometry(ref.type, ref.parameters);
+        if (!g) continue;
+        const ox = (ref.parameters.originX as number) ?? 0;
+        const oy = (ref.parameters.originY as number) ?? 0;
+        const oz = (ref.parameters.originZ as number) ?? 0;
+        g.translate(ox, oy, oz);
+        geos.push(g);
+      }
+      if (geos.length < 2) return null;
+
+      let result: THREE.BufferGeometry | null = geos[0]!;
+      for (let i = 1; i < geos.length; i++) {
+        const next = booleanTwo(result!, geos[i]!, 'intersect');
+        if (!next) return null;
+        result = next;
+      }
+      return result;
+    }
+
+    return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paramsKey, allFeaturesKey, feature.type]);
+
+  if (!geometry) return null;
+
+  const displayMode = useViewStore((s) => s.displayMode);
+  const isWireframe = displayMode === 'wireframe';
+  const showEdges = displayMode === 'shaded_edges';
+  const pointerDownPos = useRef<{ x: number; y: number } | null>(null);
+
+  const handlePointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    pointerDownPos.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  const handlePointerUp = useCallback(
+    (e: ThreeEvent<PointerEvent>) => {
+      if (!pointerDownPos.current) return;
+      const dx = e.clientX - pointerDownPos.current.x;
+      const dy = e.clientY - pointerDownPos.current.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      pointerDownPos.current = null;
+      if (dist > CLICK_THRESHOLD) return;
+
+      const { select } = useCADStore.getState();
+      if (e.shiftKey) {
+        const current = useCADStore.getState().selectedIds;
+        if (current.includes(feature.id)) {
+          select(current.filter((id) => id !== feature.id));
+        } else {
+          select([...current, feature.id]);
+        }
+      } else {
+        select([feature.id]);
+      }
+    },
+    [feature.id],
+  );
+
+  return (
+    <mesh
+      geometry={geometry}
+      castShadow
+      receiveShadow
+      userData={{ featureId: feature.id }}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
     >

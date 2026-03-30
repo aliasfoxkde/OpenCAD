@@ -397,6 +397,88 @@ describe('FeatureEngine', () => {
       expect(result.errors[0]).toContain('Count must be at least 1');
     });
 
+    it('should validate boolean_union requires at least 2 body refs', () => {
+      const features = [
+        makeFeature('f1', 'extrude', { width: 2, height: 2, depth: 2 }),
+        makeFeature('b1', 'boolean_union', { bodyRefs: 'f1' }, ['f1']),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors[0]).toContain('Union requires at least 2 body references');
+    });
+
+    it('should validate boolean_subtract requires tool ref', () => {
+      const features = [
+        makeFeature('f1', 'extrude', { width: 2, height: 2, depth: 2 }),
+        makeFeature('b1', 'boolean_subtract', { targetRef: 'f1' }, ['f1']),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors[0]).toContain('Missing required parameter');
+    });
+
+    it('should validate boolean_subtract rejects same target and tool', () => {
+      const features = [
+        makeFeature('f1', 'extrude', { width: 2, height: 2, depth: 2 }),
+        makeFeature('b1', 'boolean_subtract', { targetRef: 'f1', toolRef: 'f1' }, ['f1']),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors[0]).toContain('Target and tool must be different');
+    });
+
+    it('should validate boolean_intersect requires at least 2 body refs', () => {
+      const features = [
+        makeFeature('f1', 'extrude', { width: 2, height: 2, depth: 2 }),
+        makeFeature('b1', 'boolean_intersect', { bodyRefs: 'f1' }, ['f1']),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors[0]).toContain('Intersect requires at least 2 body references');
+    });
+
+    it('should evaluate boolean_union with valid refs', () => {
+      const features = [
+        makeFeature('f1', 'extrude', { width: 2, height: 2, depth: 2 }),
+        makeFeature('f2', 'extrude', { width: 2, height: 2, depth: 2, originX: 1 }),
+        makeFeature('b1', 'boolean_union', { bodyRefs: 'f1, f2' }, ['f1', 'f2']),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors).toEqual([]);
+      const bounds = result.results.get('b1')?.bounds;
+      expect(bounds).toBeDefined();
+      // Union bounds should encompass both boxes: minX=-1, maxX=2
+      expect(bounds!.minX).toBe(-1);
+      expect(bounds!.maxX).toBe(2);
+    });
+
+    it('should evaluate boolean_subtract with valid refs', () => {
+      const features = [
+        makeFeature('f1', 'extrude', { width: 4, height: 4, depth: 4 }),
+        makeFeature('f2', 'extrude', { width: 2, height: 2, depth: 2 }),
+        makeFeature('b1', 'boolean_subtract', { targetRef: 'f1', toolRef: 'f2' }, ['f1', 'f2']),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors).toEqual([]);
+      // Subtract bounds are the target bounds
+      const bounds = result.results.get('b1')?.bounds;
+      expect(bounds).toEqual({
+        minX: -2, minY: -2, minZ: -2,
+        maxX: 2, maxY: 2, maxZ: 2,
+      });
+    });
+
+    it('should evaluate boolean_intersect with valid refs', () => {
+      const features = [
+        makeFeature('f1', 'extrude', { width: 4, height: 4, depth: 4 }),
+        makeFeature('f2', 'extrude', { width: 4, height: 4, depth: 4, originX: 2 }),
+        makeFeature('b1', 'boolean_intersect', { bodyRefs: 'f1, f2' }, ['f1', 'f2']),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors).toEqual([]);
+      // Intersect bounds should be the overlap region
+      const bounds = result.results.get('b1')?.bounds;
+      expect(bounds).toBeDefined();
+      expect(bounds!.minX).toBe(0); // overlap starts at 0
+      expect(bounds!.maxX).toBe(2); // overlap ends at 2
+    });
+
     it('should validate mirror with missing required featureRef', () => {
       const features = [
         makeFeature('f1', 'mirror', { featureRef: '', plane: 'yz' }),

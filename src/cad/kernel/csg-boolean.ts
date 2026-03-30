@@ -65,11 +65,11 @@ export function booleanTwo(
  */
 export function booleanUnion(geometries: THREE.BufferGeometry[]): THREE.BufferGeometry | null {
   if (geometries.length === 0) return null;
-  if (geometries.length === 1) return geometries[0].clone();
+  if (geometries.length === 1) return geometries[0]!.clone();
 
-  let result = geometries[0];
+  let result: THREE.BufferGeometry | null = geometries[0]!;
   for (let i = 1; i < geometries.length; i++) {
-    const next = booleanTwo(result, geometries[i]!, 'union');
+    const next = booleanTwo(result!, geometries[i]!, 'union');
     if (!next) return null;
     result = next;
   }
@@ -87,9 +87,9 @@ export function booleanSubtract(
 ): THREE.BufferGeometry | null {
   if (tools.length === 0) return target.clone();
 
-  let result = target;
+  let result: THREE.BufferGeometry | null = target;
   for (const tool of tools) {
-    const next = booleanTwo(result, tool, 'subtract');
+    const next = booleanTwo(result!, tool, 'subtract');
     if (!next) return null;
     result = next;
   }
@@ -104,9 +104,9 @@ export function booleanSubtract(
 export function booleanIntersect(geometries: THREE.BufferGeometry[]): THREE.BufferGeometry | null {
   if (geometries.length < 2) return null;
 
-  let result = geometries[0];
+  let result: THREE.BufferGeometry | null = geometries[0]!;
   for (let i = 1; i < geometries.length; i++) {
-    const next = booleanTwo(result, geometries[i]!, 'intersect');
+    const next = booleanTwo(result!, geometries[i]!, 'intersect');
     if (!next) return null;
     result = next;
   }

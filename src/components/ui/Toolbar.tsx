@@ -27,6 +27,9 @@ const tools: { id: ToolType; label: string; shortcut: string }[] = [
   { id: 'cone', label: 'Cone', shortcut: '' },
   { id: 'torus', label: 'Torus', shortcut: '' },
   { id: 'hole', label: 'Hole', shortcut: 'H' },
+  { id: 'boolean_union', label: 'Union', shortcut: '' },
+  { id: 'boolean_subtract', label: 'Subtract', shortcut: '' },
+  { id: 'boolean_intersect', label: 'Intersect', shortcut: '' },
   { id: 'fillet', label: 'Fillet', shortcut: '' },
   { id: 'chamfer', label: 'Chamfer', shortcut: '' },
   { id: 'pattern_linear', label: 'Lin Pattern', shortcut: '' },
@@ -46,6 +49,42 @@ export function Toolbar() {
     const comingSoon = ['fillet', 'chamfer', 'section'] as ToolType[];
     if (comingSoon.includes(toolId)) {
       useToast().addToast(`${toolId.charAt(0).toUpperCase() + toolId.slice(1)} tool coming soon`, 'warning');
+      return;
+    }
+
+    if (toolId === 'boolean_union' || toolId === 'boolean_subtract' || toolId === 'boolean_intersect') {
+      const defaults = getDefaultParameters(toolId);
+      const id = nanoid();
+      const selectedIds = useCADStore.getState().selectedIds;
+      const labels: Record<string, string> = {
+        boolean_union: 'Union',
+        boolean_subtract: 'Subtract',
+        boolean_intersect: 'Intersect',
+      };
+      const label = labels[toolId] ?? toolId;
+      const name = `${label} ${features.length + 1}`;
+
+      if (toolId === 'boolean_subtract') {
+        // Subtract needs exactly two references: target and tool
+        if (selectedIds.length >= 2) {
+          defaults.targetRef = selectedIds[0];
+          defaults.toolRef = selectedIds[1];
+        } else if (selectedIds.length === 1) {
+          defaults.targetRef = selectedIds[0];
+        }
+      } else {
+        // Union and intersect use comma-separated bodyRefs
+        if (selectedIds.length >= 2) {
+          defaults.bodyRefs = selectedIds.join(',');
+        }
+      }
+
+      const dependencies = selectedIds.length > 0 ? [...selectedIds] : [];
+      addFeatureAndSelect({
+        id, type: toolId as FeatureType, name,
+        parameters: defaults, dependencies, children: [], suppressed: false,
+      });
+      setActiveTool('select');
       return;
     }
 

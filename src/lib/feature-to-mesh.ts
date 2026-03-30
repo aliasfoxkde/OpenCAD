@@ -14,6 +14,8 @@ import {
   generateTorusMesh,
   generateHoleMesh,
 } from '../cad/kernel/mesh-generators';
+import * as THREE from 'three';
+import { booleanTwo } from '../cad/kernel/csg-boolean';
 
 /** Transform mesh vertices by a 4x4 matrix (3x4: row-major, translation in column 3) */
 function transformMesh(mesh: MeshData, matrix: number[]): MeshData {
@@ -70,6 +72,32 @@ function reflectionMatrix(plane: string): number[] {
     case 'xy': return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0];
     default:  return [-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]; // 'yz'
   }
+}
+
+/** Convert MeshData to THREE.BufferGeometry */
+function meshDataToGeometry(mesh: MeshData): THREE.BufferGeometry {
+  const geo = new THREE.BufferGeometry();
+  const vertexCount = mesh.vertices.length / 3;
+  geo.setAttribute('position', new THREE.BufferAttribute(mesh.vertices, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(mesh.normals, 3));
+  // Add UV attribute — required by three-bvh-csg Brush.prepareGeometry()
+  const uvs = new Float32Array(vertexCount * 2);
+  geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  geo.setIndex(new THREE.BufferAttribute(mesh.indices, 1));
+  return geo;
+}
+
+/** Convert THREE.BufferGeometry to MeshData */
+function geometryToMeshData(geo: THREE.BufferGeometry, featureId: string): MeshData {
+  const pos = geo.getAttribute('position') as THREE.BufferAttribute;
+  const norm = geo.getAttribute('normal') as THREE.BufferAttribute;
+  const idx = geo.getIndex();
+  return {
+    vertices: new Float32Array(pos.array),
+    normals: norm ? new Float32Array(norm.array) : new Float32Array(pos.array.length),
+    indices: idx ? new Uint32Array(idx.array) : new Uint32Array(pos.count),
+    featureId,
+  };
 }
 
 /** Convert a single feature to MeshData, or null if unsupported */
@@ -210,6 +238,82 @@ export function featureToMesh(feature: FeatureNode, allFeatures?: FeatureNode[])
       const mesh = transformMesh(baseMesh, m);
       mesh.featureId = feature.id;
       return mesh;
+    }
+    case 'boolean_union': {
+      if (!allFeatures) return null;
+      const bodyRefs = (feature.parameters.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+      const geos: THREE.BufferGeometry[] = [];
+      for (const refId of bodyRefs) {
+        const ref = allFeatures.find((f) => f.id === refId);
+        if (!ref || ref.suppressed) continue;
+        const mesh = featureToMesh(ref);
+        if (!mesh) continue;
+        const geo = meshDataToGeometry(mesh);
+        const ox = (ref.parameters.originX as number) ?? 0;
+        const oy = (ref.parameters.originY as number) ?? 0;
+        const oz = (ref.parameters.originZ as number) ?? 0;
+        geo.translate(ox, oy, oz);
+        geos.push(geo);
+      }
+      if (geos.length < 2) return null;
+      let result: THREE.BufferGeometry | null = geos[0]!;
+      for (let i = 1; i < geos.length; i++) {
+        const next = booleanTwo(result!, geos[i]!, 'union');
+        if (!next) return null;
+        result = next;
+      }
+      return geometryToMeshData(result!, feature.id);
+    }
+    case 'boolean_subtract': {
+      if (!allFeatures) return null;
+      const targetRef = feature.parameters.targetRef as string;
+      const toolRef = feature.parameters.toolRef as string;
+      if (!targetRef || !toolRef) return null;
+      const targetFeature = allFeatures.find((f) => f.id === targetRef);
+      const toolFeature = allFeatures.find((f) => f.id === toolRef);
+      if (!targetFeature || targetFeature.suppressed) return null;
+      if (!toolFeature || toolFeature.suppressed) return null;
+      const targetMesh = featureToMesh(targetFeature);
+      const toolMesh = featureToMesh(toolFeature);
+      if (!targetMesh || !toolMesh) return null;
+      const tGeo = meshDataToGeometry(targetMesh);
+      const uGeo = meshDataToGeometry(toolMesh);
+      const tox = (targetFeature.parameters.originX as number) ?? 0;
+      const toy = (targetFeature.parameters.originY as number) ?? 0;
+      const toz = (targetFeature.parameters.originZ as number) ?? 0;
+      tGeo.translate(tox, toy, toz);
+      const uox = (toolFeature.parameters.originX as number) ?? 0;
+      const uoy = (toolFeature.parameters.originY as number) ?? 0;
+      const uoz = (toolFeature.parameters.originZ as number) ?? 0;
+      uGeo.translate(uox, uoy, uoz);
+      const result = booleanTwo(tGeo, uGeo, 'subtract');
+      if (!result) return null;
+      return geometryToMeshData(result!, feature.id);
+    }
+    case 'boolean_intersect': {
+      if (!allFeatures) return null;
+      const bodyRefs = (feature.parameters.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+      const geos: THREE.BufferGeometry[] = [];
+      for (const refId of bodyRefs) {
+        const ref = allFeatures.find((f) => f.id === refId);
+        if (!ref || ref.suppressed) continue;
+        const mesh = featureToMesh(ref);
+        if (!mesh) continue;
+        const geo = meshDataToGeometry(mesh);
+        const ox = (ref.parameters.originX as number) ?? 0;
+        const oy = (ref.parameters.originY as number) ?? 0;
+        const oz = (ref.parameters.originZ as number) ?? 0;
+        geo.translate(ox, oy, oz);
+        geos.push(geo);
+      }
+      if (geos.length < 2) return null;
+      let result: THREE.BufferGeometry | null = geos[0]!;
+      for (let i = 1; i < geos.length; i++) {
+        const next = booleanTwo(result!, geos[i]!, 'intersect');
+        if (!next) return null;
+        result = next;
+      }
+      return geometryToMeshData(result!, feature.id);
     }
     default:
       return null;

@@ -16,14 +16,6 @@ function makeSphere(radius: number, pos: [number, number, number] = [0, 0, 0]): 
   return geo;
 }
 
-/** Count non-degenerate triangles in geometry */
-function triangleCount(geo: THREE.BufferGeometry): number {
-  const index = geo.getIndex();
-  if (index) return index.count / 3;
-  const pos = geo.getAttribute('position');
-  return pos.count / 3;
-}
-
 describe('csg-boolean', () => {
   describe('booleanTwo', () => {
     it('should union two overlapping boxes', () => {

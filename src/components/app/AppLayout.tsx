@@ -145,6 +145,38 @@ export function AppLayout() {
           ]},
         ]},
         'divider',
+        { id: 'boolean', label: 'Boolean', submenu: [
+          { id: 'bool_union', label: 'Union', action: () => {
+            const defaults = getDefaultParameters('boolean_union');
+            const id = nanoid();
+            const selIds = state.selectedIds;
+            if (selIds.length >= 2) defaults.bodyRefs = selIds.join(',');
+            const deps = selIds.length > 0 ? [...selIds] : [];
+            state.addFeatureAndSelect({ id, type: 'boolean_union', name: `Union ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
+          }},
+          { id: 'bool_subtract', label: 'Subtract', action: () => {
+            const defaults = getDefaultParameters('boolean_subtract');
+            const id = nanoid();
+            const selIds = state.selectedIds;
+            if (selIds.length >= 2) {
+              defaults.targetRef = selIds[0];
+              defaults.toolRef = selIds[1];
+            } else if (selIds.length === 1) {
+              defaults.targetRef = selIds[0];
+            }
+            const deps = selIds.length > 0 ? [...selIds] : [];
+            state.addFeatureAndSelect({ id, type: 'boolean_subtract', name: `Subtract ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
+          }},
+          { id: 'bool_intersect', label: 'Intersect', action: () => {
+            const defaults = getDefaultParameters('boolean_intersect');
+            const id = nanoid();
+            const selIds = state.selectedIds;
+            if (selIds.length >= 2) defaults.bodyRefs = selIds.join(',');
+            const deps = selIds.length > 0 ? [...selIds] : [];
+            state.addFeatureAndSelect({ id, type: 'boolean_intersect', name: `Intersect ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
+          }},
+        ]},
+        'divider',
         { id: 'suppress', label: 'Suppress/Unsuppress', action: () => {
           for (const id of state.selectedIds) {
             const feat = state.features.find((f) => f.id === id);
@@ -224,6 +256,40 @@ export function AppLayout() {
     const dependencies = selectedId ? [selectedId] : [];
     state.addFeatureAndSelect({
       id, type: patternType, name,
+      parameters: defaults, dependencies, children: [], suppressed: false,
+    });
+    state.setActiveTool('select');
+  }, []);
+
+  const handleInsertBoolean = useCallback((boolType: 'boolean_union' | 'boolean_subtract' | 'boolean_intersect') => {
+    const state = useCADStore.getState();
+    const defaults = getDefaultParameters(boolType);
+    const id = nanoid();
+    const labels: Record<string, string> = {
+      boolean_union: 'Union',
+      boolean_subtract: 'Subtract',
+      boolean_intersect: 'Intersect',
+    };
+    const label = labels[boolType] ?? boolType;
+    const name = `${label} ${state.features.length + 1}`;
+    const selectedIds = state.selectedIds;
+
+    if (boolType === 'boolean_subtract') {
+      if (selectedIds.length >= 2) {
+        defaults.targetRef = selectedIds[0];
+        defaults.toolRef = selectedIds[1];
+      } else if (selectedIds.length === 1) {
+        defaults.targetRef = selectedIds[0];
+      }
+    } else {
+      if (selectedIds.length >= 2) {
+        defaults.bodyRefs = selectedIds.join(',');
+      }
+    }
+
+    const dependencies = selectedIds.length > 0 ? [...selectedIds] : [];
+    state.addFeatureAndSelect({
+      id, type: boolType, name,
       parameters: defaults, dependencies, children: [], suppressed: false,
     });
     state.setActiveTool('select');
@@ -324,6 +390,7 @@ export function AppLayout() {
       <MenuBar
         onInsert={handleInsertPrimitive}
         onInsertPattern={handleInsertPattern}
+        onInsertBoolean={handleInsertBoolean}
         onSetCamera={handleSetCamera}
         onAbout={() => setAboutOpen(true)}
       />
@@ -553,11 +620,13 @@ function DropZone({ children, onContextMenu }: { children: React.ReactNode; onCo
 function MenuBar({
   onInsert,
   onInsertPattern,
+  onInsertBoolean,
   onSetCamera,
   onAbout,
 }: {
   onInsert: (toolType: ToolType) => void;
   onInsertPattern: (patternType: 'pattern_linear' | 'pattern_circular' | 'mirror') => void;
+  onInsertBoolean: (boolType: 'boolean_union' | 'boolean_subtract' | 'boolean_intersect') => void;
   onSetCamera: (preset: string) => void;
   onAbout: () => void;
 }) {
@@ -657,6 +726,10 @@ function MenuBar({
         { type: 'item', label: 'Cone', action: () => onInsert('cone') },
         { type: 'item', label: 'Torus', action: () => onInsert('torus') },
         { type: 'item', label: 'Hole', action: () => onInsert('hole') },
+        { type: 'separator' },
+        { type: 'item', label: 'Union', action: () => onInsertBoolean('boolean_union') },
+        { type: 'item', label: 'Subtract', action: () => onInsertBoolean('boolean_subtract') },
+        { type: 'item', label: 'Intersect', action: () => onInsertBoolean('boolean_intersect') },
         { type: 'separator' },
         { type: 'item', label: 'Linear Pattern', action: () => onInsertPattern('pattern_linear') },
         { type: 'item', label: 'Circular Pattern', action: () => onInsertPattern('pattern_circular') },
