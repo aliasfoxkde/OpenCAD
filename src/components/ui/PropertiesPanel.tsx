@@ -40,8 +40,8 @@ export function PropertiesPanel() {
   const setSectionPlaneNormal = useViewStore((s) => s.setSectionPlaneNormal);
   const setSectionPlaneOffset = useViewStore((s) => s.setSectionPlaneOffset);
 
-  const selectedFeature = features.find((f) => selectedIds.includes(f.id));
-  const featureDef = selectedFeature ? getFeatureDefinition(selectedFeature.type) : undefined;
+  const selectedFeature = useMemo(() => features.find((f) => selectedIds.includes(f.id)), [features, selectedIds]);
+  const featureDef = useMemo(() => (selectedFeature ? getFeatureDefinition(selectedFeature.type) : undefined), [selectedFeature]);
   const units = useCADStore((s) => s.units);
   const conversionFactor = UNIT_CONVERSION[units];
 

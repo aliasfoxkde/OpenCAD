@@ -180,7 +180,10 @@ export function FeatureTree() {
     setContextMenu({ x: e.clientX, y: e.clientY, featureId });
   }, []);
 
-  const contextFeature = contextMenu ? features.find((f) => f.id === contextMenu.featureId) : null;
+  const contextFeature = useMemo(
+    () => (contextMenu ? features.find((f) => f.id === contextMenu.featureId) : null),
+    [contextMenu, features],
+  );
 
   const visibleFeatureCount = visibleIds ? visibleIds.size : features.length;
 
