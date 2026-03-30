@@ -116,10 +116,5 @@ export const useActiveTool = () => useCADStore((s) => s.activeTool);
 export const useFeatures = () => useCADStore((s) => s.features);
 export const useSelection = () => useCADStore((s) => s.selectedIds);
 export const useIsSketchMode = () => useCADStore((s) => s.isSketchMode);
-export const useCanUndoRedo = () =>
-  useCADStore((state) => ({
-    // Depend on features length so component re-renders after undo/redo
-    _trigger: state.features.length,
-    canUndo: canUndo(),
-    canRedo: canRedo(),
-  }));
+export const useCanUndo = () => useCADStore((s) => s.features.length >= 0 && canUndo());
+export const useCanRedo = () => useCADStore((s) => s.features.length >= 0 && canRedo());

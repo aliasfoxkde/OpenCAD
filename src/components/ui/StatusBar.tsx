@@ -1,4 +1,4 @@
-import { useCADStore, useCanUndoRedo } from '../../stores/cad-store';
+import { useCADStore, useCanUndo, useCanRedo } from '../../stores/cad-store';
 import { useViewStore } from '../../stores/view-store';
 import { useUIStore } from '../../stores/ui-store';
 import { getFeatureDefinition } from '../../cad/features';
@@ -57,7 +57,8 @@ export function StatusBar() {
   const dirty = useCADStore((s) => s.dirty);
   const units = useCADStore((s) => s.units);
   const setUnits = useCADStore((s) => s.setUnits);
-  const { canUndo, canRedo } = useCanUndoRedo();
+  const canUndo = useCanUndo();
+  const canRedo = useCanRedo();
   const cameraPreset = useViewStore((s) => s.cameraPreset);
   const displayMode = useViewStore((s) => s.displayMode);
   const showGrid = useViewStore((s) => s.showGrid);
