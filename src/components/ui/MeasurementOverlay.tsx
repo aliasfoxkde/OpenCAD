@@ -44,7 +44,7 @@ function FeatureMeasurement({ feature }: { feature: { name: string; type: string
   );
 }
 
-function getFeatureMeasurements(params: Record<string, unknown>): Array<{ label: string; value: number; unit: string }> {
+export function getFeatureMeasurements(params: Record<string, unknown>): Array<{ label: string; value: number; unit: string }> {
   const results: Array<{ label: string; value: number; unit: string }> = [];
 
   switch (true) {
@@ -77,6 +77,13 @@ function getFeatureMeasurements(params: Record<string, unknown>): Array<{ label:
       const r = (params.radius as number) ?? 0;
       results.push({ label: 'Radius', value: r, unit: 'mm' });
       results.push({ label: 'Diameter', value: r * 2, unit: 'mm' });
+      break;
+    }
+    case 'diameter' in params && 'depth' in params: {
+      const d = (params.diameter as number) ?? 0;
+      const depth = (params.depth as number) ?? 0;
+      results.push({ label: 'Diameter', value: d, unit: 'mm' });
+      results.push({ label: 'Depth', value: depth, unit: 'mm' });
       break;
     }
   }
