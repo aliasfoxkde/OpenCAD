@@ -1,7 +1,7 @@
 # OpenCAD - Task Breakdown
 
-**Version**: 1.0.0
-**Last Updated**: 2026-03-29
+**Version**: 1.1.0
+**Last Updated**: 2026-03-30
 
 ---
 
@@ -20,56 +20,56 @@
 
 - [x] Create comprehensive PLAN.md
 - [x] Write TASKS.md
-- [ ] Initialize Vite + React + TypeScript project
-- [ ] Configure package.json with all dependencies
-- [ ] Configure TypeScript (strict mode)
-- [ ] Configure ESLint + Prettier
-- [ ] Configure Vite for WASM + Worker support
-- [ ] Create .gitignore (exclude lock files, build, .claude, etc.)
-- [ ] Create index.html entry point
-- [ ] Create project directory structure (src/cad, src/components, etc.)
+- [x] Initialize Vite + React + TypeScript project
+- [x] Configure package.json with all dependencies
+- [x] Configure TypeScript (strict mode)
+- [x] Configure ESLint + Prettier
+- [x] Configure Vite for WASM + Worker support
+- [x] Create .gitignore (exclude lock files, build, .claude, etc.)
+- [x] Create index.html entry point
+- [x] Create project directory structure (src/cad, src/components, etc.)
 
 ### 1.2 Cloudflare Pages Deployment
 
-- [ ] Create wrangler.toml configuration
+- [x] Create wrangler.toml configuration
 - [ ] Test `wrangler pages dev` locally
-- [ ] Configure GitHub Actions CI/CD (deploy.yml)
+- [x] Configure GitHub Actions CI/CD (deploy.yml)
 - [ ] First deployment to Cloudflare Pages
 - [ ] Verify live URL works
 
 ### 1.3 3D Viewport
 
-- [ ] Install and configure Three.js + R3F + Drei
-- [ ] Create Viewport component with Canvas
-- [ ] Add OrbitControls (rotate, pan, zoom)
-- [ ] Add reference grid plane
-- [ ] Add XYZ axis indicator
+- [x] Install and configure Three.js + R3F + Drei
+- [x] Create Viewport component with Canvas
+- [x] Add OrbitControls (rotate, pan, zoom)
+- [x] Add reference grid plane
+- [x] Add XYZ axis indicator
 - [ ] Add view cube / navigation cube
-- [ ] Configure lighting (ambient + directional)
-- [ ] Set up camera defaults (perspective, isometric)
+- [x] Configure lighting (ambient + directional)
+- [x] Set up camera defaults (perspective, isometric)
 - [ ] Add multiple viewport layout (front/top/right/iso)
 
 ### 1.4 State Management
 
-- [ ] Create view-store (camera, viewport layout)
-- [ ] Create cad-store (document, features, selection)
-- [ ] Create ui-store (panel visibility, theme, active tool)
-- [ ] Wire stores to UI components
+- [x] Create view-store (camera, viewport layout)
+- [x] Create cad-store (document, features, selection)
+- [x] Create ui-store (panel visibility, theme, active tool)
+- [x] Wire stores to UI components
 
 ### 1.5 PWA Support
 
-- [ ] Create web app manifest (manifest.json)
-- [ ] Create service worker (sw.js)
-- [ ] Generate PWA icons
+- [x] Create web app manifest (manifest.json)
+- [x] Create service worker (sw.js)
+- [x] Generate PWA icons
 - [ ] Test installability
 - [ ] Test offline support
 
 ### 1.6 Testing Infrastructure
 
-- [ ] Configure Vitest
+- [x] Configure Vitest
 - [ ] Configure React Testing Library
-- [ ] Write first viewport render test
-- [ ] Write first store test
+- [x] Write first viewport render test
+- [x] Write first store test
 - [ ] Configure Playwright for E2E
 
 ---
@@ -78,11 +78,11 @@
 
 ### 2.1 Web Worker Setup
 
-- [ ] Create CAD Worker entry point (worker.ts)
-- [ ] Define message protocol (request/response types)
-- [ ] Create useCADWorker hook for React communication
+- [x] Create CAD Worker entry point (worker.ts)
+- [x] Define message protocol (request/response types)
+- [x] Create useCADWorker hook for React communication
 - [ ] Handle WASM loading in worker context
-- [ ] Add error handling and timeout management
+- [x] Add error handling and timeout management
 
 ### 2.2 OpenCASCADE.js Integration
 
@@ -93,27 +93,27 @@
 
 ### 2.3 Primitive Shapes
 
-- [ ] Implement box primitive
-- [ ] Implement cylinder primitive
-- [ ] Implement sphere primitive
-- [ ] Implement cone primitive
-- [ ] Implement torus primitive
-- [ ] Create primitive creation UI (toolbar buttons)
+- [x] Implement box primitive
+- [x] Implement cylinder primitive
+- [x] Implement sphere primitive
+- [x] Implement cone primitive
+- [x] Implement torus primitive
+- [x] Create primitive creation UI (toolbar buttons)
 
 ### 2.4 Tessellation Pipeline
 
-- [ ] BRep -> triangle mesh tessellation
-- [ ] Transfer mesh data from worker to main thread (ArrayBuffer)
-- [ ] Create CADModel component to render tessellated meshes
+- [x] BRep -> triangle mesh tessellation
+- [x] Transfer mesh data from worker to main thread (ArrayBuffer)
+- [x] Create CADModel component to render tessellated meshes
 - [ ] Implement progressive loading (low-res first, refine async)
 
 ### 2.5 Feature Tree (Basic)
 
-- [ ] Define FeatureNode data model
-- [ ] Implement feature tree as Zustand store
-- [ ] Create FeatureTreePanel UI component
-- [ ] Display created primitives in feature tree
-- [ ] Click feature tree item to select geometry
+- [x] Define FeatureNode data model
+- [x] Implement feature tree as Zustand store
+- [x] Create FeatureTreePanel UI component
+- [x] Display created primitives in feature tree
+- [x] Click feature tree item to select geometry
 
 ---
 
@@ -121,52 +121,52 @@
 
 ### 3.1 Sketch Mode
 
-- [ ] Select sketch plane (XY, XZ, YZ, or face)
-- [ ] Enter sketch mode (2D view, camera alignment)
-- [ ] Exit sketch mode (return to 3D view)
-- [ ] Create Sketch data model
-- [ ] Create sketch-store for active sketch state
+- [x] Select sketch plane (XY, XZ, YZ, or face)
+- [x] Enter sketch mode (2D view, camera alignment)
+- [x] Exit sketch mode (return to 3D view)
+- [x] Create Sketch data model
+- [x] Create sketch-store for active sketch state
 
 ### 3.2 Drawing Tools
 
-- [ ] Line tool (click-to-click)
-- [ ] Arc tool (3-point arc)
-- [ ] Circle tool (center + radius)
-- [ ] Rectangle tool (2-point)
-- [ ] Ellipse tool
-- [ ] Spline tool (control points)
-- [ ] Point tool (reference point)
-- [ ] Construction geometry toggle
+- [x] Line tool (click-to-click)
+- [x] Arc tool (3-point arc)
+- [x] Circle tool (center + radius)
+- [x] Rectangle tool (2-point)
+- [x] Ellipse tool
+- [x] Spline tool (control points)
+- [x] Point tool (reference point)
+- [x] Construction geometry toggle
 
 ### 3.3 Constraints
 
-- [ ] Coincident constraint
-- [ ] Parallel constraint
-- [ ] Perpendicular constraint
-- [ ] Tangent constraint
-- [ ] Horizontal / Vertical constraint
-- [ ] Equal length / radius constraint
-- [ ] Midpoint constraint
-- [ ] Fix constraint
-- [ ] Distance dimension
-- [ ] Angle dimension
-- [ ] Radius / Diameter dimension
+- [x] Coincident constraint
+- [x] Parallel constraint
+- [x] Perpendicular constraint
+- [x] Tangent constraint
+- [x] Horizontal / Vertical constraint
+- [x] Equal length / radius constraint
+- [x] Midpoint constraint
+- [x] Fix constraint
+- [x] Distance dimension
+- [x] Angle dimension
+- [x] Radius / Diameter dimension
 
 ### 3.4 Constraint Solver
 
 - [ ] Integrate SolveSpace constraint solver (WASM)
-- [ ] Or: implement custom Newton-Raphson solver
-- [ ] Real-time solve as constraints are added
-- [ ] Over-constraint detection and warning
-- [ ] Under-constraint indicators (degrees of freedom)
+- [x] Or: implement custom Newton-Raphson solver
+- [x] Real-time solve as constraints are added
+- [x] Over-constraint detection and warning
+- [x] Under-constraint indicators (degrees of freedom)
 
 ### 3.5 Sketch Visualization
 
-- [ ] Render sketch elements (lines, arcs, circles)
-- [ ] Display constraint icons (parallel, tangent, etc.)
-- [ ] Display dimension annotations
-- [ ] Highlight selected elements
-- [ ] Snap indicators (endpoint, midpoint, center)
+- [x] Render sketch elements (lines, arcs, circles)
+- [x] Display constraint icons (parallel, tangent, etc.)
+- [x] Display dimension annotations
+- [x] Highlight selected elements
+- [x] Snap indicators (endpoint, midpoint, center)
 
 ---
 
@@ -174,48 +174,48 @@
 
 ### 4.1 Core Features
 
-- [ ] Extrude (from sketch profile, distance / to-surface)
-- [ ] Revolve (from sketch profile, axis selection)
-- [ ] Cut / Extrude Cut (subtractive)
+- [x] Extrude (from sketch profile, distance / to-surface)
+- [x] Revolve (from sketch profile, axis selection)
+- [x] Cut / Extrude Cut (subtractive)
 - [ ] Revolve Cut
 - [ ] Sweep (profile along path)
 - [ ] Loft (between profiles)
-- [ ] Hole feature (drill, counterbore, countersink)
-- [ ] Shell (hollow out)
+- [x] Hole feature (drill, counterbore, countersink)
+- [x] Shell (hollow out)
 - [ ] Draft (taper faces)
 - [ ] Rib (from sketch line)
 - [ ] Thread (cosmetic or modeled)
 
 ### 4.2 Edge Features
 
-- [ ] Fillet (constant radius)
+- [x] Fillet (constant radius)
 - [ ] Fillet (variable radius)
-- [ ] Chamfer (equal distance)
+- [x] Chamfer (equal distance)
 - [ ] Chamfer (distance + angle)
 
 ### 4.3 Pattern Features
 
-- [ ] Linear pattern
-- [ ] Circular pattern
-- [ ] Mirror feature
+- [x] Linear pattern
+- [x] Circular pattern
+- [x] Mirror feature
 - [ ] Pattern by sketch points
 
 ### 4.4 Boolean Operations
 
-- [ ] Union (join bodies)
-- [ ] Subtract (cut from body)
-- [ ] Intersect (common volume)
+- [x] Union (join bodies)
+- [x] Subtract (cut from body)
+- [x] Intersect (common volume)
 
 ### 4.5 Feature Engine
 
-- [ ] Feature dependency graph (DAG)
-- [ ] Parametric rebuild engine
-- [ ] Feature edit (change parameters, rebuild)
-- [ ] Feature delete (remove + rebuild downstream)
-- [ ] Feature reorder (drag in tree)
-- [ ] Feature suppress / unsuppress
-- [ ] Parameter table (named dimensions across features)
-- [ ] Error recovery (failed feature handling)
+- [x] Feature dependency graph (DAG)
+- [x] Parametric rebuild engine
+- [x] Feature edit (change parameters, rebuild)
+- [x] Feature delete (remove + rebuild downstream)
+- [x] Feature reorder (drag in tree)
+- [x] Feature suppress / unsuppress
+- [x] Parameter table (named dimensions across features)
+- [x] Error recovery (failed feature handling)
 
 ---
 
@@ -223,19 +223,19 @@
 
 ### 5.1 Toolbar System
 
-- [ ] Main toolbar (file operations, view controls)
-- [ ] Feature toolbar (sketch, extrude, fillet, etc.)
-- [ ] Sketch toolbar (line, arc, circle, constraint tools)
-- [ ] Context-sensitive toolbar (changes with selection)
+- [x] Main toolbar (file operations, view controls)
+- [x] Feature toolbar (sketch, extrude, fillet, etc.)
+- [x] Sketch toolbar (line, arc, circle, constraint tools)
+- [x] Context-sensitive toolbar (changes with selection)
 - [ ] Toolbar customization (drag-and-drop)
 
 ### 5.2 Panels
 
-- [ ] Feature tree panel (left sidebar)
-- [ ] Properties panel (edit selected feature parameters)
+- [x] Feature tree panel (left sidebar)
+- [x] Properties panel (edit selected feature parameters)
 - [ ] Color/material panel
-- [ ] Document panel (recent documents, settings)
-- [ ] Resizable and collapsible panels
+- [x] Document panel (recent documents, settings)
+- [x] Resizable and collapsible panels
 
 ### 5.3 Navigation
 
@@ -251,7 +251,7 @@
 - [x] Measure distance (point-to-point)
 - [x] Measure angle
 - [ ] Measure radius/diameter
-- [ ] Section view (dynamic cross-section)
+- [x] Section view (dynamic cross-section)
 - [x] Mass properties (volume, surface area, center of mass)
 
 ### 5.5 Appearance
@@ -265,7 +265,7 @@
 
 ### 5.6 Status and Feedback
 
-- [ ] Status bar (coordinates, units, active tool)
+- [x] Status bar (coordinates, units, active tool)
 - [ ] Progress indicators (rebuild, import)
 - [x] Toast notifications
 - [ ] Error messages with actionable guidance
@@ -283,7 +283,7 @@
 - [x] OBJ import (via Three.js)
 - [x] glTF/GLB import (via Three.js)
 - [ ] 3MF import
-- [ ] Drag-and-drop file import
+- [x] Drag-and-drop file import
 
 ### 6.2 Export Formats
 
@@ -440,8 +440,8 @@
 
 ## Progress Summary
 
-- **Total Tasks**: ~200
-- **Completed**: 53
-- **In Progress**: 3
-- **Pending**: ~144
-- **Completion**: 27%
+- **Total Tasks**: 256
+- **Completed**: 150
+- **In Progress**: 0
+- **Pending**: 106
+- **Completion**: 59%
