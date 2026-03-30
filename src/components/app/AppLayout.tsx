@@ -175,6 +175,14 @@ export function AppLayout() {
             const deps = selIds.length > 0 ? [...selIds] : [];
             state.addFeatureAndSelect({ id, type: 'boolean_intersect', name: `Intersect ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
           }},
+          { id: 'shell', label: 'Shell', action: () => {
+            const defaults = getDefaultParameters('shell');
+            const id = nanoid();
+            const selectedId = state.selectedIds[0];
+            if (selectedId) defaults.targetRef = selectedId;
+            const deps = selectedId ? [selectedId] : [];
+            state.addFeatureAndSelect({ id, type: 'shell', name: `Shell ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
+          }},
         ]},
         'divider',
         { id: 'suppress', label: 'Suppress/Unsuppress', action: () => {
