@@ -97,6 +97,61 @@ export function AppLayout() {
           for (const id of state.selectedIds) state.duplicateFeature(id);
         }},
         'divider',
+        { id: 'pattern', label: 'Pattern', submenu: [
+          { id: 'pattern_linear', label: 'Linear Pattern', action: () => {
+            const defaults = getDefaultParameters('pattern_linear');
+            const id = nanoid();
+            const selectedId = state.selectedIds[0];
+            if (selectedId) defaults.featureRef = selectedId;
+            const deps = selectedId ? [selectedId] : [];
+            state.addFeatureAndSelect({ id, type: 'pattern_linear', name: `Linear Pattern ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
+          }},
+          { id: 'pattern_circular', label: 'Circular Pattern', action: () => {
+            const defaults = getDefaultParameters('pattern_circular');
+            const id = nanoid();
+            const selectedId = state.selectedIds[0];
+            if (selectedId) defaults.featureRef = selectedId;
+            const deps = selectedId ? [selectedId] : [];
+            state.addFeatureAndSelect({ id, type: 'pattern_circular', name: `Circular Pattern ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
+          }},
+          { id: 'mirror', label: 'Mirror', submenu: [
+            { id: 'mirror_yz', label: 'Mirror across YZ', action: () => {
+              const defaults = getDefaultParameters('mirror');
+              defaults.plane = 'yz';
+              const id = nanoid();
+              const selectedId = state.selectedIds[0];
+              if (selectedId) defaults.featureRef = selectedId;
+              const deps = selectedId ? [selectedId] : [];
+              state.addFeatureAndSelect({ id, type: 'mirror', name: `Mirror YZ ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
+            }},
+            { id: 'mirror_xz', label: 'Mirror across XZ', action: () => {
+              const defaults = getDefaultParameters('mirror');
+              defaults.plane = 'xz';
+              const id = nanoid();
+              const selectedId = state.selectedIds[0];
+              if (selectedId) defaults.featureRef = selectedId;
+              const deps = selectedId ? [selectedId] : [];
+              state.addFeatureAndSelect({ id, type: 'mirror', name: `Mirror XZ ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
+            }},
+            { id: 'mirror_xy', label: 'Mirror across XY', action: () => {
+              const defaults = getDefaultParameters('mirror');
+              defaults.plane = 'xy';
+              const id = nanoid();
+              const selectedId = state.selectedIds[0];
+              if (selectedId) defaults.featureRef = selectedId;
+              const deps = selectedId ? [selectedId] : [];
+              state.addFeatureAndSelect({ id, type: 'mirror', name: `Mirror XY ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
+            }},
+          ]},
+        ]},
+        'divider',
+        { id: 'suppress', label: 'Suppress/Unsuppress', action: () => {
+          for (const id of state.selectedIds) {
+            const feat = state.features.find((f) => f.id === id);
+            if (feat) state.updateFeature(id, { suppressed: !feat.suppressed });
+          }
+        }},
+        'divider',
         { id: 'delete', label: 'Delete', shortcut: 'Del', danger: true, action: () => {
           for (const id of state.selectedIds) state.removeFeature(id);
           state.clearSelection();
