@@ -18,6 +18,9 @@ export function MeasurementOverlay() {
   return (
     <div style={styles.container}>
       <div style={styles.header}>Measurements</div>
+      {selectedFeatures.length > 1 && (
+        <InterFeatureDistances features={selectedFeatures} />
+      )}
       {selectedFeatures.map((feature) => (
         <FeatureMeasurement key={feature.id} feature={feature} />
       ))}
@@ -96,6 +99,38 @@ export function getFeatureMeasurements(params: Record<string, unknown>): Array<{
   }
 
   return results;
+}
+
+/** Show distance between the first selected feature and each other selected feature */
+function InterFeatureDistances({ features }: { features: Array<{ name: string; parameters: Record<string, unknown> }> }) {
+  if (features.length < 2) return null;
+  const first = features[0]!;
+  const ox0 = (first.parameters.originX as number) ?? 0;
+  const oy0 = (first.parameters.originY as number) ?? 0;
+  const oz0 = (first.parameters.originZ as number) ?? 0;
+
+  return (
+    <div style={styles.item}>
+      <div style={styles.featureName}>Distances from {first.name}</div>
+      <div style={styles.measurements}>
+        {features.slice(1).map((f, i) => {
+          const ox = (f.parameters.originX as number) ?? 0;
+          const oy = (f.parameters.originY as number) ?? 0;
+          const oz = (f.parameters.originZ as number) ?? 0;
+          const dx = ox - ox0;
+          const dy = oy - oy0;
+          const dz = oz - oz0;
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          return (
+            <div key={i} style={styles.measurement}>
+              <span style={styles.measureLabel}>{f.name}:</span>
+              <span style={styles.measureValue}>{dist.toFixed(2)} mm</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 const styles: Record<string, React.CSSProperties> = {

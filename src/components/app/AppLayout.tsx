@@ -208,9 +208,12 @@ export function AppLayout() {
       duplicate: handleDuplicate,
       escape: () => {
         setSketchMode(false);
+        useCADStore.getState().clearSelection();
+        useCADStore.getState().setActiveTool('select');
         if (useUIStore.getState().commandPaletteOpen) {
           toggleCommandPalette();
         }
+        closeContextMenu();
       },
       enterSketch: () => setSketchMode(true),
       cameraFront: () => handleSetCamera('front'),
