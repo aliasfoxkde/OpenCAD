@@ -1,8 +1,8 @@
 # OpenCAD - Progress Tracking
 
 **Last Updated**: 2026-03-30
-**Current Phase**: Post-Assembly Gap Analysis & Infrastructure Fixes
-**Overall Progress**: 85%
+**Current Phase**: Enhancement Sprint — Kernel, UI/UX, Performance
+**Overall Progress**: 90%
 
 ---
 
@@ -11,7 +11,7 @@
 | Phase | Status | Progress |
 |-------|--------|----------|
 | Phase 1: Foundation | COMPLETE | 90% |
-| Phase 2: CAD Kernel | COMPLETE | 80% |
+| Phase 2: CAD Kernel | COMPLETE | 90% |
 | Phase 3: Sketcher | COMPLETE | 80% |
 | Phase 4: Parametric Features | COMPLETE | 80% |
 | Phase 5: Professional UI | COMPLETE | 95% |
@@ -24,6 +24,66 @@
 ---
 
 ## Session Log
+
+### 2026-03-30 - Session 11: Kernel Enhancement, UI/UX, Performance
+
+**Completed gap analysis and executed prioritized enhancement plan (Phases A-F):**
+
+**D1: Confirmation Dialogs**
+- [x] ConfirmDialog.tsx — imperative Promise-based API (`confirm(options): Promise<boolean>`)
+- [x] ConfirmDialogContainer — React component subscribing to module state
+- [x] FeatureTree delete wired with confirmation dialog (inline + context menu)
+- [x] 4 ConfirmDialog tests
+
+**D4: Error Boundaries**
+- [x] ErrorBoundary.tsx — React class component with retry button
+- [x] getDerivedStateFromError + componentDidCatch with console logging
+- [x] Wrapped Viewport, FeatureTree, PropertiesPanel in AppLayout
+
+**D2: Property Validation**
+- [x] Number inputs show red border when value violates min/max constraints
+- [x] Validation hint text displays min/max limits
+- [x] Values clamped to valid range on blur
+
+**C1: Fillet/Chamfer Mesh Generation**
+- [x] generateFilletCylinderMesh — cylinder along axis-aligned edges
+- [x] generateChamferWedgeMesh — wedge for 45° chamfers
+- [x] feature-to-mesh.ts: fillet/chamfer cases with CSG union along 12 bounding box edges
+- [x] CADModel.tsx: FilletChamferMesh component with CSG operations
+- [x] getConsumedFeatureIds updated to hide target bodies
+
+**C2: Sketch-Based Feature Mesh Generation**
+- [x] Ear-clipping triangulation (triangulatePolygon)
+- [x] generateExtrudeProfileMesh — 2D polygon extrusion along plane normal (xy/xz/yz)
+- [x] generateRevolveProfileMesh — 2D profile revolution around x/y/z axis
+- [x] computeNormals — flat normal computation from triangle geometry
+- [x] extrude_sketch case: profile + depth + direction (normal/reverse/symmetric) + plane
+- [x] revolve_sketch case: profile + axis + angle + segments
+- [x] cut case: CSG subtract extruded profile from target body
+- [x] CutMesh component in CADModel.tsx
+- [x] Feature registry updated with profile, plane, origin params for sketch features
+- [x] 10 new mesh generator tests (rectangle/triangle extrude, revolve, axes, offset, edge cases)
+
+**C3: Import System (verified complete)**
+- [x] mesh_import feature type already registered and working
+- [x] STL/OBJ import preserves vertex/index data in parameters
+
+**E1: Lazy Loading**
+- [x] Viewport and SketchCanvas lazy loaded via React.lazy() + Suspense in AppLayout
+
+**E2: Selector Audit (assessed adequate)**
+- [x] All Zustand selectors use individual slice selectors — already efficient
+
+**Infrastructure (from prior session)**
+- [x] ESLint configuration (eslint.config.js)
+- [x] Prettier configuration (.prettierrc, .prettierignore)
+
+**Build Stats:**
+- 54 test suites, 797 tests, all passing (18 new from this session)
+- 0 TypeScript errors
+- Clean production build
+
+---
 
 ### 2026-03-30 - Session 10: Assembly System Implementation
 
