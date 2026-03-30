@@ -933,6 +933,13 @@ function MenuBar({
             handleExport('glb');
           },
         },
+        {
+          type: 'item',
+          label: 'Export 3MF',
+          action: () => {
+            handleExport('3mf');
+          },
+        },
         { type: 'separator' },
         {
           type: 'item',

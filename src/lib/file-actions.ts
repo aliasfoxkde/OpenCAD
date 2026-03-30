@@ -65,7 +65,7 @@ export async function handleSaveDocument(): Promise<boolean> {
 }
 
 /** Export current features to a format and trigger download */
-export function handleExport(format: 'stl' | 'obj' | 'glb' | 'ocad'): void {
+export function handleExport(format: 'stl' | 'obj' | 'glb' | '3mf' | 'ocad'): void {
   const state = useCADStore.getState();
 
   if (format === 'ocad') {

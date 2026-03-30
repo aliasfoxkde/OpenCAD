@@ -5,6 +5,7 @@
 import { exportSTL } from '@/cad/io/stl-exporter';
 import { exportOBJ } from '@/cad/io/obj-exporter';
 import { exportGLB } from '@/cad/io/gltf-exporter';
+import { export3MF } from '@/cad/io/3mf-exporter';
 import { importSTL } from '@/cad/io/stl-importer';
 import { importOBJ } from '@/cad/io/obj-importer';
 import { serializeProject, deserializeProject, downloadFile, openFile } from '@/cad/io/project';
@@ -53,6 +54,18 @@ export function exportToFormat(options: ExportOptions): ExportResult {
         data: buffer,
         filename: filename ?? 'model.glb',
         mimeType: 'model/gltf-binary',
+      };
+    }
+    case '3mf': {
+      const meshes = options.meshes ?? [];
+      if (meshes.length === 0) {
+        throw new Error('No meshes provided for 3MF export');
+      }
+      const xml = export3MF(meshes);
+      return {
+        data: xml,
+        filename: filename ?? 'model.3mf',
+        mimeType: 'application/xml',
       };
     }
     case 'ocad': {

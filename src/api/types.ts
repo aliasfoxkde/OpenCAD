@@ -62,7 +62,7 @@ export interface BoundingBoxResult {
 }
 
 /** Export format options */
-export type ExportFormat = 'stl' | 'obj' | 'glb' | 'ocad';
+export type ExportFormat = 'stl' | 'obj' | 'glb' | '3mf' | 'ocad';
 
 export interface ExportOptions {
   format: ExportFormat;
