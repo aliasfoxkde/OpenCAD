@@ -4,6 +4,8 @@ import { getDefaultParameters, getFeatureDefinition } from '../../cad/features';
 import { nanoid } from 'nanoid';
 import type { ParameterDef } from '../../cad/features';
 import type { FeatureType } from '../../types/cad';
+import { useMemo } from 'react';
+import { computeFeatureProperties, formatPropertyValue } from '../../lib/mass-properties';
 
 /** Map primitive ToolType to feature-registry type */
 const primitiveTypeMap: Record<string, FeatureType> = {
@@ -37,6 +39,12 @@ export function PropertiesPanel() {
 
   const selectedFeature = features.find((f) => selectedIds.includes(f.id));
   const featureDef = selectedFeature ? getFeatureDefinition(selectedFeature.type) : undefined;
+
+  // Compute mass properties for selected feature
+  const massProps = useMemo(() => {
+    if (!selectedFeature) return null;
+    return computeFeatureProperties(features, selectedFeature.id);
+  }, [features, selectedFeature]);
 
   const handleCreatePrimitive = (primitiveType: string) => {
     const featureType = primitiveTypeMap[primitiveType];
@@ -179,6 +187,47 @@ export function PropertiesPanel() {
               onChange={(v) => handleParamChange(paramDef.name, v)}
             />
           ))}
+        </div>
+      )}
+      {selectedFeature && massProps && (
+        <div style={styles.section}>
+          <div style={styles.sectionTitle}>Mass Properties</div>
+          <div style={styles.massGrid}>
+            <div style={styles.massItem}>
+              <span style={styles.massLabel}>Volume</span>
+              <span style={styles.massValue}>
+                {formatPropertyValue(massProps.volume, 'mm³')}
+              </span>
+            </div>
+            <div style={styles.massItem}>
+              <span style={styles.massLabel}>Surface Area</span>
+              <span style={styles.massValue}>
+                {formatPropertyValue(massProps.surfaceArea, 'mm²')}
+              </span>
+            </div>
+            {massProps.boundingBox && (
+              <div style={styles.massItem}>
+                <span style={styles.massLabel}>Bounding Box</span>
+                <span style={styles.massValue}>
+                  {(massProps.boundingBox.maxX - massProps.boundingBox.minX).toFixed(2)} x{' '}
+                  {(massProps.boundingBox.maxY - massProps.boundingBox.minY).toFixed(2)} x{' '}
+                  {(massProps.boundingBox.maxZ - massProps.boundingBox.minZ).toFixed(2)}
+                </span>
+              </div>
+            )}
+            {massProps.centerOfMass && (
+              <div style={styles.massItem}>
+                <span style={styles.massLabel}>Center</span>
+                <span style={styles.massValue}>
+                  ({massProps.centerOfMass.x.toFixed(2)}, {massProps.centerOfMass.y.toFixed(2)}, {massProps.centerOfMass.z.toFixed(2)})
+                </span>
+              </div>
+            )}
+            <div style={styles.massItem}>
+              <span style={styles.massLabel}>Triangles</span>
+              <span style={styles.massValue}>{massProps.triangleCount}</span>
+            </div>
+          </div>
         </div>
       )}
       {!selectedFeature && (
@@ -493,5 +542,26 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 11,
     color: '#475569',
     fontStyle: 'italic' as const,
+  },
+  massGrid: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 3,
+  },
+  massItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 1,
+  },
+  massLabel: {
+    fontSize: 10,
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: '0.03em',
+  },
+  massValue: {
+    fontSize: 11,
+    color: '#e2e8f0',
+    fontFamily: 'monospace',
   },
 };
