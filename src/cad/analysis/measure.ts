@@ -199,3 +199,74 @@ export function getMassProperties(mesh: MeshData) {
     bounds: measureBoundingBox(mesh),
   };
 }
+
+/**
+ * Estimate the bounding sphere radius of a mesh.
+ *
+ * Computes the AABB of all vertices, then finds the maximum distance
+ * from the AABB center to any vertex. This gives a reasonable
+ * "estimated radius" for feature meshes.
+ *
+ * @param mesh - Triangle mesh data
+ * @param point - 3D point (currently unused, reserved for local curvature estimation)
+ */
+export function estimateRadiusAtPoint(
+  mesh: MeshData,
+  _point: Point3D,
+): number | null {
+  const verts = mesh.vertices;
+  const vertCount = verts.length / 3;
+  if (vertCount < 4) return null;
+
+  // Compute AABB
+  let minX = Infinity, minY = Infinity, minZ = Infinity;
+  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+  for (let i = 0; i < vertCount; i++) {
+    const vx = verts[i * 3]!;
+    const vy = verts[i * 3 + 1]!;
+    const vz = verts[i * 3 + 2]!;
+    if (vx < minX) minX = vx;
+    if (vx > maxX) maxX = vx;
+    if (vy < minY) minY = vy;
+    if (vy > maxY) maxY = vy;
+    if (vz < minZ) minZ = vz;
+    if (vz > maxZ) maxZ = vz;
+  }
+
+  // Bounding sphere center is AABB center
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const cz = (minZ + maxZ) / 2;
+
+  // Radius is max distance from center to any vertex
+  let maxDist2 = 0;
+  for (let i = 0; i < vertCount; i++) {
+    const dx = verts[i * 3]! - cx;
+    const dy = verts[i * 3 + 1]! - cy;
+    const dz = verts[i * 3 + 2]! - cz;
+    const d2 = dx * dx + dy * dy + dz * dz;
+    if (d2 > maxDist2) maxDist2 = d2;
+  }
+
+  return Math.sqrt(maxDist2);
+}
+
+/** Measure radius at a point on a mesh */
+export function measureRadiusAtPoint(
+  mesh: MeshData,
+  point: Point3D,
+): MeasurementResult | null {
+  const radius = estimateRadiusAtPoint(mesh, point);
+  if (radius === null) return null;
+  return { value: radius, unit: 'mm', label: 'Radius' };
+}
+
+/** Measure diameter at a point on a mesh */
+export function measureDiameterAtPoint(
+  mesh: MeshData,
+  point: Point3D,
+): MeasurementResult | null {
+  const radius = estimateRadiusAtPoint(mesh, point);
+  if (radius === null) return null;
+  return { value: radius * 2, unit: 'mm', label: 'Diameter' };
+}

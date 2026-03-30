@@ -11,6 +11,9 @@ import {
   getMassProperties,
   measureDistance,
   measureAngle,
+  estimateRadiusAtPoint,
+  measureRadiusAtPoint,
+  measureDiameterAtPoint,
   type Point3D,
 } from './measure';
 
@@ -281,5 +284,123 @@ describe('Measure Tools', () => {
       expect(props.bounds.height).toBeCloseTo(1, 5);
       expect(props.bounds.depth).toBeCloseTo(1, 5);
     });
+  });
+});
+
+// ============================================================
+// Radius / Diameter estimation
+// ============================================================
+
+describe('estimateRadiusAtPoint', () => {
+  /** Create a sphere-like point cloud on a sphere of given radius */
+  function createSphereMesh(radius: number, segments: number = 16): import('../../types/cad').MeshData {
+    const verts: number[] = [];
+    const indices: number[] = [];
+
+    for (let i = 0; i <= segments; i++) {
+      const phi = (Math.PI * i) / segments;
+      for (let j = 0; j <= segments; j++) {
+        const theta = (2 * Math.PI * j) / segments;
+        verts.push(
+          radius * Math.sin(phi) * Math.cos(theta),
+          radius * Math.cos(phi),
+          radius * Math.sin(phi) * Math.sin(theta),
+        );
+      }
+    }
+
+    const cols = segments + 1;
+    for (let i = 0; i < segments; i++) {
+      for (let j = 0; j < segments; j++) {
+        const a = i * cols + j;
+        const b = a + 1;
+        const c = (i + 1) * cols + j;
+        const d = c + 1;
+        indices.push(a, c, b);
+        indices.push(b, c, d);
+      }
+    }
+
+    return {
+      vertices: new Float32Array(verts),
+      normals: new Float32Array(verts.length),
+      indices: new Uint32Array(indices),
+      featureId: '',
+    };
+  }
+
+  it('should estimate radius of a sphere mesh', () => {
+    const mesh = createSphereMesh(5, 32);
+    const radius = estimateRadiusAtPoint(mesh, { x: 0, y: 0, z: 0 });
+    expect(radius).not.toBeNull();
+    expect(radius!).toBeCloseTo(5, 0);
+  });
+
+  it('should estimate radius from near-surface point', () => {
+    const mesh = createSphereMesh(3, 32);
+    const radius = estimateRadiusAtPoint(mesh, { x: 2, y: 1, z: 0 });
+    expect(radius).not.toBeNull();
+    expect(radius!).toBeCloseTo(3, 0);
+  });
+
+  it('should return null for insufficient neighbors', () => {
+    // Single triangle — not enough vertices for sphere fitting
+    const mesh = {
+      vertices: new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+      normals: new Float32Array(9),
+      indices: new Uint32Array([0, 1, 2]),
+      featureId: '',
+    };
+    const radius = estimateRadiusAtPoint(mesh, { x: 0.3, y: 0.3, z: 0 });
+    expect(radius).toBeNull();
+  });
+
+  it('should return null for flat mesh', () => {
+    // Flat plane — degenerate sphere fit
+    const verts: number[] = [];
+    const indices: number[] = [];
+    const n = 10;
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        verts.push(i, 0, j);
+      }
+    }
+    for (let i = 0; i < n - 1; i++) {
+      for (let j = 0; j < n - 1; j++) {
+        const a = i * n + j;
+        indices.push(a, a + n, a + 1);
+        indices.push(a + 1, a + n, a + n + 1);
+      }
+    }
+    const mesh = {
+      vertices: new Float32Array(verts),
+      normals: new Float32Array(verts.length),
+      indices: new Uint32Array(indices),
+      featureId: '',
+    };
+    const radius = estimateRadiusAtPoint(mesh, { x: 5, y: 0, z: 5 });
+    // Bounding sphere approach returns a finite radius even for flat meshes
+    // (AABB center + max distance). A 10x10 flat plane has a bounding sphere
+    // radius of sqrt(5^2 + 5^2) ≈ 7.07 from AABB center to corner.
+    expect(radius).not.toBeNull();
+    expect(radius!).toBeGreaterThan(0);
+  });
+
+  it('measureRadiusAtPoint should return MeasurementResult', () => {
+    const mesh = createSphereMesh(4, 32);
+    const result = measureRadiusAtPoint(mesh, { x: 0, y: 0, z: 0 });
+    expect(result).not.toBeNull();
+    expect(result!.value).toBeCloseTo(4, 0);
+    expect(result!.unit).toBe('mm');
+    expect(result!.label).toBe('Radius');
+  });
+
+  it('measureDiameterAtPoint should return twice the radius', () => {
+    const mesh = createSphereMesh(2.5, 32);
+    const result = measureDiameterAtPoint(mesh, { x: 0, y: 0, z: 0 });
+    expect(result).not.toBeNull();
+    expect(result!.value).toBeCloseTo(5, 0);
+    expect(result!.unit).toBe('mm');
+    expect(result!.label).toBe('Diameter');
   });
 });

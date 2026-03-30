@@ -7,6 +7,8 @@ import { useMemo } from 'react';
 import { useCADStore } from '../../stores/cad-store';
 import { useViewStore } from '../../stores/view-store';
 import { createDistanceAnnotation } from '../../lib/annotations';
+import { estimateRadiusAtPoint } from '../../cad/analysis/measure';
+import { featureToMesh } from '../../lib/feature-to-mesh';
 
 export function MeasurementOverlay() {
   const activeTool = useCADStore((s) => s.activeTool);
@@ -57,7 +59,7 @@ export function MeasurementOverlay() {
       {hasPointMeasure && <PointToDistance points={measurePoints} />}
       {selectedFeatures.length > 1 && <InterFeatureDistances features={selectedFeatures} />}
       {selectedFeatures.map((feature) => (
-        <FeatureMeasurement key={feature.id} feature={feature} />
+        <FeatureMeasurement key={feature.id} feature={feature} allFeatures={selectedFeatures} />
       ))}
     </div>
   );
@@ -126,10 +128,42 @@ function PointToDistance({ points }: { points: Array<[number, number, number]> }
 
 function FeatureMeasurement({
   feature,
+  allFeatures,
 }: {
-  feature: { name: string; type: string; parameters: Record<string, unknown> };
+  feature: { id: string; name: string; type: string; parameters: Record<string, unknown> };
+  allFeatures: Array<{ id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean }>;
 }) {
-  const measurements = useMemo(() => getFeatureMeasurements(feature.parameters), [feature.parameters]);
+  const measurements = useMemo(() => {
+    const base = getFeatureMeasurements(feature.parameters);
+
+    // For curved features without an explicit radius, estimate from mesh
+    const hasRadius = 'radius' in feature.parameters || 'diameter' in feature.parameters;
+    const isCurved = ['sphere', 'cone', 'torus', 'revolve', 'revolve_sketch', 'hole', 'sweep'].includes(feature.type);
+    if (!hasRadius && isCurved) {
+      const mesh = featureToMesh(feature as any, allFeatures as any);
+      if (mesh && mesh.vertices.length >= 12) {
+        const centroid = {
+          x: 0, y: 0, z: 0,
+        };
+        let count = mesh.vertices.length / 3;
+        for (let i = 0; i < mesh.vertices.length; i += 3) {
+          centroid.x += mesh.vertices[i]!;
+          centroid.y += mesh.vertices[i + 1]!;
+          centroid.z += mesh.vertices[i + 2]!;
+        }
+        centroid.x /= count;
+        centroid.y /= count;
+        centroid.z /= count;
+        const radius = estimateRadiusAtPoint(mesh, centroid);
+        if (radius !== null && radius > 0.01) {
+          base.push({ label: 'Est. Radius', value: radius, unit: 'mm' });
+          base.push({ label: 'Est. Diameter', value: radius * 2, unit: 'mm' });
+        }
+      }
+    }
+
+    return base;
+  }, [feature, allFeatures, feature.parameters]);
 
   return (
     <div style={styles.item}>
