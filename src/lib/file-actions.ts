@@ -97,6 +97,27 @@ export function handleExport(format: 'stl' | 'obj' | 'glb' | 'ocad'): void {
   }
 }
 
+/** Capture a PNG screenshot of the current viewport */
+export function handleScreenshot(): void {
+  const canvas = document.querySelector('canvas');
+  if (!canvas) {
+    useToast().addToast('No viewport found', 'error');
+    return;
+  }
+  try {
+    const dataUrl = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    const state = useCADStore.getState();
+    a.download = `${state.documentName || 'opencad'}-screenshot.png`;
+    a.click();
+    useToast().addToast('Screenshot saved', 'success');
+  } catch (err) {
+    console.error('Screenshot failed:', err);
+    useToast().addToast('Screenshot failed', 'error');
+  }
+}
+
 /** Import STL/OBJ file and add as a feature */
 export async function handleImportFile(): Promise<void> {
   try {

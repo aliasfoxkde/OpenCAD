@@ -8,6 +8,8 @@ import {
   generateHoleMesh,
   generateExtrudeProfileMesh,
   generateRevolveProfileMesh,
+  generateSweepMesh,
+  generateLoftMesh,
 } from './mesh-generators';
 
 /** Validate mesh integrity: index bounds, normal lengths, vertex count consistency */
@@ -404,5 +406,115 @@ describe('generateRevolveProfileMesh', () => {
 
   it('should return empty mesh for insufficient points', () => {
     expect(generateRevolveProfileMesh([], 360, 'y').vertices.length).toBe(0);
+  });
+});
+
+// ============================================================
+// Sweep mesh generator
+// ============================================================
+
+describe('generateSweepMesh', () => {
+  const squareProfile: Array<[number, number]> = [
+    [-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5],
+  ];
+  const straightPath: Array<[number, number, number]> = [
+    [0, 0, 0], [0, 5, 0],
+  ];
+  const curvedPath: Array<[number, number, number]> = [
+    [0, 0, 0], [2, 2, 0], [4, 0, 0],
+  ];
+
+  it('should generate a valid mesh for a straight path', () => {
+    const mesh = generateSweepMesh(squareProfile, straightPath, 8);
+    validateMesh(mesh, 'sweep straight');
+    expect(mesh.vertices.length).toBeGreaterThan(0);
+    expect(mesh.indices.length).toBeGreaterThan(0);
+  });
+
+  it('should generate a valid mesh for a curved path', () => {
+    const mesh = generateSweepMesh(squareProfile, curvedPath, 16);
+    validateMesh(mesh, 'sweep curved');
+    expect(mesh.vertices.length).toBeGreaterThan(0);
+  });
+
+  it('should return empty mesh for insufficient profile points', () => {
+    const mesh = generateSweepMesh([[0, 0]], straightPath);
+    expect(mesh.vertices.length).toBe(0);
+  });
+
+  it('should return empty mesh for insufficient path points', () => {
+    const mesh = generateSweepMesh(squareProfile, [[0, 0, 0]]);
+    expect(mesh.vertices.length).toBe(0);
+  });
+
+  it('should return empty mesh for zero-length path', () => {
+    const mesh = generateSweepMesh(squareProfile, [[0, 0, 0], [0, 0, 0]]);
+    expect(mesh.vertices.length).toBe(0);
+  });
+
+  it('should scale mesh size with segments', () => {
+    const low = generateSweepMesh(squareProfile, curvedPath, 4);
+    const high = generateSweepMesh(squareProfile, curvedPath, 16);
+    // Higher segment count should produce more vertices
+    expect(high.vertices.length).toBeGreaterThan(low.vertices.length);
+  });
+
+  it('should produce mesh with correct number of path stations', () => {
+    const segments = 8;
+    const mesh = generateSweepMesh(squareProfile, straightPath, segments);
+    // Each station has profile.length vertices; segs+1 stations
+    const expectedVertices = (segments + 1) * squareProfile.length;
+    expect(mesh.vertices.length / 3).toBe(expectedVertices);
+  });
+});
+
+// ============================================================
+// Loft mesh generator
+// ============================================================
+
+describe('generateLoftMesh', () => {
+  const bottomProfile: Array<[number, number, number]> = [
+    [-1, 0, -1], [1, 0, -1], [1, 0, 1], [-1, 0, 1],
+  ];
+  const topProfile: Array<[number, number, number]> = [
+    [-0.5, 0, -0.5], [0.5, 0, -0.5], [0.5, 0, 0.5], [-0.5, 0, 0.5],
+  ];
+
+  it('should generate a valid mesh for two profiles', () => {
+    const mesh = generateLoftMesh([bottomProfile, topProfile]);
+    validateMesh(mesh, 'loft two profiles');
+    expect(mesh.vertices.length).toBeGreaterThan(0);
+    expect(mesh.indices.length).toBeGreaterThan(0);
+  });
+
+  it('should generate a valid mesh for three profiles', () => {
+    const midProfile: Array<[number, number, number]> = [
+      [-0.75, 0, -0.75], [0.75, 0, -0.75], [0.75, 0, 0.75], [-0.75, 0, 0.75],
+    ];
+    const mesh = generateLoftMesh([bottomProfile, midProfile, topProfile]);
+    validateMesh(mesh, 'loft three profiles');
+    expect(mesh.vertices.length).toBeGreaterThan(0);
+  });
+
+  it('should return empty mesh for fewer than 2 profiles', () => {
+    expect(generateLoftMesh([]).vertices.length).toBe(0);
+    expect(generateLoftMesh([bottomProfile]).vertices.length).toBe(0);
+  });
+
+  it('should return empty mesh for profiles with fewer than 3 points', () => {
+    const tinyProfile: Array<[number, number, number]> = [[0, 0, 0], [1, 0, 0]];
+    expect(generateLoftMesh([tinyProfile, tinyProfile]).vertices.length).toBe(0);
+  });
+
+  it('should return empty mesh for mismatched profile sizes', () => {
+    const smallProfile: Array<[number, number, number]> = [[0, 0, 0], [1, 0, 0], [1, 0, 1]];
+    expect(generateLoftMesh([bottomProfile, smallProfile]).vertices.length).toBe(0);
+  });
+
+  it('should produce mesh spanning the Y axis between profiles', () => {
+    const mesh = generateLoftMesh([bottomProfile, topProfile]);
+    const bounds = computeBounds(mesh.vertices);
+    // Mesh should span Y axis (profiles placed at y=0 and y=2)
+    expect(bounds.minY).toBeLessThan(bounds.maxY);
   });
 });

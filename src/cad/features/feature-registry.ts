@@ -224,6 +224,9 @@ registerFeature({
   parameters: [
     { name: 'profileRef', label: 'Profile', type: 'reference', default: '', required: true },
     { name: 'pathRef', label: 'Path', type: 'reference', default: '', required: true },
+    { name: 'profile', label: 'Profile Data', type: 'string', default: '', description: 'JSON array of [x,y] points' },
+    { name: 'path', label: 'Path Data', type: 'string', default: '', description: 'JSON array of [x,y,z] points' },
+    { name: 'segments', label: 'Segments', type: 'number', default: 16, min: 4, max: 128, step: 4 },
   ],
 });
 
@@ -243,6 +246,33 @@ registerFeature({
       required: true,
       description: 'Comma-separated sketch IDs',
     },
+    {
+      name: 'profiles',
+      label: 'Profile Data',
+      type: 'string',
+      default: '',
+      description: 'JSON array of profiles, each an array of [x,y,z] points',
+    },
+  ],
+});
+
+registerFeature({
+  type: 'revolve_cut',
+  label: 'Revolve Cut',
+  icon: '◉',
+  category: 'features',
+  description: 'Revolve a profile and subtract from target body',
+  requiresBody: true,
+  parameters: [
+    { name: 'targetRef', label: 'Target Body', type: 'reference', default: '', required: true },
+    { name: 'profile', label: 'Profile Data', type: 'string', default: '', description: 'JSON array of [x,y] points' },
+    { name: 'axis', label: 'Axis', type: 'enum', default: 'y', enumValues: ['x', 'y', 'z'] },
+    { name: 'angle', label: 'Angle', type: 'number', default: 360, min: 1, max: 360, step: 1, unit: 'deg' },
+    { name: 'segments', label: 'Segments', type: 'number', default: 32, min: 6, max: 128, step: 4 },
+    { name: 'plane', label: 'Sketch Plane', type: 'enum', default: 'xy', enumValues: ['xy', 'xz', 'yz'] },
+    { name: 'originX', label: 'Origin X', type: 'number', default: 0, unit: 'mm' },
+    { name: 'originY', label: 'Origin Y', type: 'number', default: 0, unit: 'mm' },
+    { name: 'originZ', label: 'Origin Z', type: 'number', default: 0, unit: 'mm' },
   ],
 });
 

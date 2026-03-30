@@ -24,6 +24,8 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
   snapToGrid: false,
   gridSnapSize: 0.5,
   annotations: [],
+  cameraAzimuth: 45,
+  cameraElevation: 35,
 
   setDisplayMode: (mode) => set({ displayMode: mode }),
   setViewportLayout: (layout) => set({ viewportLayout: layout }),

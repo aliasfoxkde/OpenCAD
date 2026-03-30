@@ -37,6 +37,12 @@ export function CameraController() {
     // Track camera state for imperative calls (zoom)
     lastCameraState.pos.copy(camera.position);
 
+    // Publish camera orientation for ViewCube
+    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+    const az = Math.atan2(dir.x, dir.z) * (180 / Math.PI);
+    const el = Math.asin(Math.max(-1, Math.min(1, dir.y))) * (180 / Math.PI);
+    useViewStore.setState({ cameraAzimuth: az, cameraElevation: el });
+
     // Handle fitView request
     if (fitViewRequested > 0) {
       fitViewToScene(camera, scene);

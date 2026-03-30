@@ -64,6 +64,8 @@ export interface ViewStoreState {
   snapToGrid: boolean;
   gridSnapSize: number;
   annotations: DimensionAnnotation[];
+  cameraAzimuth: number;
+  cameraElevation: number;
 }
 
 export interface ViewStoreActions {

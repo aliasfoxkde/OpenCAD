@@ -11,6 +11,8 @@ import {
   generateChamferWedgeMesh,
   generateExtrudeProfileMesh,
   generateRevolveProfileMesh,
+  generateSweepMesh,
+  generateLoftMesh,
 } from '../../cad/kernel/mesh-generators';
 import { DEG2RAD } from '../../lib/assembly-tree';
 import type { FeatureNode } from '../../types/cad';
@@ -111,6 +113,10 @@ function renderFeatureTree(
 
     if (f.type === 'cut') {
       return <CutMesh key={f.id} feature={f} allFeatures={features} selected={selectedIds.includes(f.id)} />;
+    }
+
+    if (f.type === 'revolve_cut') {
+      return <RevolveCutMesh key={f.id} feature={f} allFeatures={features} selected={selectedIds.includes(f.id)} />;
     }
 
     return (
@@ -917,6 +923,82 @@ function BooleanMesh({ feature, allFeatures, selected }: BooleanMeshProps) {
   );
 }
 
+interface RevolveCutMeshProps {
+  feature: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean };
+  allFeatures: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean }[];
+  selected: boolean;
+}
+
+/** Renders a revolve cut (revolved profile subtracted from target body) */
+function RevolveCutMesh({ feature, allFeatures, selected }: RevolveCutMeshProps) {
+  if (feature.suppressed) return null;
+
+  const paramsKey = JSON.stringify(feature.parameters);
+  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
+  const meshRef = useRef<THREE.Mesh>(null);
+  useSelectionGlow(meshRef, selected);
+
+  const geometry = useMemo(() => {
+    const targetRef = feature.parameters.targetRef as string;
+    if (!targetRef) return null;
+    const target = allFeatures.find((f) => f.id === targetRef);
+    if (!target || target.suppressed) return null;
+
+    const profileStr = feature.parameters.profile as string | undefined;
+    if (!profileStr) return null;
+    let profile: Array<[number, number]>;
+    try {
+      profile = JSON.parse(profileStr);
+    } catch {
+      return null;
+    }
+    if (!Array.isArray(profile) || profile.length < 2) return null;
+
+    const axis = (feature.parameters.axis as 'x' | 'y' | 'z') ?? 'y';
+    const angle = (feature.parameters.angle as number) ?? 360;
+    const segments = (feature.parameters.segments as number) ?? 32;
+    const ox = (feature.parameters.originX as number) ?? 0;
+    const oy = (feature.parameters.originY as number) ?? 0;
+    const oz = (feature.parameters.originZ as number) ?? 0;
+
+    const baseGeo = createGeometry(target.type, target.parameters);
+    if (!baseGeo) return null;
+
+    const cutMeshData = generateRevolveProfileMesh(profile, angle, axis, segments, [ox, oy, oz]);
+    const cutGeo = new THREE.BufferGeometry();
+    cutGeo.setAttribute('position', new THREE.BufferAttribute(cutMeshData.vertices, 3));
+    cutGeo.setAttribute('normal', new THREE.BufferAttribute(cutMeshData.normals, 3));
+    cutGeo.setIndex(new THREE.BufferAttribute(cutMeshData.indices, 1));
+
+    const result = booleanTwo(baseGeo, cutGeo, 'subtract');
+    baseGeo.dispose();
+    cutGeo.dispose();
+    return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feature.type, paramsKey, allFeaturesKey]);
+
+  if (!geometry) return null;
+
+  return (
+    <mesh
+      ref={meshRef}
+      geometry={geometry}
+      castShadow
+      receiveShadow
+      userData={{ featureId: feature.id }}
+    >
+      <meshStandardMaterial
+        color={selected ? '#3b82f6' : '#64748b'}
+        emissive={selected ? SELECTED_EMISSIVE : '#000000'}
+        emissiveIntensity={selected ? SELECTED_EMISSIVE_INTENSITY : 0}
+        transparent={selected}
+        opacity={selected ? 0.85 : 1}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
 function createGeometry(type: string, params: Record<string, unknown>): THREE.BufferGeometry | null {
   switch (type) {
     case 'extrude': {
@@ -988,6 +1070,44 @@ function createGeometry(type: string, params: Record<string, unknown>): THREE.Bu
       const oy = (params.originY as number) ?? 0;
       const oz = (params.originZ as number) ?? 0;
       const mesh = generateRevolveProfileMesh(profile, angle, axis, segments, [ox, oy, oz]);
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(Array.from(mesh.vertices), 3));
+      geo.setAttribute('normal', new THREE.Float32BufferAttribute(Array.from(mesh.normals), 3));
+      geo.setIndex(Array.from(mesh.indices));
+      return geo;
+    }
+    case 'sweep': {
+      const profileStr = params.profile as string | undefined;
+      const pathStr = params.path as string | undefined;
+      if (!profileStr || !pathStr) return null;
+      let profile: Array<[number, number]>;
+      let path: Array<[number, number, number]>;
+      try {
+        profile = JSON.parse(profileStr);
+        path = JSON.parse(pathStr);
+      } catch {
+        return null;
+      }
+      if (!Array.isArray(profile) || !Array.isArray(path) || profile.length < 3 || path.length < 2) return null;
+      const segments = (params.segments as number) ?? 16;
+      const mesh = generateSweepMesh(profile, path, segments);
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(Array.from(mesh.vertices), 3));
+      geo.setAttribute('normal', new THREE.Float32BufferAttribute(Array.from(mesh.normals), 3));
+      geo.setIndex(Array.from(mesh.indices));
+      return geo;
+    }
+    case 'loft': {
+      const profilesStr = params.profiles as string | undefined;
+      if (!profilesStr) return null;
+      let profiles: Array<Array<[number, number, number]>>;
+      try {
+        profiles = JSON.parse(profilesStr);
+      } catch {
+        return null;
+      }
+      if (!Array.isArray(profiles) || profiles.length < 2) return null;
+      const mesh = generateLoftMesh(profiles);
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(Array.from(mesh.vertices), 3));
       geo.setAttribute('normal', new THREE.Float32BufferAttribute(Array.from(mesh.normals), 3));

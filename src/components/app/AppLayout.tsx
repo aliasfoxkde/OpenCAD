@@ -15,6 +15,7 @@ import type { ContextMenuItem } from '../ui/ContextMenu';
 const Viewport = lazy(() => import('../viewport/Viewport').then((m) => ({ default: m.Viewport })));
 const SketchCanvas = lazy(() => import('../sketcher/SketchCanvas').then((m) => ({ default: m.SketchCanvas })));
 import { MeasurementOverlay } from '../ui/MeasurementOverlay';
+import { ViewCube } from '../viewport/ViewCube';
 import { CollabPanel } from '../ui/CollabPanel';
 import { useUIStore } from '../../stores/ui-store';
 import { useCADStore } from '../../stores/cad-store';
@@ -29,6 +30,7 @@ import {
   handleSaveDocument,
   handleExport,
   handleImportFile,
+  handleScreenshot,
 } from '../../lib/file-actions';
 import { copyFeatures, pasteFeatures, cutFeatures, hasClipboardContent } from '../../lib/clipboard';
 import { zoomCamera } from '../viewport/CameraController';
@@ -660,6 +662,7 @@ export function AppLayout() {
           )}
           <SketchToolbar />
           <MeasurementOverlay />
+          <ViewCube />
         </DropZone>
 
         {rightPanelOpen && (
@@ -943,6 +946,15 @@ function MenuBar({
           label: 'Import STL/OBJ',
           action: () => {
             handleImportFile();
+          },
+        },
+        { type: 'separator' },
+        {
+          type: 'item',
+          label: 'Screenshot (PNG)',
+          shortcut: 'Ctrl+Shift+S',
+          action: () => {
+            handleScreenshot();
           },
         },
       ],

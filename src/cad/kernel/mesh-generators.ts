@@ -687,3 +687,252 @@ function computeNormals(vertices: Float32Array, indices: Uint32Array): number[] 
 
   return normals;
 }
+
+// ============================================================
+// Sweep mesh generator
+// ============================================================
+
+/**
+ * Generate a mesh by sweeping a 2D profile along a 3D path.
+ * The profile is extruded at each path point, oriented by the path tangent.
+ */
+export function generateSweepMesh(
+  profile2D: Array<[number, number]>,
+  pathPoints: Array<[number, number, number]>,
+  segments: number = 16,
+): MeshData {
+  if (profile2D.length < 3 || pathPoints.length < 2) {
+    return { vertices: new Float32Array(0), normals: new Float32Array(0), indices: new Uint32Array(0), featureId: '' };
+  }
+
+  const n = profile2D.length;
+  const pLen = pathPoints.length;
+
+  // Compute cumulative arc-length parameterization along path
+  const arcLen: number[] = [0];
+  for (let i = 1; i < pLen; i++) {
+    const dx = pathPoints[i]![0] - pathPoints[i - 1]![0];
+    const dy = pathPoints[i]![1] - pathPoints[i - 1]![1];
+    const dz = pathPoints[i]![2] - pathPoints[i - 1]![2];
+    arcLen.push(arcLen[i - 1]! + Math.sqrt(dx * dx + dy * dy + dz * dz));
+  }
+  const totalLen = arcLen[arcLen.length - 1]!;
+  if (totalLen < 1e-10) {
+    return { vertices: new Float32Array(0), normals: new Float32Array(0), indices: new Uint32Array(0), featureId: '' };
+  }
+
+  // Resample path to uniform segments
+  const segs = Math.max(2, segments);
+  const resampledPath: Array<[number, number, number]> = [];
+  for (let s = 0; s <= segs; s++) {
+    const targetLen = (s / segs) * totalLen;
+    // Find segment and interpolate
+    let segIdx = 0;
+    for (let i = 1; i < arcLen.length; i++) {
+      if (arcLen[i]! >= targetLen) {
+        segIdx = i - 1;
+        break;
+      }
+      segIdx = arcLen.length - 2;
+    }
+    const segStart = arcLen[segIdx]!;
+    const segEnd = arcLen[segIdx + 1]!;
+    const t = segEnd > segStart ? (targetLen - segStart) / (segEnd - segStart) : 0;
+    const p0 = pathPoints[segIdx]!;
+    const p1 = pathPoints[segIdx + 1]!;
+    resampledPath.push([
+      p0[0] + (p1[0] - p0[0]) * t,
+      p0[1] + (p1[1] - p0[1]) * t,
+      p0[2] + (p1[2] - p0[2]) * t,
+    ]);
+  }
+
+  // Compute Frenet frames at each path point
+  // Use a simple approach: tangent from finite differences, normal = up projected, binormal = cross
+  const frames: Array<{ origin: [number, number, number]; normal: [number, number, number]; binormal: [number, number, number] }> = [];
+  let prevNormal: [number, number, number] | null = null;
+
+  for (let i = 0; i < resampledPath.length; i++) {
+    let tangent: [number, number, number];
+    if (i === 0) {
+      const dx = resampledPath[1]![0] - resampledPath[0]![0];
+      const dy = resampledPath[1]![1] - resampledPath[0]![1];
+      const dz = resampledPath[1]![2] - resampledPath[0]![2];
+      const len = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+      tangent = [dx / len, dy / len, dz / len];
+    } else if (i === resampledPath.length - 1) {
+      const dx = resampledPath[i]![0] - resampledPath[i - 1]![0];
+      const dy = resampledPath[i]![1] - resampledPath[i - 1]![1];
+      const dz = resampledPath[i]![2] - resampledPath[i - 1]![2];
+      const len = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+      tangent = [dx / len, dy / len, dz / len];
+    } else {
+      const dx = resampledPath[i + 1]![0] - resampledPath[i - 1]![0];
+      const dy = resampledPath[i + 1]![1] - resampledPath[i - 1]![1];
+      const dz = resampledPath[i + 1]![2] - resampledPath[i - 1]![2];
+      const len = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+      tangent = [dx / len, dy / len, dz / len];
+    }
+
+    // Choose initial normal perpendicular to tangent
+    let normal: [number, number, number];
+    if (prevNormal) {
+      normal = [...prevNormal];
+    } else {
+      // Pick an arbitrary perpendicular direction
+      const up = Math.abs(tangent[1]) < 0.9 ? [0, 1, 0] as [number, number, number] : [1, 0, 0] as [number, number, number];
+      // normal = cross(tangent, up)
+      normal = [
+        tangent[1] * up[2] - tangent[2] * up[1],
+        tangent[2] * up[0] - tangent[0] * up[2],
+        tangent[0] * up[1] - tangent[1] * up[0],
+      ];
+    }
+
+    // Re-orthogonalize normal against tangent
+    const dot = normal[0] * tangent[0] + normal[1] * tangent[1] + normal[2] * tangent[2];
+    normal[0] -= dot * tangent[0];
+    normal[1] -= dot * tangent[1];
+    normal[2] -= dot * tangent[2];
+    const nLen = Math.sqrt(normal[0] ** 2 + normal[1] ** 2 + normal[2] ** 2) || 1;
+    normal[0] /= nLen;
+    normal[1] /= nLen;
+    normal[2] /= nLen;
+
+    // binormal = cross(tangent, normal)
+    const binormal: [number, number, number] = [
+      tangent[1] * normal[2] - tangent[2] * normal[1],
+      tangent[2] * normal[0] - tangent[0] * normal[2],
+      tangent[0] * normal[1] - tangent[1] * normal[0],
+    ];
+
+    prevNormal = normal;
+    frames.push({ origin: resampledPath[i]!, normal, binormal });
+  }
+
+  // Generate vertices: profile at each path station
+  const verts: number[] = [];
+  for (const frame of frames) {
+    for (const [u, v] of profile2D) {
+      const x = frame.origin[0] + u * frame.normal[0] + v * frame.binormal[0];
+      const y = frame.origin[1] + u * frame.normal[1] + v * frame.binormal[1];
+      const z = frame.origin[2] + u * frame.normal[2] + v * frame.binormal[2];
+      verts.push(x, y, z);
+    }
+  }
+
+  // Generate indices
+  const indices: number[] = [];
+  for (let s = 0; s < segs; s++) {
+    for (let i = 0; i < n - 1; i++) {
+      const a = s * n + i;
+      const b = s * n + i + 1;
+      const c = (s + 1) * n + i;
+      const d = (s + 1) * n + i + 1;
+      indices.push(a, c, b);
+      indices.push(b, c, d);
+    }
+  }
+
+  const vertices = new Float32Array(verts);
+  const normalsArr = computeNormals(vertices, new Uint32Array(indices));
+  const normalFloats = new Float32Array(normalsArr.length);
+  for (let i = 0; i < normalsArr.length; i++) normalFloats[i] = normalsArr[i]!;
+
+  return { vertices, normals: normalFloats, indices: new Uint32Array(indices), featureId: '' };
+}
+
+// ============================================================
+// Loft mesh generator
+// ============================================================
+
+/**
+ * Generate a mesh by interpolating between two or more profile cross-sections.
+ * Profiles are placed along the Y axis at equal spacing.
+ */
+export function generateLoftMesh(
+  profiles: Array<Array<[number, number, number]>>,
+): MeshData {
+  if (profiles.length < 2) {
+    return { vertices: new Float32Array(0), normals: new Float32Array(0), indices: new Uint32Array(0), featureId: '' };
+  }
+
+  // All profiles must have the same number of points
+  const profileSize = profiles[0]!.length;
+  if (profileSize < 3) {
+    return { vertices: new Float32Array(0), normals: new Float32Array(0), indices: new Uint32Array(0), featureId: '' };
+  }
+  for (const prof of profiles) {
+    if (prof.length !== profileSize) {
+      return { vertices: new Float32Array(0), normals: new Float32Array(0), indices: new Uint32Array(0), featureId: '' };
+    }
+  }
+
+  const numProfiles = profiles.length;
+
+  // Place profiles along Y axis, evenly spaced
+  const verts: number[] = [];
+  for (let p = 0; p < numProfiles; p++) {
+    const y = p * 2; // spacing of 2 units between profiles
+    for (const [x, _, z] of profiles[p]!) {
+      verts.push(x, y, z);
+    }
+  }
+
+  // Generate quads between adjacent profiles, triangulated
+  const indices: number[] = [];
+  for (let p = 0; p < numProfiles - 1; p++) {
+    for (let i = 0; i < profileSize - 1; i++) {
+      const a = p * profileSize + i;
+      const b = p * profileSize + i + 1;
+      const c = (p + 1) * profileSize + i;
+      const d = (p + 1) * profileSize + i + 1;
+      indices.push(a, c, b);
+      indices.push(b, c, d);
+    }
+    // Close the loop (connect last point to first in each profile)
+    const a = p * profileSize + profileSize - 1;
+    const b = p * profileSize;
+    const c = (p + 1) * profileSize + profileSize - 1;
+    const d = (p + 1) * profileSize;
+    indices.push(a, c, b);
+    indices.push(b, c, d);
+  }
+
+  // Cap the first and last profile (fan triangulation)
+  // Bottom cap (profile 0) — reverse winding for outward normal
+  const centroid0: [number, number, number] = [0, 0, 0];
+  for (const pt of profiles[0]!) {
+    centroid0[0] += pt[0] / profileSize;
+    centroid0[1] += pt[1] / profileSize;
+    centroid0[2] += pt[2] / profileSize;
+  }
+  verts.push(centroid0[0], centroid0[1], centroid0[2]);
+  const cIdx0 = numProfiles * profileSize;
+  for (let i = 0; i < profileSize; i++) {
+    const next = (i + 1) % profileSize;
+    indices.push(cIdx0, next, i); // Reversed for bottom
+  }
+
+  // Top cap (last profile)
+  const topOffset = (numProfiles - 1) * profileSize;
+  const centroidN: [number, number, number] = [0, 0, 0];
+  for (const pt of profiles[numProfiles - 1]!) {
+    centroidN[0] += pt[0] / profileSize;
+    centroidN[1] += pt[1] / profileSize;
+    centroidN[2] += pt[2] / profileSize;
+  }
+  verts.push(centroidN[0], centroidN[1], centroidN[2]);
+  const cIdxN = numProfiles * profileSize + 1;
+  for (let i = 0; i < profileSize; i++) {
+    const next = (i + 1) % profileSize;
+    indices.push(cIdxN, topOffset + i, topOffset + next);
+  }
+
+  const vertices = new Float32Array(verts);
+  const normalsArr = computeNormals(vertices, new Uint32Array(indices));
+  const normalFloats = new Float32Array(normalsArr.length);
+  for (let i = 0; i < normalsArr.length; i++) normalFloats[i] = normalsArr[i]!;
+
+  return { vertices, normals: normalFloats, indices: new Uint32Array(indices), featureId: '' };
+}

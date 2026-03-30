@@ -18,6 +18,8 @@ import {
   generateChamferWedgeMesh,
   generateExtrudeProfileMesh,
   generateRevolveProfileMesh,
+  generateSweepMesh,
+  generateLoftMesh,
 } from '../cad/kernel/mesh-generators';
 import * as THREE from 'three';
 import { booleanTwo } from '../cad/kernel/csg-boolean';
@@ -587,6 +589,74 @@ export function featureToMesh(feature: FeatureNode, allFeatures?: FeatureNode[])
 
       return result ? geometryToMeshData(result, feature.id) : null;
     }
+    case 'sweep': {
+      const profileStr = feature.parameters.profile as string | undefined;
+      const pathStr = feature.parameters.path as string | undefined;
+      if (!profileStr || !pathStr) return null;
+      let profile: Array<[number, number]>;
+      let path: Array<[number, number, number]>;
+      try {
+        profile = JSON.parse(profileStr);
+        path = JSON.parse(pathStr);
+      } catch {
+        return null;
+      }
+      if (!Array.isArray(profile) || !Array.isArray(path) || profile.length < 3 || path.length < 2) return null;
+      const segments = (feature.parameters.segments as number) ?? 16;
+      const mesh = generateSweepMesh(profile, path, segments);
+      mesh.featureId = feature.id;
+      return mesh;
+    }
+    case 'loft': {
+      const profilesStr = feature.parameters.profiles as string | undefined;
+      if (!profilesStr) return null;
+      let profiles: Array<Array<[number, number, number]>>;
+      try {
+        profiles = JSON.parse(profilesStr);
+      } catch {
+        return null;
+      }
+      if (!Array.isArray(profiles) || profiles.length < 2) return null;
+      const mesh = generateLoftMesh(profiles);
+      mesh.featureId = feature.id;
+      return mesh;
+    }
+    case 'revolve_cut': {
+      if (!allFeatures) return null;
+      const targetRef = feature.parameters.targetRef as string;
+      if (!targetRef) return null;
+      const targetFeature = allFeatures.find((f) => f.id === targetRef);
+      if (!targetFeature || targetFeature.suppressed) return null;
+
+      const profileStr = feature.parameters.profile as string | undefined;
+      if (!profileStr) return null;
+      let profile: Array<[number, number]>;
+      try {
+        profile = JSON.parse(profileStr);
+      } catch {
+        return null;
+      }
+      if (!Array.isArray(profile) || profile.length < 2) return null;
+
+      const axis = (feature.parameters.axis as 'x' | 'y' | 'z') ?? 'y';
+      const angle = (feature.parameters.angle as number) ?? 360;
+      const segments = (feature.parameters.segments as number) ?? 32;
+      const ox = (feature.parameters.originX as number) ?? 0;
+      const oy = (feature.parameters.originY as number) ?? 0;
+      const oz = (feature.parameters.originZ as number) ?? 0;
+
+      const baseMesh = featureToMesh(targetFeature, allFeatures);
+      if (!baseMesh) return null;
+      const baseGeo = meshDataToGeometry(baseMesh);
+
+      const cutMesh = generateRevolveProfileMesh(profile, angle, axis, segments, [ox, oy, oz]);
+      const cutGeo = meshDataToGeometry(cutMesh);
+
+      const result = booleanTwo(baseGeo, cutGeo, 'subtract');
+      baseGeo.dispose();
+      cutGeo.dispose();
+      return result ? geometryToMeshData(result, feature.id) : null;
+    }
     default:
       return null;
   }
@@ -597,7 +667,7 @@ export function getConsumedFeatureIds(features: FeatureNode[]): Set<string> {
   const consumedIds = new Set<string>();
   for (const f of features) {
     if (f.suppressed) continue;
-    if (f.type.startsWith('boolean_') || f.type === 'shell' || f.type.startsWith('pattern_') || f.type === 'mirror' || f.type === 'fillet' || f.type === 'chamfer' || f.type === 'cut') {
+    if (f.type.startsWith('boolean_') || f.type === 'shell' || f.type.startsWith('pattern_') || f.type === 'mirror' || f.type === 'fillet' || f.type === 'chamfer' || f.type === 'cut' || f.type === 'revolve_cut') {
       for (const depId of f.dependencies) consumedIds.add(depId);
       const bodyRefs =
         (f.parameters.bodyRefs as string)
