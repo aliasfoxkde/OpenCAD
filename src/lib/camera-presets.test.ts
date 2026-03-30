@@ -51,7 +51,7 @@ describe('camera-presets', () => {
   });
 
   it('should have non-zero position for all presets', () => {
-    for (const [name, preset] of Object.entries(CAMERA_PRESETS)) {
+    for (const preset of Object.values(CAMERA_PRESETS)) {
       const distance = Math.sqrt(
         preset.position[0] ** 2 + preset.position[1] ** 2 + preset.position[2] ** 2,
       );

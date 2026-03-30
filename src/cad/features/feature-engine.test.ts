@@ -185,6 +185,54 @@ describe('FeatureEngine', () => {
         maxX: 6, maxY: 1, maxZ: 1,
       });
     });
+
+    it('should compute fillet bounds', () => {
+      const features = [
+        makeFeature('f1', 'fillet', { radius: 2 }),
+      ];
+      const result = engine.rebuildAll(features);
+      const bounds = result.results.get('f1')?.bounds;
+      expect(bounds).toEqual({
+        minX: -2, minY: -2, minZ: -2,
+        maxX: 2, maxY: 2, maxZ: 2,
+      });
+    });
+
+    it('should compute chamfer bounds', () => {
+      const features = [
+        makeFeature('f1', 'chamfer', { distance: 1.5, angle: 45 }),
+      ];
+      const result = engine.rebuildAll(features);
+      const bounds = result.results.get('f1')?.bounds;
+      expect(bounds).toEqual({
+        minX: -1.5, minY: -1.5, minZ: -1.5,
+        maxX: 1.5, maxY: 1.5, maxZ: 1.5,
+      });
+    });
+
+    it('should compute shell bounds', () => {
+      const features = [
+        makeFeature('f1', 'shell', { thickness: 3 }),
+      ];
+      const result = engine.rebuildAll(features);
+      const bounds = result.results.get('f1')?.bounds;
+      expect(bounds).toEqual({
+        minX: -3, minY: -3, minZ: -3,
+        maxX: 3, maxY: 3, maxZ: 3,
+      });
+    });
+
+    it('should compute hole bounds', () => {
+      const features = [
+        makeFeature('f1', 'hole', { diameter: 6, depth: 10 }),
+      ];
+      const result = engine.rebuildAll(features);
+      const bounds = result.results.get('f1')?.bounds;
+      expect(bounds).toEqual({
+        minX: -3, minY: 0, minZ: -3,
+        maxX: 3, maxY: 10, maxZ: 3,
+      });
+    });
   });
 
   describe('rebuildFrom', () => {

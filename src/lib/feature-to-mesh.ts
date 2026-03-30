@@ -12,6 +12,7 @@ import {
   generateSphereMesh,
   generateConeMesh,
   generateTorusMesh,
+  generateHoleMesh,
 } from '../cad/kernel/mesh-generators';
 
 /** Convert a single feature to MeshData, or null if unsupported */
@@ -49,6 +50,13 @@ export function featureToMesh(feature: FeatureNode): MeshData | null {
       const radius = Math.max(0.001, (feature.parameters.radius as number) ?? 0.5);
       const tube = Math.max(0.001, (feature.parameters.tube as number) ?? 0.15);
       const mesh = generateTorusMesh(radius, tube);
+      mesh.featureId = feature.id;
+      return mesh;
+    }
+    case 'hole': {
+      const diameter = Math.max(0.001, (feature.parameters.diameter as number) ?? 5);
+      const depth = Math.max(0.001, (feature.parameters.depth as number) ?? 10);
+      const mesh = generateHoleMesh(diameter, depth);
       mesh.featureId = feature.id;
       return mesh;
     }

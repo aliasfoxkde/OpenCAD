@@ -105,6 +105,11 @@ function createGeometry(
       const tube = Math.max(0.001, (params.tube as number) ?? 0.15);
       return new THREE.TorusGeometry(radius, tube, 16, 48);
     }
+    case 'hole': {
+      const diameter = Math.max(0.001, (params.diameter as number) ?? 5);
+      const depth = Math.max(0.001, (params.depth as number) ?? 10);
+      return new THREE.CylinderGeometry(diameter / 2, diameter / 2, depth, 32);
+    }
     default:
       return new THREE.BoxGeometry(1, 1, 1);
   }

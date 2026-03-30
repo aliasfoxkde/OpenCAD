@@ -31,6 +31,25 @@ describe('feature-to-mesh', () => {
     expect(mesh).toBeNull();
   });
 
+  it('should convert hole feature to mesh', () => {
+    const mesh = featureToMesh(makeFeature({
+      type: 'hole',
+      parameters: { diameter: 6, depth: 10 },
+    }));
+    expect(mesh).not.toBeNull();
+    expect(mesh!.vertices.length).toBeGreaterThan(0);
+    expect(mesh!.indices.length).toBeGreaterThan(0);
+  });
+
+  it('should assign featureId to hole mesh', () => {
+    const mesh = featureToMesh(makeFeature({
+      id: 'hole-42',
+      type: 'hole',
+      parameters: { diameter: 4, depth: 8 },
+    }));
+    expect(mesh!.featureId).toBe('hole-42');
+  });
+
   it('should skip suppressed features', () => {
     const features = [
       makeFeature({ id: 'a' }),

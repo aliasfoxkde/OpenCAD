@@ -267,6 +267,35 @@ export class FeatureEngine {
           maxX: ox + outer, maxY: oy + t, maxZ: oz + outer,
         };
       }
+      case 'fillet': {
+        const r = p.radius as number;
+        return {
+          minX: ox - r, minY: oy - r, minZ: oz - r,
+          maxX: ox + r, maxY: oy + r, maxZ: oz + r,
+        };
+      }
+      case 'chamfer': {
+        const d = p.distance as number;
+        return {
+          minX: ox - d, minY: oy - d, minZ: oz - d,
+          maxX: ox + d, maxY: oy + d, maxZ: oz + d,
+        };
+      }
+      case 'shell': {
+        const t = p.thickness as number;
+        return {
+          minX: ox - t, minY: oy - t, minZ: oz - t,
+          maxX: ox + t, maxY: oy + t, maxZ: oz + t,
+        };
+      }
+      case 'hole': {
+        const d = (p.diameter as number) / 2;
+        const depth = p.depth as number;
+        return {
+          minX: ox - d, minY: oy, minZ: oz - d,
+          maxX: ox + d, maxY: oy + depth, maxZ: oz + d,
+        };
+      }
       default:
         return undefined;
     }

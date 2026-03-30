@@ -218,3 +218,55 @@ export function generateTorusMesh(radius: number, tube: number): MeshData {
     featureId: '',
   };
 }
+
+export function generateHoleMesh(diameter: number, depth: number): MeshData {
+  const radius = Math.max(0.001, diameter / 2);
+  const height = Math.max(0.001, depth);
+  const segments = 32;
+  const vertexCount = segments * 2 + 2;
+  const vertices = new Float32Array(vertexCount * 3);
+  const normals = new Float32Array(vertexCount * 3);
+  const hh = height / 2;
+
+  vertices[0] = 0; vertices[1] = -hh; vertices[2] = 0;
+  normals[0] = 0; normals[1] = -1; normals[2] = 0;
+
+  vertices[3] = 0; vertices[4] = hh; vertices[5] = 0;
+  normals[3] = 0; normals[4] = 1; normals[5] = 0;
+
+  for (let i = 0; i < segments; i++) {
+    const angle = (2 * Math.PI * i) / segments;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+
+    const bi = (2 + i) * 3;
+    vertices[bi] = x; vertices[bi + 1] = -hh; vertices[bi + 2] = z;
+    normals[bi] = Math.cos(angle); normals[bi + 1] = 0; normals[bi + 2] = Math.sin(angle);
+
+    const ti = (2 + segments + i) * 3;
+    vertices[ti] = x; vertices[ti + 1] = hh; vertices[ti + 2] = z;
+    normals[ti] = Math.cos(angle); normals[ti + 1] = 0; normals[ti + 2] = Math.sin(angle);
+  }
+
+  const indices: number[] = [];
+
+  for (let i = 0; i < segments; i++) {
+    const next = (i + 1) % segments;
+    indices.push(0, 2 + i, 2 + next);
+  }
+
+  for (let i = 0; i < segments; i++) {
+    const next = (i + 1) % segments;
+    indices.push(1, 2 + segments + next, 2 + segments + i);
+  }
+
+  for (let i = 0; i < segments; i++) {
+    const next = (i + 1) % segments;
+    const bl = 2 + i, br = 2 + next;
+    const tl = 2 + segments + i, tr = 2 + segments + next;
+    indices.push(bl, br, tl);
+    indices.push(br, tr, tl);
+  }
+
+  return { vertices, normals, indices: new Uint32Array(indices), featureId: '' };
+}

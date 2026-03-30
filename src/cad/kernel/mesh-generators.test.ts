@@ -5,6 +5,7 @@ import {
   generateSphereMesh,
   generateConeMesh,
   generateTorusMesh,
+  generateHoleMesh,
 } from './mesh-generators';
 
 /** Validate mesh integrity: index bounds, normal lengths, vertex count consistency */
@@ -217,6 +218,37 @@ describe('MeshGenerators', () => {
     });
   });
 
+  describe('generateHoleMesh', () => {
+    it('should produce a valid hole (cylinder) mesh', () => {
+      const mesh = generateHoleMesh(5, 10);
+      const { vertexCount, triangleCount } = validateMesh(mesh, 'hole');
+
+      expect(vertexCount).toBe(66); // same as cylinder: 2 centers + 32*2 ring
+      expect(triangleCount).toBe(128);
+    });
+
+    it('should respect diameter and depth', () => {
+      const mesh = generateHoleMesh(6, 20);
+      const bounds = computeBounds(mesh.vertices);
+
+      expect(bounds.maxX - bounds.minX).toBeCloseTo(6, 1); // diameter
+      expect(bounds.maxY - bounds.minY).toBeCloseTo(20, 1); // depth
+    });
+
+    it('should be centered vertically', () => {
+      const mesh = generateHoleMesh(4, 8);
+      const bounds = computeBounds(mesh.vertices);
+
+      expect(bounds.minY).toBeCloseTo(-4, 5);
+      expect(bounds.maxY).toBeCloseTo(4, 5);
+    });
+
+    it('should clamp very small values', () => {
+      const mesh = generateHoleMesh(0, 0);
+      validateMesh(mesh, 'tiny-hole');
+    });
+  });
+
   describe('Cross-cutting validations', () => {
     const generators = [
       { name: 'box', fn: () => generateBoxMesh(1, 1, 1) },
@@ -224,6 +256,7 @@ describe('MeshGenerators', () => {
       { name: 'sphere', fn: () => generateSphereMesh(1) },
       { name: 'cone', fn: () => generateConeMesh(1, 1) },
       { name: 'torus', fn: () => generateTorusMesh(1, 0.3) },
+      { name: 'hole', fn: () => generateHoleMesh(5, 10) },
     ];
 
     for (const gen of generators) {
