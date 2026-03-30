@@ -5,7 +5,10 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useCollabStore } from '../../stores/collab-store';
+import { useCADStore } from '../../stores/cad-store';
 import { getCollaborationSync, generateRoomId } from '../../cad/collab/webrtc-sync';
+import { startCollabSync, stopCollabSync } from '../../cad/collab/crdt-cad-bridge';
+import { addFeature as addCRDTFeature } from '../../cad/collab/crdt-store';
 
 export function CollabPanel() {
   const connectionState = useCollabStore((s) => s.connectionState);
@@ -49,8 +52,14 @@ export function CollabPanel() {
       const { createCRDTDocument } = await import('../../cad/collab/crdt-store');
       const docId = useCollabStore.getState().roomId ?? crypto.randomUUID();
       const crdtDoc = createCRDTDocument(docId);
+      // Push existing features to CRDT so peers see them
+      const localFeatures = useCADStore.getState().features;
+      for (const f of localFeatures) {
+        addCRDTFeature(crdtDoc, f);
+      }
       const newRoomId = await sync.createSession(crdtDoc);
       joinSession(newRoomId, sync.peerId, sync.displayName, sync.color);
+      startCollabSync(crdtDoc);
     } catch (err) {
       console.error('Failed to create session:', err);
       setConnectionState('error');
@@ -65,6 +74,7 @@ export function CollabPanel() {
       const crdtDoc = createCRDTDocument(docId);
       await sync.joinSession(crdtDoc, joinId.trim());
       joinSession(joinId.trim(), sync.peerId, sync.displayName, sync.color);
+      startCollabSync(crdtDoc);
       setShowJoin(false);
       setJoinId('');
     } catch (err) {
@@ -74,6 +84,7 @@ export function CollabPanel() {
   }, [joinId, sync, joinSession, setConnectionState]);
 
   const handleLeave = useCallback(() => {
+    stopCollabSync();
     sync.leaveSession();
     leaveSession();
   }, [sync, leaveSession]);
