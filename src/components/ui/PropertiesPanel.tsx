@@ -4,6 +4,8 @@ import { getDefaultParameters, getFeatureDefinition } from '../../cad/features';
 import { nanoid } from 'nanoid';
 import type { ParameterDef } from '../../cad/features';
 import type { FeatureType } from '../../types/cad';
+import type { Unit } from '../../types/store';
+import { UNIT_CONVERSION } from '../../types/store';
 import { useMemo } from 'react';
 import { computeFeatureProperties, formatPropertyValue } from '../../lib/mass-properties';
 
@@ -39,6 +41,8 @@ export function PropertiesPanel() {
 
   const selectedFeature = features.find((f) => selectedIds.includes(f.id));
   const featureDef = selectedFeature ? getFeatureDefinition(selectedFeature.type) : undefined;
+  const units = useCADStore((s) => s.units);
+  const conversionFactor = UNIT_CONVERSION[units];
 
   // Compute mass properties for selected feature
   const massProps = useMemo(() => {
@@ -184,6 +188,8 @@ export function PropertiesPanel() {
               paramDef={paramDef}
               value={selectedFeature.parameters[paramDef.name] ?? paramDef.default}
               features={features}
+              units={units}
+              conversionFactor={conversionFactor}
               onChange={(v) => handleParamChange(paramDef.name, v)}
             />
           ))}
@@ -196,22 +202,22 @@ export function PropertiesPanel() {
             <div style={styles.massItem}>
               <span style={styles.massLabel}>Volume</span>
               <span style={styles.massValue}>
-                {formatPropertyValue(massProps.volume, 'mm³')}
+                {formatPropertyValue(massProps.volume / (conversionFactor ** 3), `${units}³`)}
               </span>
             </div>
             <div style={styles.massItem}>
               <span style={styles.massLabel}>Surface Area</span>
               <span style={styles.massValue}>
-                {formatPropertyValue(massProps.surfaceArea, 'mm²')}
+                {formatPropertyValue(massProps.surfaceArea / (conversionFactor ** 2), `${units}²`)}
               </span>
             </div>
             {massProps.boundingBox && (
               <div style={styles.massItem}>
                 <span style={styles.massLabel}>Bounding Box</span>
                 <span style={styles.massValue}>
-                  {(massProps.boundingBox.maxX - massProps.boundingBox.minX).toFixed(2)} x{' '}
-                  {(massProps.boundingBox.maxY - massProps.boundingBox.minY).toFixed(2)} x{' '}
-                  {(massProps.boundingBox.maxZ - massProps.boundingBox.minZ).toFixed(2)}
+                  {((massProps.boundingBox.maxX - massProps.boundingBox.minX) / conversionFactor).toFixed(2)} x{' '}
+                  {((massProps.boundingBox.maxY - massProps.boundingBox.minY) / conversionFactor).toFixed(2)} x{' '}
+                  {((massProps.boundingBox.maxZ - massProps.boundingBox.minZ) / conversionFactor).toFixed(2)} {units}
                 </span>
               </div>
             )}
@@ -219,7 +225,7 @@ export function PropertiesPanel() {
               <div style={styles.massItem}>
                 <span style={styles.massLabel}>Center</span>
                 <span style={styles.massValue}>
-                  ({massProps.centerOfMass.x.toFixed(2)}, {massProps.centerOfMass.y.toFixed(2)}, {massProps.centerOfMass.z.toFixed(2)})
+                  ({(massProps.centerOfMass.x / conversionFactor).toFixed(2)}, {(massProps.centerOfMass.y / conversionFactor).toFixed(2)}, {(massProps.centerOfMass.z / conversionFactor).toFixed(2)}) {units}
                 </span>
               </div>
             )}
@@ -243,34 +249,45 @@ function ParameterInput({
   paramDef,
   value,
   features,
+  units,
+  conversionFactor,
   onChange,
 }: {
   paramDef: ParameterDef;
   value: unknown;
   features: { id: string; name: string; type: string; suppressed: boolean }[];
+  units: Unit;
+  conversionFactor: number;
   onChange: (v: unknown) => void;
 }) {
   switch (paramDef.type) {
-    case 'number':
+    case 'number': {
+      // Convert mm to display units
+      const displayValue = (value as number) / conversionFactor;
+      const displayStep = ((paramDef.step ?? 0.1) / conversionFactor);
+      const displayMin = paramDef.min != null ? (paramDef.min as number) / conversionFactor : undefined;
+      const displayMax = paramDef.max != null ? (paramDef.max as number) / conversionFactor : undefined;
+      const displayUnit = paramDef.unit ? units : undefined;
       return (
         <div style={styles.paramRow}>
           <label style={styles.paramLabel}>
             {paramDef.label}
-            {paramDef.unit && (
-              <span style={styles.paramUnit}> {paramDef.unit}</span>
+            {displayUnit && (
+              <span style={styles.paramUnit}> {displayUnit}</span>
             )}
           </label>
           <input
             type="number"
             style={styles.paramInput}
-            value={value as number}
-            min={paramDef.min}
-            max={paramDef.max}
-            step={paramDef.step ?? 0.1}
-            onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+            value={parseFloat(displayValue.toFixed(4))}
+            min={displayMin}
+            max={displayMax}
+            step={parseFloat(displayStep.toFixed(4))}
+            onChange={(e) => onChange((parseFloat(e.target.value) || 0) * conversionFactor)}
           />
         </div>
       );
+    }
 
     case 'string':
       return (

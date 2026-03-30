@@ -11,6 +11,7 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
   activeTool: 'select',
   isSketchMode: false,
   dirty: false,
+  units: 'mm' as const,
 
   setDocument: (id, name) => set({ documentId: id, documentName: name }),
   addFeature: (feature) =>
@@ -101,6 +102,7 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
       );
       return { features: next.features, selectedIds: validIds, dirty: true };
     }),
+  setUnits: (units) => set({ units }),
 }));
 
 // Selector hooks for performance

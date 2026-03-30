@@ -1,6 +1,16 @@
 import type { FeatureNode, ToolType, DisplayMode, ViewportLayout, SelectionTarget } from './cad';
 import type { DimensionAnnotation } from '../lib/annotations';
 
+export type Unit = 'mm' | 'cm' | 'm' | 'in' | 'ft';
+
+export const UNIT_CONVERSION: Record<Unit, number> = {
+  mm: 1,
+  cm: 10,
+  m: 1000,
+  in: 25.4,
+  ft: 304.8,
+};
+
 export interface CADStoreState {
   documentId: string | null;
   documentName: string;
@@ -10,6 +20,7 @@ export interface CADStoreState {
   activeTool: ToolType;
   isSketchMode: boolean;
   dirty: boolean;
+  units: Unit;
 }
 
 export interface CADStoreActions {
@@ -27,6 +38,7 @@ export interface CADStoreActions {
   duplicateFeature: (id: string) => void;
   undo: () => void;
   redo: () => void;
+  setUnits: (units: Unit) => void;
 }
 
 export interface ViewStoreState {

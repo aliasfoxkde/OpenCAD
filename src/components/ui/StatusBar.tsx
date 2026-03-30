@@ -2,6 +2,10 @@ import { useCADStore, useCanUndoRedo } from '../../stores/cad-store';
 import { useViewStore } from '../../stores/view-store';
 import { useUIStore } from '../../stores/ui-store';
 import { getFeatureDefinition } from '../../cad/features';
+import type { Unit } from '../../types/store';
+import { UNIT_CONVERSION } from '../../types/store';
+
+const UNIT_CYCLE: Unit[] = ['mm', 'cm', 'm', 'in', 'ft'];
 
 /** Pretty-print active tool name */
 function formatToolName(tool: string): string {
@@ -50,6 +54,8 @@ export function StatusBar() {
   const features = useCADStore((s) => s.features);
   const selectedIds = useCADStore((s) => s.selectedIds);
   const dirty = useCADStore((s) => s.dirty);
+  const units = useCADStore((s) => s.units);
+  const setUnits = useCADStore((s) => s.setUnits);
   const { canUndo, canRedo } = useCanUndoRedo();
   const cameraPreset = useViewStore((s) => s.cameraPreset);
   const displayMode = useViewStore((s) => s.displayMode);
@@ -95,7 +101,17 @@ export function StatusBar() {
       {canUndo && <span style={styles.dimItem}>Ctrl+Z</span>}
       {canRedo && <span style={styles.dimItem}>Ctrl+Shift+Z</span>}
       {cameraPreset && <span style={styles.indicator}>{cameraPreset}</span>}
-      <span style={styles.item}>mm</span>
+      <span
+        style={styles.unitsBtn}
+        onClick={() => {
+          const idx = UNIT_CYCLE.indexOf(units);
+          const next = UNIT_CYCLE[(idx + 1) % UNIT_CYCLE.length]!;
+          setUnits(next);
+        }}
+        title={`Click to change units (1 ${units} = ${UNIT_CONVERSION[units]} mm)`}
+      >
+        {units}
+      </span>
       <span style={styles.separator}>|</span>
       <span style={styles.version}>OpenCAD v0.1.0</span>
     </div>
@@ -157,6 +173,15 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#22d3ee',
     fontSize: 10,
     marginRight: 8,
+  },
+  unitsBtn: {
+    color: '#94a3b8',
+    fontSize: 11,
+    cursor: 'pointer',
+    background: 'transparent',
+    border: '1px solid transparent',
+    borderRadius: 2,
+    padding: '0 3px',
   },
   dirtyDot: {
     color: '#f59e0b',
