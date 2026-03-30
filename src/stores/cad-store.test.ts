@@ -110,12 +110,22 @@ describe('CADStore', () => {
 
   it('should reorder features', () => {
     const f1: FeatureNode = {
-      id: 'f1', type: 'extrude', name: 'First',
-      parameters: {}, dependencies: [], children: [], suppressed: false,
+      id: 'f1',
+      type: 'extrude',
+      name: 'First',
+      parameters: {},
+      dependencies: [],
+      children: [],
+      suppressed: false,
     };
     const f2: FeatureNode = {
-      id: 'f2', type: 'revolve', name: 'Second',
-      parameters: {}, dependencies: [], children: [], suppressed: false,
+      id: 'f2',
+      type: 'revolve',
+      name: 'Second',
+      parameters: {},
+      dependencies: [],
+      children: [],
+      suppressed: false,
     };
 
     useCADStore.getState().addFeature(f1);
@@ -145,12 +155,22 @@ describe('CADStore', () => {
 
   it('should remove selected feature from selection on delete', () => {
     const f1: FeatureNode = {
-      id: 'del-1', type: 'extrude', name: 'Box1',
-      parameters: {}, dependencies: [], children: [], suppressed: false,
+      id: 'del-1',
+      type: 'extrude',
+      name: 'Box1',
+      parameters: {},
+      dependencies: [],
+      children: [],
+      suppressed: false,
     };
     const f2: FeatureNode = {
-      id: 'del-2', type: 'sphere', name: 'Sphere1',
-      parameters: {}, dependencies: [], children: [], suppressed: false,
+      id: 'del-2',
+      type: 'sphere',
+      name: 'Sphere1',
+      parameters: {},
+      dependencies: [],
+      children: [],
+      suppressed: false,
     };
 
     useCADStore.getState().addFeatureAndSelect(f1);
@@ -165,8 +185,13 @@ describe('CADStore', () => {
 
   it('should suppress and unsuppress features', () => {
     const feature: FeatureNode = {
-      id: 'test-supp', type: 'extrude', name: 'Box',
-      parameters: {}, dependencies: [], children: [], suppressed: false,
+      id: 'test-supp',
+      type: 'extrude',
+      name: 'Box',
+      parameters: {},
+      dependencies: [],
+      children: [],
+      suppressed: false,
     };
 
     useCADStore.getState().addFeature(feature);
@@ -179,8 +204,13 @@ describe('CADStore', () => {
 
   it('should undo feature addition', () => {
     const feature: FeatureNode = {
-      id: 'test-undo', type: 'extrude', name: 'Box',
-      parameters: {}, dependencies: [], children: [], suppressed: false,
+      id: 'test-undo',
+      type: 'extrude',
+      name: 'Box',
+      parameters: {},
+      dependencies: [],
+      children: [],
+      suppressed: false,
     };
 
     useCADStore.getState().addFeature(feature);
@@ -192,8 +222,13 @@ describe('CADStore', () => {
 
   it('should redo after undo', () => {
     const feature: FeatureNode = {
-      id: 'test-redo', type: 'extrude', name: 'Box',
-      parameters: {}, dependencies: [], children: [], suppressed: false,
+      id: 'test-redo',
+      type: 'extrude',
+      name: 'Box',
+      parameters: {},
+      dependencies: [],
+      children: [],
+      suppressed: false,
     };
 
     useCADStore.getState().addFeature(feature);
@@ -207,8 +242,13 @@ describe('CADStore', () => {
 
   it('should undo feature removal', () => {
     const feature: FeatureNode = {
-      id: 'test-undo-rm', type: 'extrude', name: 'Box',
-      parameters: {}, dependencies: [], children: [], suppressed: false,
+      id: 'test-undo-rm',
+      type: 'extrude',
+      name: 'Box',
+      parameters: {},
+      dependencies: [],
+      children: [],
+      suppressed: false,
     };
 
     useCADStore.getState().addFeature(feature);
@@ -222,8 +262,13 @@ describe('CADStore', () => {
 
   it('should undo feature update', () => {
     const feature: FeatureNode = {
-      id: 'test-undo-upd', type: 'extrude', name: 'Box',
-      parameters: { width: 1 }, dependencies: [], children: [], suppressed: false,
+      id: 'test-undo-upd',
+      type: 'extrude',
+      name: 'Box',
+      parameters: { width: 1 },
+      dependencies: [],
+      children: [],
+      suppressed: false,
     };
 
     useCADStore.getState().addFeature(feature);
@@ -238,8 +283,13 @@ describe('CADStore', () => {
 
   it('should restore selection on undo of feature removal', () => {
     const feature: FeatureNode = {
-      id: 'test-undo-sel', type: 'extrude', name: 'Box',
-      parameters: {}, dependencies: [], children: [], suppressed: false,
+      id: 'test-undo-sel',
+      type: 'extrude',
+      name: 'Box',
+      parameters: {},
+      dependencies: [],
+      children: [],
+      suppressed: false,
     };
 
     useCADStore.getState().addFeatureAndSelect(feature);
@@ -256,8 +306,13 @@ describe('CADStore', () => {
 
   it('should restore selection on undo of addFeatureAndSelect', () => {
     const feature: FeatureNode = {
-      id: 'test-undo-add-sel', type: 'extrude', name: 'Box',
-      parameters: {}, dependencies: [], children: [], suppressed: false,
+      id: 'test-undo-add-sel',
+      type: 'extrude',
+      name: 'Box',
+      parameters: {},
+      dependencies: [],
+      children: [],
+      suppressed: false,
     };
 
     useCADStore.getState().addFeatureAndSelect(feature);
@@ -270,9 +325,13 @@ describe('CADStore', () => {
 
   it('should duplicate a feature', () => {
     const feature: FeatureNode = {
-      id: 'test-dup', type: 'extrude', name: 'Box',
+      id: 'test-dup',
+      type: 'extrude',
+      name: 'Box',
       parameters: { width: 2, originX: 0 },
-      dependencies: [], children: [], suppressed: false,
+      dependencies: [],
+      children: [],
+      suppressed: false,
     };
 
     useCADStore.getState().addFeature(feature);
@@ -290,8 +349,13 @@ describe('CADStore', () => {
 
   it('should not duplicate nonexistent feature', () => {
     const feature: FeatureNode = {
-      id: 'test-dup-ne', type: 'extrude', name: 'Box',
-      parameters: {}, dependencies: [], children: [], suppressed: false,
+      id: 'test-dup-ne',
+      type: 'extrude',
+      name: 'Box',
+      parameters: {},
+      dependencies: [],
+      children: [],
+      suppressed: false,
     };
 
     useCADStore.getState().addFeature(feature);
@@ -303,13 +367,22 @@ describe('CADStore', () => {
   describe('assembly hierarchy', () => {
     it('should move feature to assembly', () => {
       const asm: FeatureNode = {
-        id: 'asm-1', type: 'assembly', name: 'Assembly',
+        id: 'asm-1',
+        type: 'assembly',
+        name: 'Assembly',
         parameters: { positionX: 5 },
-        dependencies: [], children: [], suppressed: false,
+        dependencies: [],
+        children: [],
+        suppressed: false,
       };
       const box: FeatureNode = {
-        id: 'box-1', type: 'extrude', name: 'Box',
-        parameters: { width: 2 }, dependencies: [], children: [], suppressed: false,
+        id: 'box-1',
+        type: 'extrude',
+        name: 'Box',
+        parameters: { width: 2 },
+        dependencies: [],
+        children: [],
+        suppressed: false,
       };
 
       useCADStore.getState().addFeature(asm);
@@ -322,12 +395,22 @@ describe('CADStore', () => {
 
     it('should move feature to root (null parentId)', () => {
       const asm: FeatureNode = {
-        id: 'asm-2', type: 'assembly', name: 'Assembly',
-        parameters: {}, dependencies: [], children: [], suppressed: false,
+        id: 'asm-2',
+        type: 'assembly',
+        name: 'Assembly',
+        parameters: {},
+        dependencies: [],
+        children: [],
+        suppressed: false,
       };
       const box: FeatureNode = {
-        id: 'box-2', type: 'extrude', name: 'Box',
-        parameters: {}, dependencies: [], children: [], suppressed: false,
+        id: 'box-2',
+        type: 'extrude',
+        name: 'Box',
+        parameters: {},
+        dependencies: [],
+        children: [],
+        suppressed: false,
       };
 
       useCADStore.getState().addFeature(asm);
@@ -340,12 +423,22 @@ describe('CADStore', () => {
 
     it('should undo move to assembly', () => {
       const asm: FeatureNode = {
-        id: 'asm-3', type: 'assembly', name: 'Assembly',
-        parameters: {}, dependencies: [], children: [], suppressed: false,
+        id: 'asm-3',
+        type: 'assembly',
+        name: 'Assembly',
+        parameters: {},
+        dependencies: [],
+        children: [],
+        suppressed: false,
       };
       const box: FeatureNode = {
-        id: 'box-3', type: 'extrude', name: 'Box',
-        parameters: {}, dependencies: [], children: [], suppressed: false,
+        id: 'box-3',
+        type: 'extrude',
+        name: 'Box',
+        parameters: {},
+        dependencies: [],
+        children: [],
+        suppressed: false,
       };
 
       useCADStore.getState().addFeature(asm);
@@ -359,16 +452,33 @@ describe('CADStore', () => {
 
     it('should remove assembly and all descendants', () => {
       const asm: FeatureNode = {
-        id: 'asm-4', type: 'assembly', name: 'Assembly',
-        parameters: {}, dependencies: [], children: [], suppressed: false,
+        id: 'asm-4',
+        type: 'assembly',
+        name: 'Assembly',
+        parameters: {},
+        dependencies: [],
+        children: [],
+        suppressed: false,
       };
       const box: FeatureNode = {
-        id: 'box-4a', type: 'extrude', name: 'Box A',
-        parameters: {}, dependencies: [], children: [], suppressed: false, parentId: 'asm-4',
+        id: 'box-4a',
+        type: 'extrude',
+        name: 'Box A',
+        parameters: {},
+        dependencies: [],
+        children: [],
+        suppressed: false,
+        parentId: 'asm-4',
       };
       const box2: FeatureNode = {
-        id: 'box-4b', type: 'extrude', name: 'Box B',
-        parameters: {}, dependencies: [], children: [], suppressed: false, parentId: 'asm-4',
+        id: 'box-4b',
+        type: 'extrude',
+        name: 'Box B',
+        parameters: {},
+        dependencies: [],
+        children: [],
+        suppressed: false,
+        parentId: 'asm-4',
       };
 
       useCADStore.getState().addFeature(asm);
@@ -382,12 +492,23 @@ describe('CADStore', () => {
 
     it('should duplicate feature inside assembly (same parentId)', () => {
       const asm: FeatureNode = {
-        id: 'asm-5', type: 'assembly', name: 'Assembly',
-        parameters: {}, dependencies: [], children: [], suppressed: false,
+        id: 'asm-5',
+        type: 'assembly',
+        name: 'Assembly',
+        parameters: {},
+        dependencies: [],
+        children: [],
+        suppressed: false,
       };
       const box: FeatureNode = {
-        id: 'box-5', type: 'extrude', name: 'Box',
-        parameters: { width: 2 }, dependencies: [], children: [], suppressed: false, parentId: 'asm-5',
+        id: 'box-5',
+        type: 'extrude',
+        name: 'Box',
+        parameters: { width: 2 },
+        dependencies: [],
+        children: [],
+        suppressed: false,
+        parentId: 'asm-5',
       };
 
       useCADStore.getState().addFeature(asm);
@@ -403,12 +524,23 @@ describe('CADStore', () => {
 
     it('should undo removal of assembly with descendants', () => {
       const asm: FeatureNode = {
-        id: 'asm-6', type: 'assembly', name: 'Assembly',
-        parameters: {}, dependencies: [], children: [], suppressed: false,
+        id: 'asm-6',
+        type: 'assembly',
+        name: 'Assembly',
+        parameters: {},
+        dependencies: [],
+        children: [],
+        suppressed: false,
       };
       const box: FeatureNode = {
-        id: 'box-6', type: 'extrude', name: 'Box',
-        parameters: {}, dependencies: [], children: [], suppressed: false, parentId: 'asm-6',
+        id: 'box-6',
+        type: 'extrude',
+        name: 'Box',
+        parameters: {},
+        dependencies: [],
+        children: [],
+        suppressed: false,
+        parentId: 'asm-6',
       };
 
       useCADStore.getState().addFeature(asm);

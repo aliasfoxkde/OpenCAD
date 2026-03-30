@@ -25,7 +25,8 @@ export type FeatureType =
   | 'thread'
   | 'rib'
   | 'draft'
-  | 'assembly';
+  | 'assembly'
+  | 'mesh_import';
 
 /** A single node in the feature tree */
 export interface FeatureNode {
@@ -77,14 +78,7 @@ export interface SketchConstraint {
 }
 
 /** Sketch element types */
-export type SketchElementType =
-  | 'line'
-  | 'arc'
-  | 'circle'
-  | 'ellipse'
-  | 'spline'
-  | 'point'
-  | 'rectangle';
+export type SketchElementType = 'line' | 'arc' | 'circle' | 'ellipse' | 'spline' | 'point' | 'rectangle';
 
 /** A 2D sketch element */
 export interface SketchElement {

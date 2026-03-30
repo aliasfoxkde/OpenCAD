@@ -99,9 +99,7 @@ export function CommandPalette() {
         </div>
 
         <div style={styles.list} ref={listRef}>
-          {results.length === 0 && (
-            <div style={styles.empty}>No commands found</div>
-          )}
+          {results.length === 0 && <div style={styles.empty}>No commands found</div>}
           {grouped.map(([category, cmds]) => (
             <div key={category}>
               <div style={styles.categoryHeader}>{category.toUpperCase()}</div>
@@ -118,9 +116,7 @@ export function CommandPalette() {
                     onMouseEnter={() => setSelectedIndex(globalIdx)}
                   >
                     <span style={styles.itemLabel}>{cmd.label}</span>
-                    {cmd.shortcut && (
-                      <span style={styles.itemShortcut}>{cmd.shortcut}</span>
-                    )}
+                    {cmd.shortcut && <span style={styles.itemShortcut}>{cmd.shortcut}</span>}
                   </div>
                 );
               })}

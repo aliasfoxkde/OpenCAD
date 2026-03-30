@@ -134,10 +134,7 @@ describe('feature-api', () => {
   describe('getFeatureSummaries', () => {
     it('should return summaries for all features', () => {
       useCADStore.setState({
-        features: [
-          makeFeature('a', 'Box 1'),
-          makeFeature('b', 'Sphere 1'),
-        ],
+        features: [makeFeature('a', 'Box 1'), makeFeature('b', 'Sphere 1')],
       });
       const summaries = getFeatureSummaries();
       expect(summaries).toHaveLength(2);

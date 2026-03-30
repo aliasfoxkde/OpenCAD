@@ -111,7 +111,13 @@ export function ToastContainer() {
           >
             <span style={{ ...styles.icon, color: colors.border }}>{colors.icon}</span>
             <span style={styles.message}>{toast.message}</span>
-            <button style={styles.closeBtn} onClick={(e) => { e.stopPropagation(); removeToast(toast.id); }}>
+            <button
+              style={styles.closeBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                removeToast(toast.id);
+              }}
+            >
               &times;
             </button>
           </div>

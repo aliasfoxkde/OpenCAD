@@ -7,10 +7,7 @@ import { useRef, useEffect, useMemo } from 'react';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useViewStore } from '../../stores/view-store';
-import {
-  getAnnotationLabel,
-  getAnnotationMidpoint,
-} from '../../lib/annotations';
+import { getAnnotationLabel, getAnnotationMidpoint } from '../../lib/annotations';
 import type { DimensionAnnotation } from '../../lib/annotations';
 
 /** R3F component that renders all annotations */
@@ -21,32 +18,18 @@ export function DimensionAnnotations() {
   return (
     <>
       {annotations.map((ann) => (
-        <AnnotationItem
-          key={ann.id}
-          annotation={ann}
-          onRemove={() => removeAnnotation(ann.id)}
-        />
+        <AnnotationItem key={ann.id} annotation={ann} onRemove={() => removeAnnotation(ann.id)} />
       ))}
     </>
   );
 }
 
-function AnnotationItem({
-  annotation,
-  onRemove,
-}: {
-  annotation: DimensionAnnotation;
-  onRemove: () => void;
-}) {
+function AnnotationItem({ annotation, onRemove }: { annotation: DimensionAnnotation; onRemove: () => void }) {
   const label = getAnnotationLabel(annotation);
   const mid = useMemo(() => getAnnotationMidpoint(annotation), [annotation]);
   const groupRef = useRef<THREE.Group>(null);
 
-  const color = annotation.type === 'distance'
-    ? '#22d3ee'
-    : annotation.type === 'radius'
-      ? '#a78bfa'
-      : '#f472b6';
+  const color = annotation.type === 'distance' ? '#22d3ee' : annotation.type === 'radius' ? '#a78bfa' : '#f472b6';
 
   // Build dashed leader line
   useEffect(() => {
@@ -61,10 +44,7 @@ function AnnotationItem({
       (old.material as THREE.Material).dispose();
     }
 
-    const points = [
-      new THREE.Vector3(...annotation.p1),
-      new THREE.Vector3(...annotation.p2),
-    ];
+    const points = [new THREE.Vector3(...annotation.p1), new THREE.Vector3(...annotation.p2)];
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     const material = new THREE.LineDashedMaterial({
       color,

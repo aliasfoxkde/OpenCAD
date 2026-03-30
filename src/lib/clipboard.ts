@@ -55,10 +55,11 @@ export function pasteFeatures(): FeatureNode[] {
     // Remap comma-separated bodyRefs
     const bodyRefs = f.parameters.bodyRefs as string | undefined;
     if (bodyRefs) {
-      const refs = bodyRefs.split(',').map((s) => s.trim()).filter(Boolean);
-      const remapped = refs
-        .filter((refId) => idMap.has(refId))
-        .map((refId) => idMap.get(refId)!);
+      const refs = bodyRefs
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const remapped = refs.filter((refId) => idMap.has(refId)).map((refId) => idMap.get(refId)!);
       f.parameters.bodyRefs = remapped.join(',');
     }
   }

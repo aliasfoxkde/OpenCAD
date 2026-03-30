@@ -36,9 +36,7 @@ describe('useFeatureErrors (via FeatureEngine)', () => {
 
   it('detects negative dimensions', () => {
     const engine = new FeatureEngine();
-    const features = [
-      makeFeature('a', 'extrude', { width: -1, height: 2, depth: 2 }),
-    ];
+    const features = [makeFeature('a', 'extrude', { width: -1, height: 2, depth: 2 })];
 
     const { results } = engine.rebuildAll(features);
     const errors = new Map<string, string>();
@@ -52,9 +50,7 @@ describe('useFeatureErrors (via FeatureEngine)', () => {
 
   it('detects zero dimensions', () => {
     const engine = new FeatureEngine();
-    const features = [
-      makeFeature('a', 'extrude', { width: 0, height: 2, depth: 2 }),
-    ];
+    const features = [makeFeature('a', 'extrude', { width: 0, height: 2, depth: 2 })];
 
     const { results } = engine.rebuildAll(features);
     const errors = new Map<string, string>();
@@ -110,9 +106,7 @@ describe('useFeatureErrors (via FeatureEngine)', () => {
 
   it('detects unknown feature type', () => {
     const engine = new FeatureEngine();
-    const features = [
-      makeFeature('a', 'unknown_type', {}),
-    ];
+    const features = [makeFeature('a', 'unknown_type', {})];
 
     const { results } = engine.rebuildAll(features);
     const errors = new Map<string, string>();
@@ -145,9 +139,7 @@ describe('useFeatureErrors (via FeatureEngine)', () => {
 
   it('skips suppressed features', () => {
     const engine = new FeatureEngine();
-    const features = [
-      makeFeature('a', 'extrude', { width: -1, height: 2, depth: 2 }),
-    ];
+    const features = [makeFeature('a', 'extrude', { width: -1, height: 2, depth: 2 })];
     features[0]!.suppressed = true;
 
     const { results } = engine.rebuildAll(features);
@@ -201,9 +193,7 @@ describe('useFeatureErrors (via FeatureEngine)', () => {
 
   it('computes bounds for valid features', () => {
     const engine = new FeatureEngine();
-    const features = [
-      makeFeature('a', 'extrude', { width: 2, height: 4, depth: 6 }),
-    ];
+    const features = [makeFeature('a', 'extrude', { width: 2, height: 4, depth: 6 })];
 
     const { results } = engine.rebuildAll(features);
     const result = results.get('a')!;

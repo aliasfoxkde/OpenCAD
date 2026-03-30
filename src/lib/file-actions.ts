@@ -104,28 +104,41 @@ export async function handleImportFile(): Promise<void> {
     const { openFile } = await import('@/cad/io/project');
     const { data, name } = await openFile('.stl,.obj');
 
+    let vertices: number[] = [];
+    let indices: number[] = [];
+
     if (name.endsWith('.stl')) {
       const buffer = data instanceof ArrayBuffer ? data : new TextEncoder().encode(data).buffer;
       const { importSTL } = await import('@/cad/io/stl-importer');
-      importSTL(buffer);
+      const result = importSTL(buffer);
+      vertices = Array.from(result.mesh.vertices);
+      indices = Array.from(result.mesh.indices);
     } else {
       const text = typeof data === 'string' ? data : new TextDecoder().decode(data);
       const { importOBJ } = await import('@/cad/io/obj-importer');
-      importOBJ(text);
+      const result = importOBJ(text);
+      vertices = Array.from(result.mesh.vertices);
+      indices = Array.from(result.mesh.indices);
     }
 
-    // Add imported geometry as a feature
+    // Add imported geometry as a mesh_import feature with stored vertex/index data
     const feature = {
       id: nanoid(),
-      type: 'extrude' as const,
+      type: 'mesh_import' as const,
       name: name.replace(/\.[^.]+$/, ''),
-      parameters: {},
+      parameters: {
+        _vertices: vertices,
+        _indices: indices,
+        vertexCount: vertices.length / 3,
+        faceCount: indices.length / 3,
+        sourceFile: name,
+      },
       dependencies: [] as string[],
       children: [] as string[],
       suppressed: false,
     };
     useCADStore.getState().addFeatureAndSelect(feature);
-    useToast().addToast(`Imported ${name}`, 'success');
+    useToast().addToast(`Imported ${name} (${(indices.length / 3).toFixed(0)} faces)`, 'success');
   } catch {
     // User cancelled or import failed
   }

@@ -70,18 +70,27 @@ export function exportGLB(meshes: MeshData[], name = 'OpenCAD'): ArrayBuffer {
       byteLength: vertexByteLength,
       target: 34962, // ARRAY_BUFFER
     });
-    binaryChunks.push(mesh.vertices.buffer.slice(mesh.vertices.byteOffset, mesh.vertices.byteOffset + vertexByteLength) as ArrayBuffer);
+    binaryChunks.push(
+      mesh.vertices.buffer.slice(mesh.vertices.byteOffset, mesh.vertices.byteOffset + vertexByteLength) as ArrayBuffer,
+    );
 
     // Compute min/max for positions
-    let minX = Infinity, minY = Infinity, minZ = Infinity;
-    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    let minX = Infinity,
+      minY = Infinity,
+      minZ = Infinity;
+    let maxX = -Infinity,
+      maxY = -Infinity,
+      maxZ = -Infinity;
     for (let i = 0; i < vertexCount; i++) {
       const x = mesh.vertices[i * 3]!;
       const y = mesh.vertices[i * 3 + 1]!;
       const z = mesh.vertices[i * 3 + 2]!;
-      if (x < minX) minX = x; if (x > maxX) maxX = x;
-      if (y < minY) minY = y; if (y > maxY) maxY = y;
-      if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+      if (z < minZ) minZ = z;
+      if (z > maxZ) maxZ = z;
     }
 
     // Position accessor
@@ -113,7 +122,9 @@ export function exportGLB(meshes: MeshData[], name = 'OpenCAD'): ArrayBuffer {
       byteLength: normalByteLength,
       target: 34962,
     });
-    binaryChunks.push(mesh.normals.buffer.slice(mesh.normals.byteOffset, mesh.normals.byteOffset + normalByteLength) as ArrayBuffer);
+    binaryChunks.push(
+      mesh.normals.buffer.slice(mesh.normals.byteOffset, mesh.normals.byteOffset + normalByteLength) as ArrayBuffer,
+    );
 
     // Normal accessor
     const normalAccessorIndex = accessors.length;
@@ -143,7 +154,9 @@ export function exportGLB(meshes: MeshData[], name = 'OpenCAD'): ArrayBuffer {
         byteLength: indexByteLength,
         target: 34963, // ELEMENT_ARRAY_BUFFER
       });
-      binaryChunks.push(mesh.indices.buffer.slice(mesh.indices.byteOffset, mesh.indices.byteOffset + indexByteLength) as ArrayBuffer);
+      binaryChunks.push(
+        mesh.indices.buffer.slice(mesh.indices.byteOffset, mesh.indices.byteOffset + indexByteLength) as ArrayBuffer,
+      );
 
       indicesAccessorIndex = accessors.length;
       accessors.push({
@@ -164,13 +177,15 @@ export function exportGLB(meshes: MeshData[], name = 'OpenCAD'): ArrayBuffer {
 
     gltfMeshes.push({
       name: mesh.featureId || `mesh_${mi}`,
-      primitives: [{
-        attributes: {
-          POSITION: positionAccessorIndex,
-          NORMAL: normalAccessorIndex,
+      primitives: [
+        {
+          attributes: {
+            POSITION: positionAccessorIndex,
+            NORMAL: normalAccessorIndex,
+          },
+          indices: indicesAccessorIndex,
         },
-        indices: indicesAccessorIndex,
-      }],
+      ],
     });
   }
 
@@ -220,13 +235,18 @@ export function exportGLB(meshes: MeshData[], name = 'OpenCAD'): ArrayBuffer {
 
   // JSON chunk
   let off = 12;
-  view.setUint32(off, jsonChunkLength, true); off += 4;
-  view.setUint32(off, JSON_CHUNK_TYPE, true); off += 4;
-  bytes.set(jsonPadded, off); off += jsonChunkLength;
+  view.setUint32(off, jsonChunkLength, true);
+  off += 4;
+  view.setUint32(off, JSON_CHUNK_TYPE, true);
+  off += 4;
+  bytes.set(jsonPadded, off);
+  off += jsonChunkLength;
 
   // BIN chunk
-  view.setUint32(off, binChunkLength, true); off += 4;
-  view.setUint32(off, BIN_CHUNK_TYPE, true); off += 4;
+  view.setUint32(off, binChunkLength, true);
+  off += 4;
+  view.setUint32(off, BIN_CHUNK_TYPE, true);
+  off += 4;
   bytes.set(binData, off);
 
   return glb;

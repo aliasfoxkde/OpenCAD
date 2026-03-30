@@ -39,15 +39,21 @@ function parseBinarySTL(view: DataView): MeshData {
 
   for (let t = 0; t < triangleCount; t++) {
     // Normal
-    const nx = view.getFloat32(offset, true); offset += 4;
-    const ny = view.getFloat32(offset, true); offset += 4;
-    const nz = view.getFloat32(offset, true); offset += 4;
+    const nx = view.getFloat32(offset, true);
+    offset += 4;
+    const ny = view.getFloat32(offset, true);
+    offset += 4;
+    const nz = view.getFloat32(offset, true);
+    offset += 4;
 
     // 3 vertices
     for (let v = 0; v < 3; v++) {
-      const x = view.getFloat32(offset, true); offset += 4;
-      const y = view.getFloat32(offset, true); offset += 4;
-      const z = view.getFloat32(offset, true); offset += 4;
+      const x = view.getFloat32(offset, true);
+      offset += 4;
+      const y = view.getFloat32(offset, true);
+      offset += 4;
+      const z = view.getFloat32(offset, true);
+      offset += 4;
 
       normals.push(nx, ny, nz);
       vertices.push(x, y, z);
@@ -90,11 +96,7 @@ function parseASCII_STL(text: string): MeshData {
 
     const vertexMatch = trimmed.match(/^vertex\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)/);
     if (vertexMatch) {
-      vertices.push(
-        parseFloat(vertexMatch[1]!),
-        parseFloat(vertexMatch[2]!),
-        parseFloat(vertexMatch[3]!),
-      );
+      vertices.push(parseFloat(vertexMatch[1]!), parseFloat(vertexMatch[2]!), parseFloat(vertexMatch[3]!));
       indices.push(vertexIndex++);
     }
   }

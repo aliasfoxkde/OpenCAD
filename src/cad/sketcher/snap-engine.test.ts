@@ -25,7 +25,8 @@ describe('SnapEngine', () => {
   describe('getSnapPoints', () => {
     it('should return endpoints and midpoint for a line', () => {
       const line: SketchElement = {
-        id: 'l1', type: 'line',
+        id: 'l1',
+        type: 'line',
         geometry: { x1: 0, y1: 0, x2: 10, y2: 0 },
         construction: false,
       };
@@ -38,7 +39,8 @@ describe('SnapEngine', () => {
 
     it('should return center and cardinal points for a circle', () => {
       const circle: SketchElement = {
-        id: 'c1', type: 'circle',
+        id: 'c1',
+        type: 'circle',
         geometry: { cx: 5, cy: 5, r: 3 },
         construction: false,
       };
@@ -50,7 +52,8 @@ describe('SnapEngine', () => {
 
     it('should return corners and midpoints for a rectangle', () => {
       const rect: SketchElement = {
-        id: 'r1', type: 'rectangle',
+        id: 'r1',
+        type: 'rectangle',
         geometry: { x: 0, y: 0, width: 10, height: 5 },
         construction: false,
       };
@@ -62,7 +65,8 @@ describe('SnapEngine', () => {
 
     it('should return endpoint for a point element', () => {
       const point: SketchElement = {
-        id: 'p1', type: 'point',
+        id: 'p1',
+        type: 'point',
         geometry: { x: 3, y: 7 },
         construction: false,
       };
@@ -73,7 +77,8 @@ describe('SnapEngine', () => {
 
     it('should return endpoints for an arc', () => {
       const arc: SketchElement = {
-        id: 'a1', type: 'arc',
+        id: 'a1',
+        type: 'arc',
         geometry: { x1: 0, y1: 0, x2: 5, y2: 5, x3: 10, y3: 0 },
         construction: false,
       };

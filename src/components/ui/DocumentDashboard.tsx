@@ -101,7 +101,13 @@ export function DocumentDashboard({ onOpen }: DocumentDashboardProps) {
           <button style={styles.createBtn} onClick={handleCreate}>
             Create
           </button>
-          <button style={styles.cancelBtn} onClick={() => { setShowNewForm(false); setNewName(''); }}>
+          <button
+            style={styles.cancelBtn}
+            onClick={() => {
+              setShowNewForm(false);
+              setNewName('');
+            }}
+          >
             Cancel
           </button>
         </div>
@@ -112,9 +118,7 @@ export function DocumentDashboard({ onOpen }: DocumentDashboardProps) {
       {loading ? (
         <div style={styles.empty}>Loading...</div>
       ) : docs.length === 0 ? (
-        <div style={styles.empty}>
-          No documents yet. Create one to get started.
-        </div>
+        <div style={styles.empty}>No documents yet. Create one to get started.</div>
       ) : (
         <div style={styles.list}>
           {docs.map((doc) => (

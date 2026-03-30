@@ -15,9 +15,7 @@ import type { StoredDocument, DocumentMeta } from '@/cad/io/db';
 import type { APIResponse, CreateDocumentOptions, DocumentInfo } from './types';
 
 /** Create a new document */
-export async function createDocument(
-  options: CreateDocumentOptions = {},
-): Promise<APIResponse<StoredDocument>> {
+export async function createDocument(options: CreateDocumentOptions = {}): Promise<APIResponse<StoredDocument>> {
   try {
     const doc = createNewDocument(options.name, options.units);
     await saveDocument(doc);
@@ -59,9 +57,7 @@ export async function openDocument(id: string): Promise<APIResponse<StoredDocume
 }
 
 /** Save current document state */
-export async function saveCurrentDocument(
-  doc: StoredDocument,
-): Promise<APIResponse<void>> {
+export async function saveCurrentDocument(doc: StoredDocument): Promise<APIResponse<void>> {
   try {
     await saveDocument(doc);
     return { success: true };

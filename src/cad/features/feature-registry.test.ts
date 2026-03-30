@@ -82,9 +82,7 @@ describe('Feature Registry', () => {
       icon: 'T',
       category: 'features',
       description: 'A test feature',
-      parameters: [
-        { name: 'value', label: 'Value', type: 'number', default: 10, min: 0 },
-      ],
+      parameters: [{ name: 'value', label: 'Value', type: 'number', default: 10, min: 0 }],
     });
 
     const def = getFeatureDefinition('custom_test');
@@ -113,5 +111,24 @@ describe('Feature Registry', () => {
     expect(widthParam?.min).toBe(0.01);
     expect(widthParam?.step).toBe(0.1);
     expect(widthParam?.unit).toBe('mm');
+  });
+
+  it('should have mesh_import feature for imported geometry', () => {
+    const def = getFeatureDefinition('mesh_import');
+    expect(def).toBeDefined();
+    expect(def!.label).toBe('Imported Mesh');
+    expect(def!.category).toBe('primitives');
+    expect(def!.icon).toBe('📦');
+    const params = def!.parameters.map((p) => p.name);
+    expect(params).toContain('vertexCount');
+    expect(params).toContain('faceCount');
+    expect(params).toContain('sourceFile');
+  });
+
+  it('should have assembly feature', () => {
+    const def = getFeatureDefinition('assembly');
+    expect(def).toBeDefined();
+    expect(def!.label).toBe('Assembly');
+    expect(def!.category).toBe('assembly');
   });
 });

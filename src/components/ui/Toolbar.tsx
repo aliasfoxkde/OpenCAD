@@ -39,8 +39,20 @@ const toolGroups: ToolbarItem[] = [
   { kind: 'tool', id: 'boolean_intersect', label: 'Intersect', shortcut: '', tooltip: 'Intersect — keep overlap' },
   { kind: 'separator', label: 'Modify' },
   { kind: 'tool', id: 'shell', label: 'Shell', shortcut: '', tooltip: 'Shell — hollow out a body' },
-  { kind: 'tool', id: 'pattern_linear', label: 'Lin Pattern', shortcut: '', tooltip: 'Linear pattern — repeat along axis' },
-  { kind: 'tool', id: 'pattern_circular', label: 'Circ Pattern', shortcut: '', tooltip: 'Circular pattern — repeat around axis' },
+  {
+    kind: 'tool',
+    id: 'pattern_linear',
+    label: 'Lin Pattern',
+    shortcut: '',
+    tooltip: 'Linear pattern — repeat along axis',
+  },
+  {
+    kind: 'tool',
+    id: 'pattern_circular',
+    label: 'Circ Pattern',
+    shortcut: '',
+    tooltip: 'Circular pattern — repeat around axis',
+  },
   { kind: 'tool', id: 'mirror', label: 'Mirror', shortcut: '', tooltip: 'Mirror — reflect across plane' },
   { kind: 'separator', label: 'Inspect' },
   { kind: 'tool', id: 'measure', label: 'Measure', shortcut: 'M', tooltip: 'Measure distance (M)' },
@@ -74,8 +86,13 @@ export function Toolbar() {
       const defaults = getDefaultParameters('assembly');
       const id = nanoid();
       addFeatureAndSelect({
-        id, type: 'assembly' as FeatureType, name: `Assembly ${features.length + 1}`,
-        parameters: defaults, dependencies: [], children: [], suppressed: false,
+        id,
+        type: 'assembly' as FeatureType,
+        name: `Assembly ${features.length + 1}`,
+        parameters: defaults,
+        dependencies: [],
+        children: [],
+        suppressed: false,
       });
       setActiveTool('select');
       return;
@@ -110,8 +127,13 @@ export function Toolbar() {
 
       const dependencies = selectedIds.length > 0 ? [...selectedIds] : [];
       addFeatureAndSelect({
-        id, type: toolId as FeatureType, name,
-        parameters: defaults, dependencies, children: [], suppressed: false,
+        id,
+        type: toolId as FeatureType,
+        name,
+        parameters: defaults,
+        dependencies,
+        children: [],
+        suppressed: false,
       });
       setActiveTool('select');
       return;
@@ -126,8 +148,13 @@ export function Toolbar() {
       }
       const dependencies = selectedId ? [selectedId] : [];
       addFeatureAndSelect({
-        id, type: 'shell' as FeatureType, name: `Shell ${features.length + 1}`,
-        parameters: defaults, dependencies, children: [], suppressed: false,
+        id,
+        type: 'shell' as FeatureType,
+        name: `Shell ${features.length + 1}`,
+        parameters: defaults,
+        dependencies,
+        children: [],
+        suppressed: false,
       });
       setActiveTool('select');
       return;
@@ -149,8 +176,13 @@ export function Toolbar() {
       }
       const dependencies = selectedId ? [selectedId] : [];
       addFeatureAndSelect({
-        id, type: toolId as FeatureType, name,
-        parameters: defaults, dependencies, children: [], suppressed: false,
+        id,
+        type: toolId as FeatureType,
+        name,
+        parameters: defaults,
+        dependencies,
+        children: [],
+        suppressed: false,
       });
       setActiveTool('select');
       return;

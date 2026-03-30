@@ -182,8 +182,24 @@ describe('assembly hierarchy save/load', () => {
       name: 'Legacy Project',
       units: 'mm',
       features: [
-        { id: 'a', type: 'extrude', name: 'Box', parameters: { width: 1 }, dependencies: [], children: [], suppressed: false },
-        { id: 'b', type: 'sphere', name: 'Ball', parameters: { radius: 2 }, dependencies: [], children: [], suppressed: false },
+        {
+          id: 'a',
+          type: 'extrude',
+          name: 'Box',
+          parameters: { width: 1 },
+          dependencies: [],
+          children: [],
+          suppressed: false,
+        },
+        {
+          id: 'b',
+          type: 'sphere',
+          name: 'Ball',
+          parameters: { radius: 2 },
+          dependencies: [],
+          children: [],
+          suppressed: false,
+        },
       ],
       sketches: [],
     });

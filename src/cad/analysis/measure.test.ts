@@ -28,20 +28,34 @@ function createUnitCubeMesh(): import('../../types/cad').MeshData {
   // Unit cube centered at origin
   const hw = 0.5;
   const vertices = new Float32Array([
-    -hw, -hw, -hw, hw, -hw, -hw, hw, hw, -hw, -hw, hw, -hw,
-    -hw, -hw, hw, hw, -hw, hw, hw, hw, hw, -hw, hw, hw,
+    -hw,
+    -hw,
+    -hw,
+    hw,
+    -hw,
+    -hw,
+    hw,
+    hw,
+    -hw,
+    -hw,
+    hw,
+    -hw,
+    -hw,
+    -hw,
+    hw,
+    hw,
+    -hw,
+    hw,
+    hw,
+    hw,
+    hw,
+    -hw,
+    hw,
+    hw,
   ]);
-  const normals = new Float32Array([
-    0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1,
-    0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
-  ]);
+  const normals = new Float32Array([0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1]);
   const indices = new Uint32Array([
-    0, 2, 1, 0, 3, 2,
-    4, 5, 6, 4, 6, 7,
-    0, 1, 5, 0, 5, 4,
-    2, 3, 7, 2, 7, 6,
-    0, 4, 7, 0, 7, 3,
-    1, 2, 6, 1, 6, 5,
+    0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 0, 1, 5, 0, 5, 4, 2, 3, 7, 2, 7, 6, 0, 4, 7, 0, 7, 3, 1, 2, 6, 1, 6, 5,
   ]);
   return { vertices, normals, indices, featureId: 'cube' };
 }
@@ -58,9 +72,7 @@ describe('Measure Tools', () => {
     });
 
     it('should handle negative coordinates', () => {
-      expect(distance3D({ x: -1, y: -1, z: -1 }, { x: 1, y: 1, z: 1 })).toBeCloseTo(
-        Math.sqrt(12), 5,
-      );
+      expect(distance3D({ x: -1, y: -1, z: -1 }, { x: 1, y: 1, z: 1 })).toBeCloseTo(Math.sqrt(12), 5);
     });
   });
 
@@ -184,11 +196,37 @@ describe('Measure Tools', () => {
 
     it('should return dimensions for a 2x3x4 box', () => {
       // Create a 2x3x4 box mesh
-      const w = 2, h = 3, d = 4;
-      const hw = w / 2, hh = h / 2, hd = d / 2;
+      const w = 2,
+        h = 3,
+        d = 4;
+      const hw = w / 2,
+        hh = h / 2,
+        hd = d / 2;
       const vertices = new Float32Array([
-        -hw, -hh, -hd, hw, -hh, -hd, hw, hh, -hd, -hw, hh, -hd,
-        -hw, -hh, hd, hw, -hh, hd, hw, hh, hd, -hw, hh, hd,
+        -hw,
+        -hh,
+        -hd,
+        hw,
+        -hh,
+        -hd,
+        hw,
+        hh,
+        -hd,
+        -hw,
+        hh,
+        -hd,
+        -hw,
+        -hh,
+        hd,
+        hw,
+        -hh,
+        hd,
+        hw,
+        hh,
+        hd,
+        -hw,
+        hh,
+        hd,
       ]);
       const mesh = {
         vertices,
@@ -216,8 +254,10 @@ describe('Measure Tools', () => {
   describe('measureAngle', () => {
     it('should return formatted angle result', () => {
       const result = measureAngle(
-        { x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 },
-        { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 },
+        { x: 0, y: 0, z: 0 },
+        { x: 1, y: 0, z: 0 },
+        { x: 0, y: 0, z: 0 },
+        { x: 0, y: 1, z: 0 },
       );
       expect(result.value).toBeCloseTo(90, 2);
       expect(result.unit).toBe('deg');

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useCADStore } from '../../stores/cad-store';
 import { useFeatureErrors } from '../../hooks/useFeatureErrors';
+import { confirm } from './ConfirmDialog';
 import type { FeatureNode } from '../../types/cad';
 
 export function FeatureTree() {
@@ -18,7 +19,9 @@ export function FeatureTree() {
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [dragOverIsAssembly, setDragOverIsAssembly] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
-    x: number; y: number; featureId: string;
+    x: number;
+    y: number;
+    featureId: string;
   } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -107,60 +110,69 @@ export function FeatureTree() {
     e.dataTransfer.setData('text/plain', featureId);
   }, []);
 
-  const handleDragOver = useCallback((e: React.DragEvent, featureId: string) => {
-    e.preventDefault();
-    const feature = features.find((f) => f.id === featureId);
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverId(featureId);
-    setDragOverIsAssembly(feature?.type === 'assembly');
-  }, [features]);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent, featureId: string) => {
+      e.preventDefault();
+      const feature = features.find((f) => f.id === featureId);
+      e.dataTransfer.dropEffect = 'move';
+      setDragOverId(featureId);
+      setDragOverIsAssembly(feature?.type === 'assembly');
+    },
+    [features],
+  );
 
   const handleDragLeave = useCallback(() => {
     setDragOverId(null);
     setDragOverIsAssembly(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent, targetId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragOverId(null);
-    setDragOverIsAssembly(false);
-    const draggedId = e.dataTransfer.getData('text/plain');
-    if (!draggedId || draggedId === targetId) return;
+  const handleDrop = useCallback(
+    (e: React.DragEvent, targetId: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragOverId(null);
+      setDragOverIsAssembly(false);
+      const draggedId = e.dataTransfer.getData('text/plain');
+      if (!draggedId || draggedId === targetId) return;
 
-    const target = features.find((f) => f.id === targetId);
-    if (!target) return;
+      const target = features.find((f) => f.id === targetId);
+      if (!target) return;
 
-    // Dropping onto an assembly → move feature into assembly
-    if (target.type === 'assembly') {
-      moveFeatureToAssembly(draggedId, targetId);
-      return;
-    }
+      // Dropping onto an assembly → move feature into assembly
+      if (target.type === 'assembly') {
+        moveFeatureToAssembly(draggedId, targetId);
+        return;
+      }
 
-    // Dropping onto a non-assembly → reorder (keep same parentId as target)
-    const targetIndex = features.findIndex((f) => f.id === targetId);
-    if (targetIndex !== -1) {
-      reorderFeature(draggedId, targetIndex);
-    }
-  }, [features, moveFeatureToAssembly, reorderFeature]);
+      // Dropping onto a non-assembly → reorder (keep same parentId as target)
+      const targetIndex = features.findIndex((f) => f.id === targetId);
+      if (targetIndex !== -1) {
+        reorderFeature(draggedId, targetIndex);
+      }
+    },
+    [features, moveFeatureToAssembly, reorderFeature],
+  );
 
   const handleDragEnd = useCallback(() => {
     setDragOverId(null);
     setDragOverIsAssembly(false);
   }, []);
 
-  const handleFeatureClick = useCallback((featureId: string, e: React.MouseEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      const isSelected = selectedIds.includes(featureId);
-      if (isSelected) {
-        select(selectedIds.filter((id) => id !== featureId));
+  const handleFeatureClick = useCallback(
+    (featureId: string, e: React.MouseEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        const isSelected = selectedIds.includes(featureId);
+        if (isSelected) {
+          select(selectedIds.filter((id) => id !== featureId));
+        } else {
+          select([...selectedIds, featureId]);
+        }
       } else {
-        select([...selectedIds, featureId]);
+        select([featureId]);
       }
-    } else {
-      select([featureId]);
-    }
-  }, [selectedIds, select]);
+    },
+    [selectedIds, select],
+  );
 
   const handleContextMenu = useCallback((e: React.MouseEvent, featureId: string) => {
     e.preventDefault();
@@ -178,9 +190,7 @@ export function FeatureTree() {
         <span style={styles.title}>Feature Tree</span>
         <div style={styles.headerRight}>
           <span style={styles.count}>{visibleFeatureCount}</span>
-          {selectedIds.length > 1 && (
-            <span style={styles.selectedCount}>{selectedIds.length} selected</span>
-          )}
+          {selectedIds.length > 1 && <span style={styles.selectedCount}>{selectedIds.length} selected</span>}
         </div>
       </div>
       <div style={styles.searchWrap}>
@@ -192,15 +202,9 @@ export function FeatureTree() {
         />
       </div>
       <div style={styles.list}>
-        {features.length === 0 && (
-          <div style={styles.empty}>
-            No features yet. Use the toolbar to create shapes.
-          </div>
-        )}
+        {features.length === 0 && <div style={styles.empty}>No features yet. Use the toolbar to create shapes.</div>}
         {visibleIds && visibleFeatureCount === 0 && (
-          <div style={styles.empty}>
-            No features match &quot;{searchQuery}&quot;
-          </div>
+          <div style={styles.empty}>No features match &quot;{searchQuery}&quot;</div>
         )}
         {renderTreeItems(features, null, 0, {
           visibleIds,
@@ -221,7 +225,16 @@ export function FeatureTree() {
           onDragEnd: handleDragEnd,
           onContextMenu: handleContextMenu,
           onToggleSuppress: (id) => updateFeature(id, { suppressed: !features.find((f) => f.id === id)!.suppressed }),
-          onDelete: removeFeature,
+          onDelete: async (id: string) => {
+            const feature = features.find((f) => f.id === id);
+            const ok = await confirm({
+              title: 'Delete Feature?',
+              message: `Delete "${feature?.name ?? 'this feature'}"? This cannot be undone.`,
+              confirmLabel: 'Delete',
+              destructive: true,
+            });
+            if (ok) removeFeature(id);
+          },
           setEditName,
           commitRename,
           cancelRename,
@@ -280,9 +293,15 @@ export function FeatureTree() {
           <div style={styles.ctxSeparator} />
           <button
             style={styles.ctxDangerItem}
-            onClick={() => {
-              removeFeature(contextFeature.id);
+            onClick={async () => {
               setContextMenu(null);
+              const ok = await confirm({
+                title: 'Delete Feature?',
+                message: `Delete "${contextFeature.name}"? This cannot be undone.`,
+                confirmLabel: 'Delete',
+                destructive: true,
+              });
+              if (ok) removeFeature(contextFeature.id);
             }}
           >
             Delete
@@ -325,9 +344,7 @@ function renderTreeItems(
   depth: number,
   ctx: TreeRenderContext,
 ): React.ReactNode {
-  const children = parentId
-    ? features.filter((f) => f.parentId === parentId)
-    : features.filter((f) => !f.parentId);
+  const children = parentId ? features.filter((f) => f.parentId === parentId) : features.filter((f) => !f.parentId);
 
   return children.map((feature) => {
     if (ctx.visibleIds && !ctx.visibleIds.has(feature.id)) return null;
@@ -368,7 +385,9 @@ function renderTreeItems(
           onDragEnd={ctx.onDragEnd}
           onContextMenu={(e) => ctx.onContextMenu(e, feature.id)}
         >
-          <span style={styles.dragHandle} title="Drag to reorder or drop on assembly">&#x2261;</span>
+          <span style={styles.dragHandle} title="Drag to reorder or drop on assembly">
+            &#x2261;
+          </span>
           {isAssembly ? (
             <span
               style={styles.expandToggle}
@@ -391,9 +410,7 @@ function renderTreeItems(
           >
             {ctx.featureErrors.has(feature.id) ? '\u26A0' : '\u2713'}
           </span>
-          {getDepBadge(feature, features) && (
-            <span style={styles.depBadge}>{getDepBadge(feature, features)}</span>
-          )}
+          {getDepBadge(feature, features) && <span style={styles.depBadge}>{getDepBadge(feature, features)}</span>}
           {ctx.editingId === feature.id ? (
             <input
               ref={ctx.editInputRef}
@@ -470,7 +487,11 @@ function getDepBadge(
 
   // Boolean union/intersect
   if (feature.type === 'boolean_union' || feature.type === 'boolean_intersect') {
-    const bodyRefs = (feature.parameters.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+    const bodyRefs =
+      (feature.parameters.bodyRefs as string)
+        ?.split(',')
+        .map((s) => s.trim())
+        .filter(Boolean) ?? [];
     if (bodyRefs.length === 0) return '';
     const names = bodyRefs.map((id) => {
       const ref = allFeatures.find((f) => f.id === id);

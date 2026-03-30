@@ -170,11 +170,15 @@ export function getMetadata(crdtDoc: CRDTDocument): Record<string, unknown> {
 
 /** Export the document as a JSON snapshot */
 export function exportSnapshot(crdtDoc: CRDTDocument): string {
-  return JSON.stringify({
-    metadata: getMetadata(crdtDoc),
-    features: getFeatures(crdtDoc),
-    version: 1,
-  }, null, 2);
+  return JSON.stringify(
+    {
+      metadata: getMetadata(crdtDoc),
+      features: getFeatures(crdtDoc),
+      version: 1,
+    },
+    null,
+    2,
+  );
 }
 
 /** Import a JSON snapshot into the document */

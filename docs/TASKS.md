@@ -346,10 +346,10 @@
 
 ### 8.1 Assembly Data Model
 
-- [ ] Assembly document type
-- [ ] Part instance management
-- [ ] Part reference resolution
-- [ ] Assembly hierarchy tree
+- [x] Assembly document type
+- [x] Part instance management
+- [x] Part reference resolution
+- [x] Assembly hierarchy tree
 
 ### 8.2 Assembly Constraints
 
@@ -362,8 +362,8 @@
 
 ### 8.3 Assembly Tools
 
-- [ ] Insert part into assembly
-- [ ] Drag to position
+- [x] Insert part into assembly
+- [x] Drag to position
 - [ ] Interference detection
 - [ ] Assembly explosion view
 - [ ] BOM (Bill of Materials) table

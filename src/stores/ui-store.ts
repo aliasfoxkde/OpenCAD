@@ -12,8 +12,7 @@ export const useUIStore = create<UIStoreState & UIStoreActions>((set) => ({
   toggleLeftPanel: () => set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
   toggleRightPanel: () => set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
   toggleBottomPanel: () => set((s) => ({ bottomPanelOpen: !s.bottomPanelOpen })),
-  toggleCommandPalette: () =>
-    set((s) => ({ commandPaletteOpen: !s.commandPaletteOpen })),
+  toggleCommandPalette: () => set((s) => ({ commandPaletteOpen: !s.commandPaletteOpen })),
   toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
   setTheme: (theme) => set({ theme }),
 }));

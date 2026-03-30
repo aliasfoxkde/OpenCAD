@@ -91,7 +91,7 @@ export async function deleteDocument(id: string): Promise<void> {
 /** List all documents with metadata */
 export async function listDocuments(): Promise<DocumentMeta[]> {
   const db = await getDB();
-  const docs = await db.getAll(DOCS_STORE) as StoredDocument[];
+  const docs = (await db.getAll(DOCS_STORE)) as StoredDocument[];
   return docs
     .map((doc) => ({
       id: doc.id,

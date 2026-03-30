@@ -101,9 +101,12 @@ describe('clipboard', () => {
       const features: FeatureNode[] = [
         makeFeature('a', 'Target'),
         makeFeature('b', 'Tool'),
-        { ...makeFeature('c', 'Subtract'), type: 'boolean_subtract',
+        {
+          ...makeFeature('c', 'Subtract'),
+          type: 'boolean_subtract',
           parameters: { targetRef: 'a', toolRef: 'b' },
-          dependencies: ['a', 'b'] },
+          dependencies: ['a', 'b'],
+        },
       ];
       copyFeatures(features);
       const pasted = pasteFeatures();
@@ -117,9 +120,12 @@ describe('clipboard', () => {
       const features: FeatureNode[] = [
         makeFeature('a', 'Target'),
         makeFeature('b', 'Tool'),
-        { ...makeFeature('c', 'Subtract'), type: 'boolean_subtract',
+        {
+          ...makeFeature('c', 'Subtract'),
+          type: 'boolean_subtract',
           parameters: { targetRef: 'a', toolRef: 'external' },
-          dependencies: ['a', 'external'] },
+          dependencies: ['a', 'external'],
+        },
       ];
       copyFeatures(features);
       const pasted = pasteFeatures();
@@ -133,9 +139,12 @@ describe('clipboard', () => {
       const features: FeatureNode[] = [
         makeFeature('a', 'A'),
         makeFeature('b', 'B'),
-        { ...makeFeature('c', 'Union'), type: 'boolean_union',
+        {
+          ...makeFeature('c', 'Union'),
+          type: 'boolean_union',
           parameters: { bodyRefs: 'a, b' },
-          dependencies: ['a', 'b'] },
+          dependencies: ['a', 'b'],
+        },
       ];
       copyFeatures(features);
       const pasted = pasteFeatures();
@@ -150,9 +159,12 @@ describe('clipboard', () => {
     it('remaps featureRef parameter for pattern features', () => {
       const features: FeatureNode[] = [
         makeFeature('a', 'Base'),
-        { ...makeFeature('b', 'Pattern'), type: 'pattern_linear',
+        {
+          ...makeFeature('b', 'Pattern'),
+          type: 'pattern_linear',
           parameters: { featureRef: 'a', count: 3, direction: 'x', spacing: 5 },
-          dependencies: ['a'] },
+          dependencies: ['a'],
+        },
       ];
       copyFeatures(features);
       const pasted = pasteFeatures();

@@ -73,21 +73,14 @@ export function MeasureLine() {
   const dy = b[1] - a[1];
   const dz = b[2] - a[2];
   const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-  const mid: [number, number, number] = [
-    (a[0] + b[0]) / 2,
-    (a[1] + b[1]) / 2,
-    (a[2] + b[2]) / 2,
-  ];
+  const mid: [number, number, number] = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
 
   return (
     <group>
       {/* Line between points */}
       <line>
         <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[new Float32Array([...a, ...b]), 3]}
-          />
+          <bufferAttribute attach="attributes-position" args={[new Float32Array([...a, ...b]), 3]} />
         </bufferGeometry>
         <lineBasicMaterial color="#22d3ee" linewidth={2} />
       </line>
@@ -127,7 +120,5 @@ function DistanceLabel({ position, distance }: { position: [number, number, numb
   const texture = new THREE.CanvasTexture(canvas);
   const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
 
-  return (
-    <sprite position={position} scale={[2, 0.5, 1]} material={material} />
-  );
+  return <sprite position={position} scale={[2, 0.5, 1]} material={material} />;
 }

@@ -203,11 +203,23 @@ describe('PropertiesPanel — Store interactions', () => {
 
     it('should provide default parameters for all registered types', () => {
       const types = [
-        'extrude', 'revolve', 'sphere', 'cone', 'torus',
-        'extrude_sketch', 'revolve_sketch', 'cut',
-        'fillet', 'chamfer', 'shell',
-        'boolean_union', 'boolean_subtract', 'boolean_intersect',
-        'pattern_linear', 'pattern_circular', 'mirror',
+        'extrude',
+        'revolve',
+        'sphere',
+        'cone',
+        'torus',
+        'extrude_sketch',
+        'revolve_sketch',
+        'cut',
+        'fillet',
+        'chamfer',
+        'shell',
+        'boolean_union',
+        'boolean_subtract',
+        'boolean_intersect',
+        'pattern_linear',
+        'pattern_circular',
+        'mirror',
         'hole',
       ];
       for (const type of types) {

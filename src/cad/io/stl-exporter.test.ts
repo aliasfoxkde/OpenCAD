@@ -15,14 +15,8 @@ function makeBox(): MeshData {
   // Two triangles forming a quad (front face of a unit box)
   return {
     featureId: 'box',
-    vertices: new Float32Array([
-      0, 0, 0,  1, 0, 0,  1, 1, 0,
-      0, 0, 0,  1, 1, 0,  0, 1, 0,
-    ]),
-    normals: new Float32Array([
-      0, 0, 1,  0, 0, 1,  0, 0, 1,
-      0, 0, 1,  0, 0, 1,  0, 0, 1,
-    ]),
+    vertices: new Float32Array([0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0]),
+    normals: new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1]),
     indices: new Uint32Array([0, 1, 2, 3, 4, 5]),
   };
 }

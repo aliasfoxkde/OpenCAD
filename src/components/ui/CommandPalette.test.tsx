@@ -87,7 +87,9 @@ describe('CommandPalette Logic', () => {
         id: 'test.exec',
         label: 'Execute',
         category: 'tools',
-        action: () => { called = true; },
+        action: () => {
+          called = true;
+        },
       });
 
       expect(executeCommand('test.exec')).toBe(true);

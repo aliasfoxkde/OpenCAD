@@ -106,10 +106,7 @@ export class FeatureEngine {
   }
 
   /** Evaluate a single feature */
-  private evaluateFeature(
-    feature: FeatureNode,
-    featureMap: Map<string, FeatureNode>,
-  ): FeatureResult {
+  private evaluateFeature(feature: FeatureNode, featureMap: Map<string, FeatureNode>): FeatureResult {
     const def = getFeatureDefinition(feature.type);
 
     if (!def) {
@@ -227,7 +224,11 @@ export class FeatureEngine {
         return null; // No param validation beyond required featureRef
       }
       case 'boolean_union': {
-        const bodyRefs = (p.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+        const bodyRefs =
+          (p.bodyRefs as string)
+            ?.split(',')
+            .map((s) => s.trim())
+            .filter(Boolean) ?? [];
         if (bodyRefs.length < 2) return 'Union requires at least 2 body references';
         return null;
       }
@@ -238,7 +239,11 @@ export class FeatureEngine {
         return null;
       }
       case 'boolean_intersect': {
-        const bodyRefs = (p.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+        const bodyRefs =
+          (p.bodyRefs as string)
+            ?.split(',')
+            .map((s) => s.trim())
+            .filter(Boolean) ?? [];
         if (bodyRefs.length < 2) return 'Intersect requires at least 2 body references';
         return null;
       }
@@ -260,31 +265,47 @@ export class FeatureEngine {
         const h = (p.height as number) / 2;
         const d = (p.depth as number) / 2;
         return {
-          minX: ox - w, minY: oy - h, minZ: oz - d,
-          maxX: ox + w, maxY: oy + h, maxZ: oz + d,
+          minX: ox - w,
+          minY: oy - h,
+          minZ: oz - d,
+          maxX: ox + w,
+          maxY: oy + h,
+          maxZ: oz + d,
         };
       }
       case 'revolve': {
         const r = p.radius as number;
         const h = (p.height as number) / 2;
         return {
-          minX: ox - r, minY: oy - h, minZ: oz - r,
-          maxX: ox + r, maxY: oy + h, maxZ: oz + r,
+          minX: ox - r,
+          minY: oy - h,
+          minZ: oz - r,
+          maxX: ox + r,
+          maxY: oy + h,
+          maxZ: oz + r,
         };
       }
       case 'sphere': {
         const r = p.radius as number;
         return {
-          minX: ox - r, minY: oy - r, minZ: oz - r,
-          maxX: ox + r, maxY: oy + r, maxZ: oz + r,
+          minX: ox - r,
+          minY: oy - r,
+          minZ: oz - r,
+          maxX: ox + r,
+          maxY: oy + r,
+          maxZ: oz + r,
         };
       }
       case 'cone': {
         const r = p.radius as number;
         const h = p.height as number;
         return {
-          minX: ox - r, minY: oy, minZ: oz - r,
-          maxX: ox + r, maxY: oy + h, maxZ: oz + r,
+          minX: ox - r,
+          minY: oy,
+          minZ: oz - r,
+          maxX: ox + r,
+          maxY: oy + h,
+          maxZ: oz + r,
         };
       }
       case 'torus': {
@@ -292,22 +313,34 @@ export class FeatureEngine {
         const t = p.tube as number;
         const outer = r + t;
         return {
-          minX: ox - outer, minY: oy - t, minZ: oz - outer,
-          maxX: ox + outer, maxY: oy + t, maxZ: oz + outer,
+          minX: ox - outer,
+          minY: oy - t,
+          minZ: oz - outer,
+          maxX: ox + outer,
+          maxY: oy + t,
+          maxZ: oz + outer,
         };
       }
       case 'fillet': {
         const r = p.radius as number;
         return {
-          minX: ox - r, minY: oy - r, minZ: oz - r,
-          maxX: ox + r, maxY: oy + r, maxZ: oz + r,
+          minX: ox - r,
+          minY: oy - r,
+          minZ: oz - r,
+          maxX: ox + r,
+          maxY: oy + r,
+          maxZ: oz + r,
         };
       }
       case 'chamfer': {
         const d = p.distance as number;
         return {
-          minX: ox - d, minY: oy - d, minZ: oz - d,
-          maxX: ox + d, maxY: oy + d, maxZ: oz + d,
+          minX: ox - d,
+          minY: oy - d,
+          minZ: oz - d,
+          maxX: ox + d,
+          maxY: oy + d,
+          maxZ: oz + d,
         };
       }
       case 'shell': {
@@ -319,16 +352,24 @@ export class FeatureEngine {
         }
         const t = p.thickness as number;
         return {
-          minX: ox - t, minY: oy - t, minZ: oz - t,
-          maxX: ox + t, maxY: oy + t, maxZ: oz + t,
+          minX: ox - t,
+          minY: oy - t,
+          minZ: oz - t,
+          maxX: ox + t,
+          maxY: oy + t,
+          maxZ: oz + t,
         };
       }
       case 'hole': {
         const d = (p.diameter as number) / 2;
         const depth = p.depth as number;
         return {
-          minX: ox - d, minY: oy, minZ: oz - d,
-          maxX: ox + d, maxY: oy + depth, maxZ: oz + d,
+          minX: ox - d,
+          minY: oy,
+          minZ: oz - d,
+          maxX: ox + d,
+          maxY: oy + depth,
+          maxZ: oz + d,
         };
       }
       case 'pattern_linear': {
@@ -349,20 +390,32 @@ export class FeatureEngine {
         // Circular patterns rotate around origin, so bounds are symmetric
         const r = 1; // approximate extent
         return {
-          minX: ox - r, minY: oy - r, minZ: oz - r,
-          maxX: ox + r, maxY: oy + r, maxZ: oz + r,
+          minX: ox - r,
+          minY: oy - r,
+          minZ: oz - r,
+          maxX: ox + r,
+          maxY: oy + r,
+          maxZ: oz + r,
         };
       }
       case 'mirror': {
         // Mirror reflects across a plane — symmetric bounds around origin
         return {
-          minX: ox - 1, minY: oy - 1, minZ: oz - 1,
-          maxX: ox + 1, maxY: oy + 1, maxZ: oz + 1,
+          minX: ox - 1,
+          minY: oy - 1,
+          minZ: oz - 1,
+          maxX: ox + 1,
+          maxY: oy + 1,
+          maxZ: oz + 1,
         };
       }
       case 'boolean_union': {
         // Union bounds are the union of all referenced body bounds
-        const bodyRefs = (p.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+        const bodyRefs =
+          (p.bodyRefs as string)
+            ?.split(',')
+            .map((s) => s.trim())
+            .filter(Boolean) ?? [];
         if (bodyRefs.length === 0) return undefined;
         let bounds: FeatureResult['bounds'] | undefined;
         for (const refId of bodyRefs) {
@@ -390,7 +443,11 @@ export class FeatureEngine {
       }
       case 'boolean_intersect': {
         // Intersect bounds are the intersection of all body bounds
-        const bodyRefs = (p.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+        const bodyRefs =
+          (p.bodyRefs as string)
+            ?.split(',')
+            .map((s) => s.trim())
+            .filter(Boolean) ?? [];
         if (bodyRefs.length === 0) return undefined;
         let bounds: FeatureResult['bounds'] | undefined;
         for (const refId of bodyRefs) {
@@ -426,11 +483,7 @@ export class FeatureEngine {
   }
 
   /** Create a FeatureNode with defaults from the feature registry */
-  static createFeature(
-    type: string,
-    index: number,
-    overrides?: Partial<Record<string, unknown>>,
-  ): FeatureNode | null {
+  static createFeature(type: string, index: number, overrides?: Partial<Record<string, unknown>>): FeatureNode | null {
     const def = getFeatureDefinition(type);
     if (!def) return null;
 

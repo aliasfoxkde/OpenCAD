@@ -32,10 +32,7 @@ export interface PeerInfo {
 export type SyncStateListener = (state: SyncState) => void;
 
 const ICE_SERVERS: RTCConfiguration = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-  ],
+  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }],
 };
 
 const MAX_RECONNECT_ATTEMPTS = 10;
@@ -200,7 +197,6 @@ export class CollaborationSync {
           });
         }
       }, 2000);
-
     } catch (err) {
       this.setState({
         connectionState: 'error',

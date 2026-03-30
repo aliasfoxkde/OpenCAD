@@ -24,18 +24,10 @@ export function importOBJ(text: string, name = 'imported'): ImportResult {
 
     if (trimmed.startsWith('v ')) {
       const parts = trimmed.split(/\s+/);
-      positions.push(
-        parseFloat(parts[1] ?? '0'),
-        parseFloat(parts[2] ?? '0'),
-        parseFloat(parts[3] ?? '0'),
-      );
+      positions.push(parseFloat(parts[1] ?? '0'), parseFloat(parts[2] ?? '0'), parseFloat(parts[3] ?? '0'));
     } else if (trimmed.startsWith('vn ')) {
       const parts = trimmed.split(/\s+/);
-      normalData.push(
-        parseFloat(parts[1] ?? '0'),
-        parseFloat(parts[2] ?? '0'),
-        parseFloat(parts[3] ?? '0'),
-      );
+      normalData.push(parseFloat(parts[1] ?? '0'), parseFloat(parts[2] ?? '0'), parseFloat(parts[3] ?? '0'));
     } else if (trimmed.startsWith('f ')) {
       const parts = trimmed.split(/\s+/).slice(1);
       const faceIndices: number[] = [];
@@ -53,18 +45,10 @@ export function importOBJ(text: string, name = 'imported'): ImportResult {
           idx = nextIndex++;
           vertexMap.set(key, idx);
 
-          outVertices.push(
-            positions[vi * 3] ?? 0,
-            positions[vi * 3 + 1] ?? 0,
-            positions[vi * 3 + 2] ?? 0,
-          );
+          outVertices.push(positions[vi * 3] ?? 0, positions[vi * 3 + 1] ?? 0, positions[vi * 3 + 2] ?? 0);
 
           if (ni >= 0) {
-            outNormals.push(
-              normalData[ni * 3] ?? 0,
-              normalData[ni * 3 + 1] ?? 0,
-              normalData[ni * 3 + 2] ?? 0,
-            );
+            outNormals.push(normalData[ni * 3] ?? 0, normalData[ni * 3 + 1] ?? 0, normalData[ni * 3 + 2] ?? 0);
           } else {
             // Default normal
             outNormals.push(0, 1, 0);

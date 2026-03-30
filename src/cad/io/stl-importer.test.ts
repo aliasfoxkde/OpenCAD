@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { importSTL } from './stl-importer';
 
-function makeBinarySTL(triangles: Array<{ nx: number; ny: number; nz: number; verts: Array<[number, number, number]> }>): ArrayBuffer {
+function makeBinarySTL(
+  triangles: Array<{ nx: number; ny: number; nz: number; verts: Array<[number, number, number]> }>,
+): ArrayBuffer {
   // 80-byte header + 4-byte count + 50 bytes per triangle
   const header = new Uint8Array(80);
   const buffer = new ArrayBuffer(84 + triangles.length * 50);
@@ -14,13 +16,19 @@ function makeBinarySTL(triangles: Array<{ nx: number; ny: number; nz: number; ve
 
   let offset = 84;
   for (const tri of triangles) {
-    view.setFloat32(offset, tri.nx, true); offset += 4;
-    view.setFloat32(offset, tri.ny, true); offset += 4;
-    view.setFloat32(offset, tri.nz, true); offset += 4;
+    view.setFloat32(offset, tri.nx, true);
+    offset += 4;
+    view.setFloat32(offset, tri.ny, true);
+    offset += 4;
+    view.setFloat32(offset, tri.nz, true);
+    offset += 4;
     for (const v of tri.verts) {
-      view.setFloat32(offset, v[0], true); offset += 4;
-      view.setFloat32(offset, v[1], true); offset += 4;
-      view.setFloat32(offset, v[2], true); offset += 4;
+      view.setFloat32(offset, v[0], true);
+      offset += 4;
+      view.setFloat32(offset, v[1], true);
+      offset += 4;
+      view.setFloat32(offset, v[2], true);
+      offset += 4;
     }
     offset += 2; // attribute byte count
   }
@@ -33,8 +41,14 @@ describe('importSTL', () => {
     it('parses a single triangle', () => {
       const buffer = makeBinarySTL([
         {
-          nx: 0, ny: 0, nz: 1,
-          verts: [[0, 0, 0], [1, 0, 0], [0, 1, 0]],
+          nx: 0,
+          ny: 0,
+          nz: 1,
+          verts: [
+            [0, 0, 0],
+            [1, 0, 0],
+            [0, 1, 0],
+          ],
         },
       ]);
 
@@ -57,8 +71,26 @@ describe('importSTL', () => {
 
     it('parses multiple triangles', () => {
       const buffer = makeBinarySTL([
-        { nx: 0, ny: 0, nz: 1, verts: [[0, 0, 0], [1, 0, 0], [0, 1, 0]] },
-        { nx: 0, ny: 1, nz: 0, verts: [[1, 0, 0], [1, 1, 0], [0, 1, 0]] },
+        {
+          nx: 0,
+          ny: 0,
+          nz: 1,
+          verts: [
+            [0, 0, 0],
+            [1, 0, 0],
+            [0, 1, 0],
+          ],
+        },
+        {
+          nx: 0,
+          ny: 1,
+          nz: 0,
+          verts: [
+            [1, 0, 0],
+            [1, 1, 0],
+            [0, 1, 0],
+          ],
+        },
       ]);
 
       const result = importSTL(buffer);
@@ -73,8 +105,26 @@ describe('importSTL', () => {
 
     it('produces correct indices for multiple triangles', () => {
       const buffer = makeBinarySTL([
-        { nx: 1, ny: 0, nz: 0, verts: [[0, 0, 0], [0, 1, 0], [0, 0, 1]] },
-        { nx: 0, ny: 1, nz: 0, verts: [[1, 0, 0], [1, 1, 0], [1, 0, 1]] },
+        {
+          nx: 1,
+          ny: 0,
+          nz: 0,
+          verts: [
+            [0, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+          ],
+        },
+        {
+          nx: 0,
+          ny: 1,
+          nz: 0,
+          verts: [
+            [1, 0, 0],
+            [1, 1, 0],
+            [1, 0, 1],
+          ],
+        },
       ]);
 
       const result = importSTL(buffer);
@@ -145,7 +195,16 @@ describe('importSTL', () => {
       // Starts with "solid" but no "facet normal" keyword
       // Should be treated as binary
       const buffer = makeBinarySTL([
-        { nx: 1, ny: 0, nz: 0, verts: [[0, 0, 0], [1, 0, 0], [0, 1, 0]] },
+        {
+          nx: 1,
+          ny: 0,
+          nz: 0,
+          verts: [
+            [0, 0, 0],
+            [1, 0, 0],
+            [0, 1, 0],
+          ],
+        },
       ]);
 
       const result = importSTL(buffer);

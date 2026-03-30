@@ -8,9 +8,7 @@ describe('StatusBar', () => {
     });
 
     it('should show feature icon and name for single selection', () => {
-      const features = [
-        { id: 'abc', name: 'Box 1', type: 'extrude' },
-      ];
+      const features = [{ id: 'abc', name: 'Box 1', type: 'extrude' }];
       const result = buildSelectionInfo(['abc'], features);
       expect(result).toContain('Box 1');
       // Should include icon from feature definition

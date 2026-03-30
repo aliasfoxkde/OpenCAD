@@ -154,9 +154,7 @@ export const useSketchStore = create<SketchState & SketchActions>((set, get) => 
   removeElement: (id) =>
     set((state) => {
       const newElements = state.elements.filter((e) => e.id !== id);
-      const newConstraints = state.constraints.filter(
-        (c) => !c.elements.includes(id),
-      );
+      const newConstraints = state.constraints.filter((c) => !c.elements.includes(id));
       return {
         elements: newElements,
         constraints: newConstraints,
@@ -168,9 +166,7 @@ export const useSketchStore = create<SketchState & SketchActions>((set, get) => 
 
   updateElement: (id, geometry) =>
     set((state) => ({
-      elements: state.elements.map((e) =>
-        e.id === id ? { ...e, geometry: { ...e.geometry, ...geometry } } : e,
-      ),
+      elements: state.elements.map((e) => (e.id === id ? { ...e, geometry: { ...e.geometry, ...geometry } } : e)),
     })),
 
   select: (ids) => set({ selectedIds: ids }),
@@ -246,23 +242,42 @@ export const useSketchStore = create<SketchState & SketchActions>((set, get) => 
     const state = get();
     const elementDOF = state.elements.reduce((sum, el) => {
       switch (el.type) {
-        case 'point': return sum + 2;
-        case 'line': return sum + 4; // 2 endpoints * 2 DOF
-        case 'circle': return sum + 3; // center (2) + radius (1)
-        case 'arc': return sum + 5; // center (2) + radius (1) + start angle (1) + end angle (1)
-        default: return sum + 4;
+        case 'point':
+          return sum + 2;
+        case 'line':
+          return sum + 4; // 2 endpoints * 2 DOF
+        case 'circle':
+          return sum + 3; // center (2) + radius (1)
+        case 'arc':
+          return sum + 5; // center (2) + radius (1) + start angle (1) + end angle (1)
+        default:
+          return sum + 4;
       }
     }, 0);
     const constraintDOF = state.constraints.reduce((sum, c) => {
       switch (c.type) {
-        case 'coincident': return sum + 2;
-        case 'horizontal': case 'vertical': return sum + 1;
-        case 'parallel': case 'perpendicular': case 'tangent': return sum + 1;
-        case 'equal': return sum + 1;
-        case 'midpoint': return sum + 2;
-        case 'distance': case 'angle': case 'radius': case 'diameter': return sum + 1;
-        case 'fix': return sum + 2;
-        default: return sum;
+        case 'coincident':
+          return sum + 2;
+        case 'horizontal':
+        case 'vertical':
+          return sum + 1;
+        case 'parallel':
+        case 'perpendicular':
+        case 'tangent':
+          return sum + 1;
+        case 'equal':
+          return sum + 1;
+        case 'midpoint':
+          return sum + 2;
+        case 'distance':
+        case 'angle':
+        case 'radius':
+        case 'diameter':
+          return sum + 1;
+        case 'fix':
+          return sum + 2;
+        default:
+          return sum;
       }
     }, 0);
     const dof = Math.max(0, elementDOF - constraintDOF);
@@ -304,9 +319,12 @@ function drawingToElement(drawing: DrawingState): SketchElement | null {
         id,
         type: 'arc',
         geometry: {
-          x1: pts[0]!.x, y1: pts[0]!.y,
-          x2: pts[1]!.x, y2: pts[1]!.y,
-          x3: pts[2]!.x, y3: pts[2]!.y,
+          x1: pts[0]!.x,
+          y1: pts[0]!.y,
+          x2: pts[1]!.x,
+          y2: pts[1]!.y,
+          x3: pts[2]!.x,
+          y3: pts[2]!.y,
         },
         construction: false,
       };
@@ -348,7 +366,12 @@ function drawingToElement(drawing: DrawingState): SketchElement | null {
       return {
         id,
         type: 'ellipse',
-        geometry: { cx: pts[0]!.x, cy: pts[0]!.y, rx: Math.abs(pts[1]!.x - pts[0]!.x), ry: Math.abs(pts[1]!.y - pts[0]!.y) },
+        geometry: {
+          cx: pts[0]!.x,
+          cy: pts[0]!.y,
+          rx: Math.abs(pts[1]!.x - pts[0]!.x),
+          ry: Math.abs(pts[1]!.y - pts[0]!.y),
+        },
         construction: false,
       };
     }

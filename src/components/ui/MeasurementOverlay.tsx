@@ -48,16 +48,14 @@ export function MeasurementOverlay() {
             >
               Pin
             </button>
-            <button style={styles.clearBtn} onClick={clearMeasurePoints}>Clear</button>
+            <button style={styles.clearBtn} onClick={clearMeasurePoints}>
+              Clear
+            </button>
           </>
         )}
       </div>
-      {hasPointMeasure && (
-        <PointToDistance points={measurePoints} />
-      )}
-      {selectedFeatures.length > 1 && (
-        <InterFeatureDistances features={selectedFeatures} />
-      )}
+      {hasPointMeasure && <PointToDistance points={measurePoints} />}
+      {selectedFeatures.length > 1 && <InterFeatureDistances features={selectedFeatures} />}
       {selectedFeatures.map((feature) => (
         <FeatureMeasurement key={feature.id} feature={feature} />
       ))}
@@ -126,7 +124,11 @@ function PointToDistance({ points }: { points: Array<[number, number, number]> }
   );
 }
 
-function FeatureMeasurement({ feature }: { feature: { name: string; type: string; parameters: Record<string, unknown> } }) {
+function FeatureMeasurement({
+  feature,
+}: {
+  feature: { name: string; type: string; parameters: Record<string, unknown> };
+}) {
   const measurements = useMemo(() => getFeatureMeasurements(feature.parameters), [feature.parameters]);
 
   return (
@@ -137,7 +139,9 @@ function FeatureMeasurement({ feature }: { feature: { name: string; type: string
         {measurements.map((m, i) => (
           <div key={i} style={styles.measurement}>
             <span style={styles.measureLabel}>{m.label}:</span>
-            <span style={styles.measureValue}>{m.value.toFixed(2)} {m.unit}</span>
+            <span style={styles.measureValue}>
+              {m.value.toFixed(2)} {m.unit}
+            </span>
           </div>
         ))}
       </div>
@@ -145,7 +149,9 @@ function FeatureMeasurement({ feature }: { feature: { name: string; type: string
   );
 }
 
-export function getFeatureMeasurements(params: Record<string, unknown>): Array<{ label: string; value: number; unit: string }> {
+export function getFeatureMeasurements(
+  params: Record<string, unknown>,
+): Array<{ label: string; value: number; unit: string }> {
   const results: Array<{ label: string; value: number; unit: string }> = [];
 
   switch (true) {
@@ -200,7 +206,11 @@ export function getFeatureMeasurements(params: Record<string, unknown>): Array<{
 }
 
 /** Show distance between the first selected feature and each other selected feature */
-function InterFeatureDistances({ features }: { features: Array<{ name: string; parameters: Record<string, unknown> }> }) {
+function InterFeatureDistances({
+  features,
+}: {
+  features: Array<{ name: string; parameters: Record<string, unknown> }>;
+}) {
   if (features.length < 2) return null;
   const first = features[0]!;
   const ox0 = (first.parameters.originX as number) ?? 0;

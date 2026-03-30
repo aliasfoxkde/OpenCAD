@@ -1,13 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  pushState,
-  undo,
-  redo,
-  canUndo,
-  canRedo,
-  clearHistory,
-  resetUndoHistory,
-} from './undo-history';
+import { pushState, undo, redo, canUndo, canRedo, clearHistory, resetUndoHistory } from './undo-history';
 import type { FeatureNode } from '../types/cad';
 
 const makeFeature = (id: string): FeatureNode => ({

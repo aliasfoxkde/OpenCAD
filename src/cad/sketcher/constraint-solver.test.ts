@@ -16,14 +16,18 @@ describe('ConstraintSolver', () => {
 
     it('should solve coincident constraint', () => {
       const p1: SketchElement = {
-        id: 'p1', type: 'point', geometry: { x: 5, y: 5 }, construction: false,
+        id: 'p1',
+        type: 'point',
+        geometry: { x: 5, y: 5 },
+        construction: false,
       };
       const p2: SketchElement = {
-        id: 'p2', type: 'point', geometry: { x: 10, y: 10 }, construction: false,
+        id: 'p2',
+        type: 'point',
+        geometry: { x: 10, y: 10 },
+        construction: false,
       };
-      const constraints: SketchConstraint[] = [
-        { id: 'c1', type: 'coincident', elements: ['p1', 'p2'] },
-      ];
+      const constraints: SketchConstraint[] = [{ id: 'c1', type: 'coincident', elements: ['p1', 'p2'] }];
 
       const result = solveConstraints([p1, p2], constraints);
       expect(result.success).toBe(true);
@@ -38,11 +42,12 @@ describe('ConstraintSolver', () => {
 
     it('should solve horizontal constraint', () => {
       const line: SketchElement = {
-        id: 'l1', type: 'line', geometry: { x1: 0, y1: 5, x2: 10, y2: 3 }, construction: false,
+        id: 'l1',
+        type: 'line',
+        geometry: { x1: 0, y1: 5, x2: 10, y2: 3 },
+        construction: false,
       };
-      const constraints: SketchConstraint[] = [
-        { id: 'c1', type: 'horizontal', elements: ['l1'] },
-      ];
+      const constraints: SketchConstraint[] = [{ id: 'c1', type: 'horizontal', elements: ['l1'] }];
 
       const result = solveConstraints([line], constraints);
       expect(result.success).toBe(true);
@@ -53,11 +58,12 @@ describe('ConstraintSolver', () => {
 
     it('should solve vertical constraint', () => {
       const line: SketchElement = {
-        id: 'l1', type: 'line', geometry: { x1: 5, y1: 0, x2: 3, y2: 10 }, construction: false,
+        id: 'l1',
+        type: 'line',
+        geometry: { x1: 5, y1: 0, x2: 3, y2: 10 },
+        construction: false,
       };
-      const constraints: SketchConstraint[] = [
-        { id: 'c1', type: 'vertical', elements: ['l1'] },
-      ];
+      const constraints: SketchConstraint[] = [{ id: 'c1', type: 'vertical', elements: ['l1'] }];
 
       const result = solveConstraints([line], constraints);
       expect(result.success).toBe(true);
@@ -68,15 +74,19 @@ describe('ConstraintSolver', () => {
 
     it('should solve distance constraint between two points', () => {
       const p1: SketchElement = {
-        id: 'p1', type: 'point', geometry: { x: 0, y: 0 }, construction: false,
+        id: 'p1',
+        type: 'point',
+        geometry: { x: 0, y: 0 },
+        construction: false,
       };
       const p2: SketchElement = {
-        id: 'p2', type: 'point', geometry: { x: 3, y: 4 }, construction: false,
+        id: 'p2',
+        type: 'point',
+        geometry: { x: 3, y: 4 },
+        construction: false,
       };
       // Initial distance is 5, constrain to 10
-      const constraints: SketchConstraint[] = [
-        { id: 'c1', type: 'distance', elements: ['p1', 'p2'], value: 10 },
-      ];
+      const constraints: SketchConstraint[] = [{ id: 'c1', type: 'distance', elements: ['p1', 'p2'], value: 10 }];
 
       const result = solveConstraints([p1, p2], constraints);
       expect(result.success).toBe(true);
@@ -90,14 +100,18 @@ describe('ConstraintSolver', () => {
 
     it('should solve equal length constraint for two lines', () => {
       const l1: SketchElement = {
-        id: 'l1', type: 'line', geometry: { x1: 0, y1: 0, x2: 10, y2: 0 }, construction: false,
+        id: 'l1',
+        type: 'line',
+        geometry: { x1: 0, y1: 0, x2: 10, y2: 0 },
+        construction: false,
       };
       const l2: SketchElement = {
-        id: 'l2', type: 'line', geometry: { x1: 0, y1: 5, x2: 6, y2: 5 }, construction: false,
+        id: 'l2',
+        type: 'line',
+        geometry: { x1: 0, y1: 5, x2: 6, y2: 5 },
+        construction: false,
       };
-      const constraints: SketchConstraint[] = [
-        { id: 'c1', type: 'equal', elements: ['l1', 'l2'] },
-      ];
+      const constraints: SketchConstraint[] = [{ id: 'c1', type: 'equal', elements: ['l1', 'l2'] }];
 
       const result = solveConstraints([l1, l2], constraints);
       expect(result.success).toBe(true);
@@ -113,14 +127,18 @@ describe('ConstraintSolver', () => {
 
     it('should solve equal radius constraint for two circles', () => {
       const c1: SketchElement = {
-        id: 'c1', type: 'circle', geometry: { cx: 0, cy: 0, r: 5 }, construction: false,
+        id: 'c1',
+        type: 'circle',
+        geometry: { cx: 0, cy: 0, r: 5 },
+        construction: false,
       };
       const c2: SketchElement = {
-        id: 'c2', type: 'circle', geometry: { cx: 10, cy: 0, r: 3 }, construction: false,
+        id: 'c2',
+        type: 'circle',
+        geometry: { cx: 10, cy: 0, r: 3 },
+        construction: false,
       };
-      const constraints: SketchConstraint[] = [
-        { id: 'c1', type: 'equal', elements: ['c1', 'c2'] },
-      ];
+      const constraints: SketchConstraint[] = [{ id: 'c1', type: 'equal', elements: ['c1', 'c2'] }];
 
       const result = solveConstraints([c1, c2], constraints);
       expect(result.success).toBe(true);
@@ -131,14 +149,18 @@ describe('ConstraintSolver', () => {
 
     it('should solve parallel constraint', () => {
       const l1: SketchElement = {
-        id: 'l1', type: 'line', geometry: { x1: 0, y1: 0, x2: 10, y2: 0 }, construction: false,
+        id: 'l1',
+        type: 'line',
+        geometry: { x1: 0, y1: 0, x2: 10, y2: 0 },
+        construction: false,
       };
       const l2: SketchElement = {
-        id: 'l2', type: 'line', geometry: { x1: 0, y1: 5, x2: 6, y2: 3 }, construction: false,
+        id: 'l2',
+        type: 'line',
+        geometry: { x1: 0, y1: 5, x2: 6, y2: 3 },
+        construction: false,
       };
-      const constraints: SketchConstraint[] = [
-        { id: 'c1', type: 'parallel', elements: ['l1', 'l2'] },
-      ];
+      const constraints: SketchConstraint[] = [{ id: 'c1', type: 'parallel', elements: ['l1', 'l2'] }];
 
       const result = solveConstraints([l1, l2], constraints);
       expect(result.success).toBe(true);
@@ -154,14 +176,18 @@ describe('ConstraintSolver', () => {
 
     it('should solve perpendicular constraint', () => {
       const l1: SketchElement = {
-        id: 'l1', type: 'line', geometry: { x1: 0, y1: 0, x2: 10, y2: 0 }, construction: false,
+        id: 'l1',
+        type: 'line',
+        geometry: { x1: 0, y1: 0, x2: 10, y2: 0 },
+        construction: false,
       };
       const l2: SketchElement = {
-        id: 'l2', type: 'line', geometry: { x1: 0, y1: 0, x2: 7, y2: 3 }, construction: false,
+        id: 'l2',
+        type: 'line',
+        geometry: { x1: 0, y1: 0, x2: 7, y2: 3 },
+        construction: false,
       };
-      const constraints: SketchConstraint[] = [
-        { id: 'c1', type: 'perpendicular', elements: ['l1', 'l2'] },
-      ];
+      const constraints: SketchConstraint[] = [{ id: 'c1', type: 'perpendicular', elements: ['l1', 'l2'] }];
 
       const result = solveConstraints([l1, l2], constraints);
       expect(result.success).toBe(true);
@@ -177,14 +203,18 @@ describe('ConstraintSolver', () => {
 
     it('should solve midpoint constraint', () => {
       const point: SketchElement = {
-        id: 'p1', type: 'point', geometry: { x: 0, y: 0 }, construction: false,
+        id: 'p1',
+        type: 'point',
+        geometry: { x: 0, y: 0 },
+        construction: false,
       };
       const line: SketchElement = {
-        id: 'l1', type: 'line', geometry: { x1: 0, y1: 0, x2: 10, y2: 0 }, construction: false,
+        id: 'l1',
+        type: 'line',
+        geometry: { x1: 0, y1: 0, x2: 10, y2: 0 },
+        construction: false,
       };
-      const constraints: SketchConstraint[] = [
-        { id: 'c1', type: 'midpoint', elements: ['p1', 'l1'] },
-      ];
+      const constraints: SketchConstraint[] = [{ id: 'c1', type: 'midpoint', elements: ['p1', 'l1'] }];
 
       const result = solveConstraints([point, line], constraints);
       expect(result.success).toBe(true);
@@ -198,10 +228,16 @@ describe('ConstraintSolver', () => {
     it('should solve multiple constraints simultaneously', () => {
       // Two lines: make them perpendicular and make their endpoints coincident
       const l1: SketchElement = {
-        id: 'l1', type: 'line', geometry: { x1: 0, y1: 0, x2: 10, y2: 1 }, construction: false,
+        id: 'l1',
+        type: 'line',
+        geometry: { x1: 0, y1: 0, x2: 10, y2: 1 },
+        construction: false,
       };
       const l2: SketchElement = {
-        id: 'l2', type: 'line', geometry: { x1: 10, y1: 0, x2: 9, y2: 10 }, construction: false,
+        id: 'l2',
+        type: 'line',
+        geometry: { x1: 10, y1: 0, x2: 9, y2: 10 },
+        construction: false,
       };
       const constraints: SketchConstraint[] = [
         { id: 'c1', type: 'perpendicular', elements: ['l1', 'l2'] },
@@ -215,12 +251,13 @@ describe('ConstraintSolver', () => {
 
     it('should handle already-satisfied constraints', () => {
       const line: SketchElement = {
-        id: 'l1', type: 'line', geometry: { x1: 0, y1: 5, x2: 10, y2: 5 }, construction: false,
+        id: 'l1',
+        type: 'line',
+        geometry: { x1: 0, y1: 5, x2: 10, y2: 5 },
+        construction: false,
       };
       // Line is already horizontal
-      const constraints: SketchConstraint[] = [
-        { id: 'c1', type: 'horizontal', elements: ['l1'] },
-      ];
+      const constraints: SketchConstraint[] = [{ id: 'c1', type: 'horizontal', elements: ['l1'] }];
 
       const result = solveConstraints([line], constraints);
       expect(result.success).toBe(true);
@@ -229,11 +266,12 @@ describe('ConstraintSolver', () => {
 
     it('should handle constraints referencing non-existent elements', () => {
       const line: SketchElement = {
-        id: 'l1', type: 'line', geometry: { x1: 0, y1: 0, x2: 10, y2: 0 }, construction: false,
+        id: 'l1',
+        type: 'line',
+        geometry: { x1: 0, y1: 0, x2: 10, y2: 0 },
+        construction: false,
       };
-      const constraints: SketchConstraint[] = [
-        { id: 'c1', type: 'horizontal', elements: ['nonexistent'] },
-      ];
+      const constraints: SketchConstraint[] = [{ id: 'c1', type: 'horizontal', elements: ['nonexistent'] }];
 
       const result = solveConstraints([line], constraints);
       // No equations generated → trivially succeeds

@@ -38,23 +38,11 @@ export function Viewport() {
       <TransformGizmo />
       <DimensionAnnotations />
       <EffectComposer>
-        <Bloom
-          intensity={0.3}
-          luminanceThreshold={0.6}
-          luminanceSmoothing={0.3}
-          mipmapBlur
-        />
+        <Bloom intensity={0.3} luminanceThreshold={0.6} luminanceSmoothing={0.3} mipmapBlur />
       </EffectComposer>
       <OrbitControls makeDefault />
       {showGrid && (
-        <Grid
-          infiniteGrid
-          cellSize={1}
-          sectionSize={10}
-          fadeDistance={50}
-          cellColor="#1e293b"
-          sectionColor="#334155"
-        />
+        <Grid infiniteGrid cellSize={1} sectionSize={10} fadeDistance={50} cellColor="#1e293b" sectionColor="#334155" />
       )}
       <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
         <GizmoViewport />

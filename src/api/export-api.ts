@@ -7,12 +7,7 @@ import { exportOBJ } from '@/cad/io/obj-exporter';
 import { exportGLB } from '@/cad/io/gltf-exporter';
 import { importSTL } from '@/cad/io/stl-importer';
 import { importOBJ } from '@/cad/io/obj-importer';
-import {
-  serializeProject,
-  deserializeProject,
-  downloadFile,
-  openFile,
-} from '@/cad/io/project';
+import { serializeProject, deserializeProject, downloadFile, openFile } from '@/cad/io/project';
 import type { FeatureNode } from '@/types/cad';
 import type { ImportResult } from '@/cad/io/stl-importer';
 import type { ExportOptions, ExportResult } from './types';

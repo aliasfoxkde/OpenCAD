@@ -1,16 +1,19 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { Viewport } from '../viewport/Viewport';
+import { useEffect, useState, useRef, useCallback, lazy, Suspense } from 'react';
 import { Toolbar } from '../ui/Toolbar';
 import { FeatureTree } from '../ui/FeatureTree';
 import { PropertiesPanel } from '../ui/PropertiesPanel';
 import { StatusBar } from '../ui/StatusBar';
-import { SketchCanvas } from '../sketcher/SketchCanvas';
 import { SketchToolbar } from '../sketcher/SketchToolbar';
 import { CommandPalette } from '../ui/CommandPalette';
 import { DocumentDashboard } from '../ui/DocumentDashboard';
 import { ToastContainer } from '../ui/Toast';
+import { ConfirmDialogContainer } from '../ui/ConfirmDialog';
+import { ErrorBoundary } from '../ErrorBoundary';
 import { ContextMenu } from '../ui/ContextMenu';
 import type { ContextMenuItem } from '../ui/ContextMenu';
+
+const Viewport = lazy(() => import('../viewport/Viewport').then((m) => ({ default: m.Viewport })));
+const SketchCanvas = lazy(() => import('../sketcher/SketchCanvas').then((m) => ({ default: m.SketchCanvas })));
 import { MeasurementOverlay } from '../ui/MeasurementOverlay';
 import { CollabPanel } from '../ui/CollabPanel';
 import { useUIStore } from '../../stores/ui-store';
@@ -20,7 +23,13 @@ import { useSketchStore } from '../../stores/sketch-store';
 import { handleKeyEvent, registerStandardCommands } from '../../hooks/useKeyboardShortcuts';
 import { getDefaultParameters } from '../../cad/features';
 import { nanoid } from 'nanoid';
-import { handleNewDocument, handleOpenDocument, handleSaveDocument, handleExport, handleImportFile } from '../../lib/file-actions';
+import {
+  handleNewDocument,
+  handleOpenDocument,
+  handleSaveDocument,
+  handleExport,
+  handleImportFile,
+} from '../../lib/file-actions';
 import { copyFeatures, pasteFeatures, cutFeatures, hasClipboardContent } from '../../lib/clipboard';
 import { zoomCamera } from '../viewport/CameraController';
 import type { ToolType, FeatureType } from '../../types/cad';
@@ -53,7 +62,11 @@ export function AppLayout() {
   const removeFeature = useCADStore((s) => s.removeFeature);
   const setSketchMode = useCADStore((s) => s.setSketchMode);
 
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: (ContextMenuItem | 'divider')[] } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    items: (ContextMenuItem | 'divider')[];
+  } | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
 
   const closeContextMenu = useCallback(() => setContextMenu(null), []);
@@ -67,152 +80,319 @@ export function AppLayout() {
 
     if (hasSelection) {
       items.push(
-        { id: 'cut', label: 'Cut', shortcut: 'Ctrl+X', action: () => {
-          const selected = state.features.filter((f) => state.selectedIds.includes(f.id));
-          if (selected.length > 0) {
-            cutFeatures(selected);
-            for (const f of selected) state.removeFeature(f.id);
-            state.clearSelection();
-          }
-        }},
-        { id: 'copy', label: 'Copy', shortcut: 'Ctrl+C', action: () => {
-          const selected = state.features.filter((f) => state.selectedIds.includes(f.id));
-          if (selected.length > 0) copyFeatures(selected);
-        }},
+        {
+          id: 'cut',
+          label: 'Cut',
+          shortcut: 'Ctrl+X',
+          action: () => {
+            const selected = state.features.filter((f) => state.selectedIds.includes(f.id));
+            if (selected.length > 0) {
+              cutFeatures(selected);
+              for (const f of selected) state.removeFeature(f.id);
+              state.clearSelection();
+            }
+          },
+        },
+        {
+          id: 'copy',
+          label: 'Copy',
+          shortcut: 'Ctrl+C',
+          action: () => {
+            const selected = state.features.filter((f) => state.selectedIds.includes(f.id));
+            if (selected.length > 0) copyFeatures(selected);
+          },
+        },
       );
     }
 
     if (hasClipboardContent()) {
-      items.push(
-        { id: 'paste', label: 'Paste', shortcut: 'Ctrl+V', action: () => {
+      items.push({
+        id: 'paste',
+        label: 'Paste',
+        shortcut: 'Ctrl+V',
+        action: () => {
           const pasted = pasteFeatures();
           for (const f of pasted) state.addFeatureAndSelect(f);
-        }},
-      );
+        },
+      });
     }
 
     if (hasSelection) {
       items.push(
-        { id: 'duplicate', label: 'Duplicate', shortcut: 'Ctrl+D', action: () => {
-          for (const id of state.selectedIds) state.duplicateFeature(id);
-        }},
+        {
+          id: 'duplicate',
+          label: 'Duplicate',
+          shortcut: 'Ctrl+D',
+          action: () => {
+            for (const id of state.selectedIds) state.duplicateFeature(id);
+          },
+        },
         'divider',
-        { id: 'pattern', label: 'Pattern', submenu: [
-          { id: 'pattern_linear', label: 'Linear Pattern', action: () => {
-            const defaults = getDefaultParameters('pattern_linear');
-            const id = nanoid();
-            const selectedId = state.selectedIds[0];
-            if (selectedId) defaults.featureRef = selectedId;
-            const deps = selectedId ? [selectedId] : [];
-            state.addFeatureAndSelect({ id, type: 'pattern_linear', name: `Linear Pattern ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
-          }},
-          { id: 'pattern_circular', label: 'Circular Pattern', action: () => {
-            const defaults = getDefaultParameters('pattern_circular');
-            const id = nanoid();
-            const selectedId = state.selectedIds[0];
-            if (selectedId) defaults.featureRef = selectedId;
-            const deps = selectedId ? [selectedId] : [];
-            state.addFeatureAndSelect({ id, type: 'pattern_circular', name: `Circular Pattern ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
-          }},
-          { id: 'mirror', label: 'Mirror', submenu: [
-            { id: 'mirror_yz', label: 'Mirror across YZ', action: () => {
-              const defaults = getDefaultParameters('mirror');
-              defaults.plane = 'yz';
-              const id = nanoid();
-              const selectedId = state.selectedIds[0];
-              if (selectedId) defaults.featureRef = selectedId;
-              const deps = selectedId ? [selectedId] : [];
-              state.addFeatureAndSelect({ id, type: 'mirror', name: `Mirror YZ ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
-            }},
-            { id: 'mirror_xz', label: 'Mirror across XZ', action: () => {
-              const defaults = getDefaultParameters('mirror');
-              defaults.plane = 'xz';
-              const id = nanoid();
-              const selectedId = state.selectedIds[0];
-              if (selectedId) defaults.featureRef = selectedId;
-              const deps = selectedId ? [selectedId] : [];
-              state.addFeatureAndSelect({ id, type: 'mirror', name: `Mirror XZ ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
-            }},
-            { id: 'mirror_xy', label: 'Mirror across XY', action: () => {
-              const defaults = getDefaultParameters('mirror');
-              defaults.plane = 'xy';
-              const id = nanoid();
-              const selectedId = state.selectedIds[0];
-              if (selectedId) defaults.featureRef = selectedId;
-              const deps = selectedId ? [selectedId] : [];
-              state.addFeatureAndSelect({ id, type: 'mirror', name: `Mirror XY ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
-            }},
-          ]},
-        ]},
+        {
+          id: 'pattern',
+          label: 'Pattern',
+          submenu: [
+            {
+              id: 'pattern_linear',
+              label: 'Linear Pattern',
+              action: () => {
+                const defaults = getDefaultParameters('pattern_linear');
+                const id = nanoid();
+                const selectedId = state.selectedIds[0];
+                if (selectedId) defaults.featureRef = selectedId;
+                const deps = selectedId ? [selectedId] : [];
+                state.addFeatureAndSelect({
+                  id,
+                  type: 'pattern_linear',
+                  name: `Linear Pattern ${state.features.length + 1}`,
+                  parameters: defaults,
+                  dependencies: deps,
+                  children: [],
+                  suppressed: false,
+                });
+              },
+            },
+            {
+              id: 'pattern_circular',
+              label: 'Circular Pattern',
+              action: () => {
+                const defaults = getDefaultParameters('pattern_circular');
+                const id = nanoid();
+                const selectedId = state.selectedIds[0];
+                if (selectedId) defaults.featureRef = selectedId;
+                const deps = selectedId ? [selectedId] : [];
+                state.addFeatureAndSelect({
+                  id,
+                  type: 'pattern_circular',
+                  name: `Circular Pattern ${state.features.length + 1}`,
+                  parameters: defaults,
+                  dependencies: deps,
+                  children: [],
+                  suppressed: false,
+                });
+              },
+            },
+            {
+              id: 'mirror',
+              label: 'Mirror',
+              submenu: [
+                {
+                  id: 'mirror_yz',
+                  label: 'Mirror across YZ',
+                  action: () => {
+                    const defaults = getDefaultParameters('mirror');
+                    defaults.plane = 'yz';
+                    const id = nanoid();
+                    const selectedId = state.selectedIds[0];
+                    if (selectedId) defaults.featureRef = selectedId;
+                    const deps = selectedId ? [selectedId] : [];
+                    state.addFeatureAndSelect({
+                      id,
+                      type: 'mirror',
+                      name: `Mirror YZ ${state.features.length + 1}`,
+                      parameters: defaults,
+                      dependencies: deps,
+                      children: [],
+                      suppressed: false,
+                    });
+                  },
+                },
+                {
+                  id: 'mirror_xz',
+                  label: 'Mirror across XZ',
+                  action: () => {
+                    const defaults = getDefaultParameters('mirror');
+                    defaults.plane = 'xz';
+                    const id = nanoid();
+                    const selectedId = state.selectedIds[0];
+                    if (selectedId) defaults.featureRef = selectedId;
+                    const deps = selectedId ? [selectedId] : [];
+                    state.addFeatureAndSelect({
+                      id,
+                      type: 'mirror',
+                      name: `Mirror XZ ${state.features.length + 1}`,
+                      parameters: defaults,
+                      dependencies: deps,
+                      children: [],
+                      suppressed: false,
+                    });
+                  },
+                },
+                {
+                  id: 'mirror_xy',
+                  label: 'Mirror across XY',
+                  action: () => {
+                    const defaults = getDefaultParameters('mirror');
+                    defaults.plane = 'xy';
+                    const id = nanoid();
+                    const selectedId = state.selectedIds[0];
+                    if (selectedId) defaults.featureRef = selectedId;
+                    const deps = selectedId ? [selectedId] : [];
+                    state.addFeatureAndSelect({
+                      id,
+                      type: 'mirror',
+                      name: `Mirror XY ${state.features.length + 1}`,
+                      parameters: defaults,
+                      dependencies: deps,
+                      children: [],
+                      suppressed: false,
+                    });
+                  },
+                },
+              ],
+            },
+          ],
+        },
         'divider',
-        { id: 'boolean', label: 'Boolean', submenu: [
-          { id: 'bool_union', label: 'Union', action: () => {
-            const defaults = getDefaultParameters('boolean_union');
-            const id = nanoid();
-            const selIds = state.selectedIds;
-            if (selIds.length >= 2) defaults.bodyRefs = selIds.join(',');
-            const deps = selIds.length > 0 ? [...selIds] : [];
-            state.addFeatureAndSelect({ id, type: 'boolean_union', name: `Union ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
-          }},
-          { id: 'bool_subtract', label: 'Subtract', action: () => {
-            const defaults = getDefaultParameters('boolean_subtract');
-            const id = nanoid();
-            const selIds = state.selectedIds;
-            if (selIds.length >= 2) {
-              defaults.targetRef = selIds[0];
-              defaults.toolRef = selIds[1];
-            } else if (selIds.length === 1) {
-              defaults.targetRef = selIds[0];
+        {
+          id: 'boolean',
+          label: 'Boolean',
+          submenu: [
+            {
+              id: 'bool_union',
+              label: 'Union',
+              action: () => {
+                const defaults = getDefaultParameters('boolean_union');
+                const id = nanoid();
+                const selIds = state.selectedIds;
+                if (selIds.length >= 2) defaults.bodyRefs = selIds.join(',');
+                const deps = selIds.length > 0 ? [...selIds] : [];
+                state.addFeatureAndSelect({
+                  id,
+                  type: 'boolean_union',
+                  name: `Union ${state.features.length + 1}`,
+                  parameters: defaults,
+                  dependencies: deps,
+                  children: [],
+                  suppressed: false,
+                });
+              },
+            },
+            {
+              id: 'bool_subtract',
+              label: 'Subtract',
+              action: () => {
+                const defaults = getDefaultParameters('boolean_subtract');
+                const id = nanoid();
+                const selIds = state.selectedIds;
+                if (selIds.length >= 2) {
+                  defaults.targetRef = selIds[0];
+                  defaults.toolRef = selIds[1];
+                } else if (selIds.length === 1) {
+                  defaults.targetRef = selIds[0];
+                }
+                const deps = selIds.length > 0 ? [...selIds] : [];
+                state.addFeatureAndSelect({
+                  id,
+                  type: 'boolean_subtract',
+                  name: `Subtract ${state.features.length + 1}`,
+                  parameters: defaults,
+                  dependencies: deps,
+                  children: [],
+                  suppressed: false,
+                });
+              },
+            },
+            {
+              id: 'bool_intersect',
+              label: 'Intersect',
+              action: () => {
+                const defaults = getDefaultParameters('boolean_intersect');
+                const id = nanoid();
+                const selIds = state.selectedIds;
+                if (selIds.length >= 2) defaults.bodyRefs = selIds.join(',');
+                const deps = selIds.length > 0 ? [...selIds] : [];
+                state.addFeatureAndSelect({
+                  id,
+                  type: 'boolean_intersect',
+                  name: `Intersect ${state.features.length + 1}`,
+                  parameters: defaults,
+                  dependencies: deps,
+                  children: [],
+                  suppressed: false,
+                });
+              },
+            },
+            {
+              id: 'shell',
+              label: 'Shell',
+              action: () => {
+                const defaults = getDefaultParameters('shell');
+                const id = nanoid();
+                const selectedId = state.selectedIds[0];
+                if (selectedId) defaults.targetRef = selectedId;
+                const deps = selectedId ? [selectedId] : [];
+                state.addFeatureAndSelect({
+                  id,
+                  type: 'shell',
+                  name: `Shell ${state.features.length + 1}`,
+                  parameters: defaults,
+                  dependencies: deps,
+                  children: [],
+                  suppressed: false,
+                });
+              },
+            },
+          ],
+        },
+        'divider',
+        {
+          id: 'suppress',
+          label: 'Suppress/Unsuppress',
+          action: () => {
+            for (const id of state.selectedIds) {
+              const feat = state.features.find((f) => f.id === id);
+              if (feat) state.updateFeature(id, { suppressed: !feat.suppressed });
             }
-            const deps = selIds.length > 0 ? [...selIds] : [];
-            state.addFeatureAndSelect({ id, type: 'boolean_subtract', name: `Subtract ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
-          }},
-          { id: 'bool_intersect', label: 'Intersect', action: () => {
-            const defaults = getDefaultParameters('boolean_intersect');
-            const id = nanoid();
-            const selIds = state.selectedIds;
-            if (selIds.length >= 2) defaults.bodyRefs = selIds.join(',');
-            const deps = selIds.length > 0 ? [...selIds] : [];
-            state.addFeatureAndSelect({ id, type: 'boolean_intersect', name: `Intersect ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
-          }},
-          { id: 'shell', label: 'Shell', action: () => {
-            const defaults = getDefaultParameters('shell');
-            const id = nanoid();
-            const selectedId = state.selectedIds[0];
-            if (selectedId) defaults.targetRef = selectedId;
-            const deps = selectedId ? [selectedId] : [];
-            state.addFeatureAndSelect({ id, type: 'shell', name: `Shell ${state.features.length + 1}`, parameters: defaults, dependencies: deps, children: [], suppressed: false });
-          }},
-        ]},
+          },
+        },
         'divider',
-        { id: 'suppress', label: 'Suppress/Unsuppress', action: () => {
-          for (const id of state.selectedIds) {
-            const feat = state.features.find((f) => f.id === id);
-            if (feat) state.updateFeature(id, { suppressed: !feat.suppressed });
-          }
-        }},
-        'divider',
-        { id: 'delete', label: 'Delete', shortcut: 'Del', danger: true, action: () => {
-          for (const id of state.selectedIds) state.removeFeature(id);
-          state.clearSelection();
-        }},
+        {
+          id: 'delete',
+          label: 'Delete',
+          shortcut: 'Del',
+          danger: true,
+          action: () => {
+            for (const id of state.selectedIds) state.removeFeature(id);
+            state.clearSelection();
+          },
+        },
       );
     }
 
     if (items.length > 0) items.push('divider');
 
     items.push(
-      { id: 'select_all', label: 'Select All', shortcut: 'Ctrl+A', action: () => {
-        const feats = useCADStore.getState().features;
-        useCADStore.getState().select(feats.map((f) => f.id));
-      }},
+      {
+        id: 'select_all',
+        label: 'Select All',
+        shortcut: 'Ctrl+A',
+        action: () => {
+          const feats = useCADStore.getState().features;
+          useCADStore.getState().select(feats.map((f) => f.id));
+        },
+      },
       { id: 'fit_view', label: 'Fit View', shortcut: 'F', action: () => useViewStore.getState().requestFitView() },
-      { id: 'zoom_selection', label: 'Zoom to Selection', shortcut: 'Shift+F', action: () => useViewStore.getState().requestZoomToSelection() },
+      {
+        id: 'zoom_selection',
+        label: 'Zoom to Selection',
+        shortcut: 'Shift+F',
+        action: () => useViewStore.getState().requestZoomToSelection(),
+      },
       'divider',
       { id: 'toggle_grid', label: 'Toggle Grid', shortcut: 'G', action: () => useViewStore.getState().toggleGrid() },
-      { id: 'toggle_wireframe', label: 'Toggle Wireframe', shortcut: 'W', action: () => useViewStore.getState().toggleWireframe() },
+      {
+        id: 'toggle_wireframe',
+        label: 'Toggle Wireframe',
+        shortcut: 'W',
+        action: () => useViewStore.getState().toggleWireframe(),
+      },
       { id: 'toggle_shadows', label: 'Toggle Shadows', action: () => useViewStore.getState().toggleShadows() },
-      { id: 'toggle_section', label: 'Toggle Section Plane', action: () => useViewStore.getState().toggleSectionPlane() },
+      {
+        id: 'toggle_section',
+        label: 'Toggle Section Plane',
+        action: () => useViewStore.getState().toggleSectionPlane(),
+      },
     );
 
     setContextMenu({ x: e.clientX, y: e.clientY, items });
@@ -238,8 +418,13 @@ export function AppLayout() {
     const id = nanoid();
     const name = `${toolType.charAt(0).toUpperCase() + toolType.slice(1)} ${state.features.length + 1}`;
     state.addFeatureAndSelect({
-      id, type: featureType, name,
-      parameters: defaults, dependencies: [], children: [], suppressed: false,
+      id,
+      type: featureType,
+      name,
+      parameters: defaults,
+      dependencies: [],
+      children: [],
+      suppressed: false,
     });
     state.setActiveTool('select');
   }, []);
@@ -264,8 +449,13 @@ export function AppLayout() {
 
     const dependencies = selectedId ? [selectedId] : [];
     state.addFeatureAndSelect({
-      id, type: patternType, name,
-      parameters: defaults, dependencies, children: [], suppressed: false,
+      id,
+      type: patternType,
+      name,
+      parameters: defaults,
+      dependencies,
+      children: [],
+      suppressed: false,
     });
     state.setActiveTool('select');
   }, []);
@@ -298,8 +488,13 @@ export function AppLayout() {
 
     const dependencies = selectedIds.length > 0 ? [...selectedIds] : [];
     state.addFeatureAndSelect({
-      id, type: boolType, name,
-      parameters: defaults, dependencies, children: [], suppressed: false,
+      id,
+      type: boolType,
+      name,
+      parameters: defaults,
+      dependencies,
+      children: [],
+      suppressed: false,
     });
     state.setActiveTool('select');
   }, []);
@@ -312,8 +507,13 @@ export function AppLayout() {
     if (selectedId) defaults.targetRef = selectedId;
     const dependencies = selectedId ? [selectedId] : [];
     state.addFeatureAndSelect({
-      id, type: 'shell', name: `Shell ${state.features.length + 1}`,
-      parameters: defaults, dependencies, children: [], suppressed: false,
+      id,
+      type: 'shell',
+      name: `Shell ${state.features.length + 1}`,
+      parameters: defaults,
+      dependencies,
+      children: [],
+      suppressed: false,
     });
     state.setActiveTool('select');
   }, []);
@@ -346,11 +546,17 @@ export function AppLayout() {
       zoomToSelection: () => useViewStore.getState().requestZoomToSelection(),
       zoomIn: () => zoomCamera('in'),
       zoomOut: () => zoomCamera('out'),
-      save: () => { handleSaveDocument(); },
+      save: () => {
+        handleSaveDocument();
+      },
       undo: () => useCADStore.getState().undo(),
       redo: () => useCADStore.getState().redo(),
-      newDocument: () => { handleNewDocument(); },
-      openDocument: () => { handleOpenDocument(); },
+      newDocument: () => {
+        handleNewDocument();
+      },
+      openDocument: () => {
+        handleOpenDocument();
+      },
       delete: () => {
         const state = useCADStore.getState();
         for (const id of state.selectedIds) {
@@ -429,7 +635,9 @@ export function AppLayout() {
         {leftPanelOpen && (
           <>
             <div style={{ ...styles.leftPanel, width: leftPanelWidth }}>
-              <FeatureTree />
+              <ErrorBoundary name="Feature Tree">
+                <FeatureTree />
+              </ErrorBoundary>
             </div>
             <ResizeHandle
               onResize={(delta) => setLeftPanelWidth(Math.max(150, Math.min(400, leftPanelWidth + delta)))}
@@ -438,8 +646,18 @@ export function AppLayout() {
         )}
 
         <DropZone onContextMenu={openViewportContextMenu}>
-          <Viewport />
-          {sketchActive && <SketchCanvas />}
+          <ErrorBoundary name="Viewport">
+            <Suspense fallback={null}>
+              <Viewport />
+            </Suspense>
+          </ErrorBoundary>
+          {sketchActive && (
+            <ErrorBoundary name="SketchCanvas">
+              <Suspense fallback={null}>
+                <SketchCanvas />
+              </Suspense>
+            </ErrorBoundary>
+          )}
           <SketchToolbar />
           <MeasurementOverlay />
         </DropZone>
@@ -450,7 +668,9 @@ export function AppLayout() {
               onResize={(delta) => setRightPanelWidth(Math.max(200, Math.min(450, rightPanelWidth - delta)))}
             />
             <div style={{ ...styles.rightPanel, width: rightPanelWidth, overflow: 'auto' }}>
-              <PropertiesPanel />
+              <ErrorBoundary name="Properties Panel">
+                <PropertiesPanel />
+              </ErrorBoundary>
               <CollabPanel />
             </div>
           </>
@@ -460,13 +680,9 @@ export function AppLayout() {
       <StatusBar />
       <CommandPalette />
       <ToastContainer />
+      <ConfirmDialogContainer />
       {contextMenu && (
-        <ContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          items={contextMenu.items}
-          onClose={closeContextMenu}
-        />
+        <ContextMenu x={contextMenu.x} y={contextMenu.y} items={contextMenu.items} onClose={closeContextMenu} />
       )}
       {aboutOpen && (
         <div style={aboutOverlayStyle} onClick={() => setAboutOpen(false)}>
@@ -474,13 +690,9 @@ export function AppLayout() {
             <div style={aboutTitleStyle}>OpenCAD</div>
             <div style={aboutVersionStyle}>Version 0.1.0</div>
             <div style={aboutDescStyle}>
-              Open-source, web-native parametric 3D CAD platform.
-              Built with React, Three.js, and TypeScript.
+              Open-source, web-native parametric 3D CAD platform. Built with React, Three.js, and TypeScript.
             </div>
-            <button
-              style={aboutCloseBtnStyle}
-              onClick={() => setAboutOpen(false)}
-            >
+            <button style={aboutCloseBtnStyle} onClick={() => setAboutOpen(false)}>
               Close
             </button>
           </div>
@@ -498,38 +710,36 @@ function ResizeHandle({ onResize }: { onResize: (deltaX: number) => void }) {
   const dragging = useRef(false);
   const startX = useRef(0);
 
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    dragging.current = true;
-    startX.current = e.clientX;
+  const onMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      dragging.current = true;
+      startX.current = e.clientX;
 
-    const onMouseMove = (ev: MouseEvent) => {
-      if (!dragging.current) return;
-      const delta = ev.clientX - startX.current;
-      startX.current = ev.clientX;
-      onResize(delta);
-    };
+      const onMouseMove = (ev: MouseEvent) => {
+        if (!dragging.current) return;
+        const delta = ev.clientX - startX.current;
+        startX.current = ev.clientX;
+        onResize(delta);
+      };
 
-    const onMouseUp = () => {
-      dragging.current = false;
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
+      const onMouseUp = () => {
+        dragging.current = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
 
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  }, [onResize]);
-
-  return (
-    <div
-      style={resizeHandleStyle}
-      onMouseDown={onMouseDown}
-    />
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    },
+    [onResize],
   );
+
+  return <div style={resizeHandleStyle} onMouseDown={onMouseDown} />;
 }
 
 const resizeHandleStyle: React.CSSProperties = {
@@ -545,7 +755,13 @@ const resizeHandleStyle: React.CSSProperties = {
 // Drop Zone for file import
 // ============================================================
 
-function DropZone({ children, onContextMenu }: { children: React.ReactNode; onContextMenu?: (e: React.MouseEvent) => void }) {
+function DropZone({
+  children,
+  onContextMenu,
+}: {
+  children: React.ReactNode;
+  onContextMenu?: (e: React.MouseEvent) => void;
+}) {
   const [dragging, setDragging] = useState(false);
   const dragCount = useRef(0);
 
@@ -668,16 +884,67 @@ function MenuBar({
     {
       label: 'File',
       items: [
-        { type: 'item', label: 'New', shortcut: 'Ctrl+N', action: () => { handleNewDocument(); } },
-        { type: 'item', label: 'Open', shortcut: 'Ctrl+O', action: () => { handleOpenDocument(); } },
-        { type: 'item', label: 'Save', shortcut: 'Ctrl+S', action: () => { handleSaveDocument(); } },
+        {
+          type: 'item',
+          label: 'New',
+          shortcut: 'Ctrl+N',
+          action: () => {
+            handleNewDocument();
+          },
+        },
+        {
+          type: 'item',
+          label: 'Open',
+          shortcut: 'Ctrl+O',
+          action: () => {
+            handleOpenDocument();
+          },
+        },
+        {
+          type: 'item',
+          label: 'Save',
+          shortcut: 'Ctrl+S',
+          action: () => {
+            handleSaveDocument();
+          },
+        },
         { type: 'separator' },
-        { type: 'item', label: 'Export STL', action: () => { handleExport('stl'); } },
-        { type: 'item', label: 'Export OBJ', action: () => { handleExport('obj'); } },
-        { type: 'item', label: 'Export GLB', action: () => { handleExport('glb'); } },
+        {
+          type: 'item',
+          label: 'Export STL',
+          action: () => {
+            handleExport('stl');
+          },
+        },
+        {
+          type: 'item',
+          label: 'Export OBJ',
+          action: () => {
+            handleExport('obj');
+          },
+        },
+        {
+          type: 'item',
+          label: 'Export GLB',
+          action: () => {
+            handleExport('glb');
+          },
+        },
         { type: 'separator' },
-        { type: 'item', label: 'Export .ocad', action: () => { handleExport('ocad'); } },
-        { type: 'item', label: 'Import STL/OBJ', action: () => { handleImportFile(); } },
+        {
+          type: 'item',
+          label: 'Export .ocad',
+          action: () => {
+            handleExport('ocad');
+          },
+        },
+        {
+          type: 'item',
+          label: 'Import STL/OBJ',
+          action: () => {
+            handleImportFile();
+          },
+        },
       ],
     },
     {
@@ -686,44 +953,74 @@ function MenuBar({
         { type: 'item', label: 'Undo', shortcut: 'Ctrl+Z', action: () => useCADStore.getState().undo() },
         { type: 'item', label: 'Redo', shortcut: 'Ctrl+Shift+Z', action: () => useCADStore.getState().redo() },
         { type: 'separator' },
-        { type: 'item', label: 'Cut', shortcut: 'Ctrl+X', action: () => {
-          const state = useCADStore.getState();
-          const selected = state.features.filter((f) => state.selectedIds.includes(f.id));
-          if (selected.length > 0) {
-            cutFeatures(selected);
-            for (const f of selected) state.removeFeature(f.id);
-            state.clearSelection();
-          }
-        }},
-        { type: 'item', label: 'Copy', shortcut: 'Ctrl+C', action: () => {
-          const state = useCADStore.getState();
-          const selected = state.features.filter((f) => state.selectedIds.includes(f.id));
-          if (selected.length > 0) copyFeatures(selected);
-        }},
-        { type: 'item', label: 'Paste', shortcut: 'Ctrl+V', action: () => {
-          const pasted = pasteFeatures();
-          for (const f of pasted) {
-            useCADStore.getState().addFeatureAndSelect(f);
-          }
-        }},
-        { type: 'item', label: 'Duplicate', shortcut: 'Ctrl+D', action: () => {
-          const state = useCADStore.getState();
-          for (const id of state.selectedIds) {
-            state.duplicateFeature(id);
-          }
-        }},
+        {
+          type: 'item',
+          label: 'Cut',
+          shortcut: 'Ctrl+X',
+          action: () => {
+            const state = useCADStore.getState();
+            const selected = state.features.filter((f) => state.selectedIds.includes(f.id));
+            if (selected.length > 0) {
+              cutFeatures(selected);
+              for (const f of selected) state.removeFeature(f.id);
+              state.clearSelection();
+            }
+          },
+        },
+        {
+          type: 'item',
+          label: 'Copy',
+          shortcut: 'Ctrl+C',
+          action: () => {
+            const state = useCADStore.getState();
+            const selected = state.features.filter((f) => state.selectedIds.includes(f.id));
+            if (selected.length > 0) copyFeatures(selected);
+          },
+        },
+        {
+          type: 'item',
+          label: 'Paste',
+          shortcut: 'Ctrl+V',
+          action: () => {
+            const pasted = pasteFeatures();
+            for (const f of pasted) {
+              useCADStore.getState().addFeatureAndSelect(f);
+            }
+          },
+        },
+        {
+          type: 'item',
+          label: 'Duplicate',
+          shortcut: 'Ctrl+D',
+          action: () => {
+            const state = useCADStore.getState();
+            for (const id of state.selectedIds) {
+              state.duplicateFeature(id);
+            }
+          },
+        },
         { type: 'separator' },
-        { type: 'item', label: 'Select All', shortcut: 'Ctrl+A', action: () => {
-          const features = useCADStore.getState().features;
-          useCADStore.getState().select(features.map((f) => f.id));
-        }},
-        { type: 'item', label: 'Delete', shortcut: 'Del', action: () => {
-          const state = useCADStore.getState();
-          for (const id of state.selectedIds) {
-            useCADStore.getState().removeFeature(id);
-          }
-          useCADStore.getState().clearSelection();
-        }},
+        {
+          type: 'item',
+          label: 'Select All',
+          shortcut: 'Ctrl+A',
+          action: () => {
+            const features = useCADStore.getState().features;
+            useCADStore.getState().select(features.map((f) => f.id));
+          },
+        },
+        {
+          type: 'item',
+          label: 'Delete',
+          shortcut: 'Del',
+          action: () => {
+            const state = useCADStore.getState();
+            for (const id of state.selectedIds) {
+              useCADStore.getState().removeFeature(id);
+            }
+            useCADStore.getState().clearSelection();
+          },
+        },
       ],
     },
     {
@@ -743,10 +1040,20 @@ function MenuBar({
         { type: 'separator' },
         { type: 'item', label: 'Toggle Grid', shortcut: 'G', action: () => useViewStore.getState().toggleGrid() },
         { type: 'item', label: 'Toggle Snap', shortcut: 'Shift+G', action: () => useViewStore.getState().toggleSnap() },
-        { type: 'item', label: 'Toggle Wireframe', shortcut: 'W', action: () => useViewStore.getState().toggleWireframe() },
+        {
+          type: 'item',
+          label: 'Toggle Wireframe',
+          shortcut: 'W',
+          action: () => useViewStore.getState().toggleWireframe(),
+        },
         { type: 'item', label: 'Toggle Shadows', action: () => useViewStore.getState().toggleShadows() },
         { type: 'item', label: 'Fit View', shortcut: 'F', action: () => useViewStore.getState().requestFitView() },
-        { type: 'item', label: 'Zoom to Selection', shortcut: 'Shift+F', action: () => useViewStore.getState().requestZoomToSelection() },
+        {
+          type: 'item',
+          label: 'Zoom to Selection',
+          shortcut: 'Shift+F',
+          action: () => useViewStore.getState().requestZoomToSelection(),
+        },
         { type: 'separator' },
         { type: 'item', label: 'Section Plane', action: () => useViewStore.getState().toggleSectionPlane() },
       ],
@@ -775,22 +1082,41 @@ function MenuBar({
     {
       label: 'Tools',
       items: [
-        { type: 'item', label: 'Measure', shortcut: 'M', action: () => useCADStore.getState().setActiveTool('measure') },
+        {
+          type: 'item',
+          label: 'Measure',
+          shortcut: 'M',
+          action: () => useCADStore.getState().setActiveTool('measure'),
+        },
         { type: 'item', label: 'Section Plane', action: () => useViewStore.getState().toggleSectionPlane() },
         { type: 'separator' },
-        { type: 'item', label: 'Command Palette', shortcut: 'Ctrl+K', action: () => useUIStore.getState().toggleCommandPalette() },
+        {
+          type: 'item',
+          label: 'Command Palette',
+          shortcut: 'Ctrl+K',
+          action: () => useUIStore.getState().toggleCommandPalette(),
+        },
         { type: 'separator' },
-        { type: 'item', label: 'Share Session', action: () => {
-          // Toggle right panel to show collab panel
-          const state = useUIStore.getState();
-          if (!state.rightPanelOpen) state.toggleRightPanel();
-        }},
+        {
+          type: 'item',
+          label: 'Share Session',
+          action: () => {
+            // Toggle right panel to show collab panel
+            const state = useUIStore.getState();
+            if (!state.rightPanelOpen) state.toggleRightPanel();
+          },
+        },
       ],
     },
     {
       label: 'Help',
       items: [
-        { type: 'item', label: 'Keyboard Shortcuts', shortcut: 'Ctrl+K', action: () => useUIStore.getState().toggleCommandPalette() },
+        {
+          type: 'item',
+          label: 'Keyboard Shortcuts',
+          shortcut: 'Ctrl+K',
+          action: () => useUIStore.getState().toggleCommandPalette(),
+        },
         { type: 'item', label: 'About OpenCAD', action: onAbout },
       ],
     },
@@ -850,9 +1176,7 @@ function MenuBar({
                       disabled={item.disabled}
                     >
                       <span>{item.label}</span>
-                      {item.shortcut && (
-                        <span style={menuStyles.shortcut}>{item.shortcut}</span>
-                      )}
+                      {item.shortcut && <span style={menuStyles.shortcut}>{item.shortcut}</span>}
                     </button>
                   ),
                 )}

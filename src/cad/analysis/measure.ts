@@ -14,8 +14,12 @@ export interface Point3D {
 }
 
 export interface Bounds3D {
-  minX: number; minY: number; minZ: number;
-  maxX: number; maxY: number; maxZ: number;
+  minX: number;
+  minY: number;
+  minZ: number;
+  maxX: number;
+  maxY: number;
+  maxZ: number;
 }
 
 export interface MeasurementResult {
@@ -46,8 +50,10 @@ export function angleBetween(a: Point3D, b: Point3D): number {
 
 /** Angle in degrees between two lines defined by 4 points */
 export function angleBetweenLines(
-  p1: Point3D, p2: Point3D, // Line 1
-  p3: Point3D, p4: Point3D, // Line 2
+  p1: Point3D,
+  p2: Point3D, // Line 1
+  p3: Point3D,
+  p4: Point3D, // Line 2
 ): number {
   const dirA = { x: p2.x - p1.x, y: p2.y - p1.y, z: p2.z - p1.z };
   const dirB = { x: p4.x - p3.x, y: p4.y - p3.y, z: p4.z - p3.z };
@@ -56,8 +62,12 @@ export function angleBetweenLines(
 
 /** Compute axis-aligned bounding box of a mesh */
 export function computeBounds(mesh: MeshData): Bounds3D {
-  let minX = Infinity, minY = Infinity, minZ = Infinity;
-  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    minZ = Infinity;
+  let maxX = -Infinity,
+    maxY = -Infinity,
+    maxZ = -Infinity;
 
   for (let i = 0; i < mesh.vertices.length; i += 3) {
     const x = mesh.vertices[i]!;
@@ -79,7 +89,9 @@ export function computeCentroid(mesh: MeshData): Point3D {
   const count = mesh.vertices.length / 3;
   if (count === 0) return { x: 0, y: 0, z: 0 };
 
-  let sx = 0, sy = 0, sz = 0;
+  let sx = 0,
+    sy = 0,
+    sz = 0;
   for (let i = 0; i < mesh.vertices.length; i += 3) {
     sx += mesh.vertices[i]!;
     sy += mesh.vertices[i + 1]!;
@@ -127,14 +139,18 @@ export function computeVolume(mesh: MeshData): number {
     const i1 = mesh.indices[i + 1]! * 3;
     const i2 = mesh.indices[i + 2]! * 3;
 
-    const ax = v[i0]!, ay = v[i0 + 1]!, az = v[i0 + 2]!;
-    const bx = v[i1]!, by = v[i1 + 1]!, bz = v[i1 + 2]!;
-    const cx = v[i2]!, cy = v[i2 + 1]!, cz = v[i2 + 2]!;
+    const ax = v[i0]!,
+      ay = v[i0 + 1]!,
+      az = v[i0 + 2]!;
+    const bx = v[i1]!,
+      by = v[i1 + 1]!,
+      bz = v[i1 + 2]!;
+    const cx = v[i2]!,
+      cy = v[i2 + 1]!,
+      cz = v[i2 + 2]!;
 
     // Signed volume of tetrahedron formed with origin
-    volume += (ax * (by * cz - bz * cy)
-             - ay * (bx * cz - bz * cx)
-             + az * (bx * cy - by * cx)) / 6;
+    volume += (ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx)) / 6;
   }
 
   return Math.abs(volume);
@@ -150,10 +166,7 @@ export function measureDistance(a: Point3D, b: Point3D): MeasurementResult {
 }
 
 /** Measure angle between two lines */
-export function measureAngle(
-  p1: Point3D, p2: Point3D,
-  p3: Point3D, p4: Point3D,
-): MeasurementResult {
+export function measureAngle(p1: Point3D, p2: Point3D, p3: Point3D, p4: Point3D): MeasurementResult {
   return {
     value: angleBetweenLines(p1, p2, p3, p4),
     unit: 'deg',

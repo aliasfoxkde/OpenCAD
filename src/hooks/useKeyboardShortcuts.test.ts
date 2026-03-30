@@ -12,7 +12,10 @@ import {
   type Command,
 } from './useKeyboardShortcuts';
 
-function createKeyEvent(key: string, opts: { ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean; metaKey?: boolean; target?: HTMLElement } = {}): KeyboardEvent {
+function createKeyEvent(
+  key: string,
+  opts: { ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean; metaKey?: boolean; target?: HTMLElement } = {},
+): KeyboardEvent {
   const event = {
     key,
     ctrlKey: opts.ctrlKey ?? false,
@@ -23,7 +26,9 @@ function createKeyEvent(key: string, opts: { ctrlKey?: boolean; shiftKey?: boole
     cancelable: true,
     target: opts.target ?? ({} as HTMLElement),
     defaultPrevented: false,
-    preventDefault() { (this as any).defaultPrevented = true; },
+    preventDefault() {
+      (this as any).defaultPrevented = true;
+    },
     stopPropagation() {},
     type: 'keydown',
   } as unknown as KeyboardEvent;
@@ -128,7 +133,9 @@ describe('Keyboard Shortcuts', () => {
         id: 'test.exec',
         label: 'Execute',
         category: 'tools',
-        action: () => { called = true; },
+        action: () => {
+          called = true;
+        },
       });
 
       const result = executeCommand('test.exec');
@@ -179,7 +186,9 @@ describe('Keyboard Shortcuts', () => {
         label: 'Undo',
         category: 'edit',
         shortcut: 'Ctrl+Z',
-        action: () => { called = true; },
+        action: () => {
+          called = true;
+        },
       });
 
       const event = createKeyEvent('z', { ctrlKey: true });
@@ -194,7 +203,9 @@ describe('Keyboard Shortcuts', () => {
         label: 'Press G',
         category: 'view',
         shortcut: 'G',
-        action: () => { called = true; },
+        action: () => {
+          called = true;
+        },
       });
 
       const event = createKeyEvent('g');
@@ -209,7 +220,9 @@ describe('Keyboard Shortcuts', () => {
         label: 'Escape',
         category: 'help',
         shortcut: 'Escape',
-        action: () => { called = true; },
+        action: () => {
+          called = true;
+        },
       });
 
       const event = createKeyEvent('Escape');
@@ -224,7 +237,9 @@ describe('Keyboard Shortcuts', () => {
         label: 'Input Test',
         category: 'tools',
         shortcut: 'Ctrl+S',
-        action: () => { called = true; },
+        action: () => {
+          called = true;
+        },
       });
 
       // Simulate an input element target
@@ -274,7 +289,11 @@ describe('Keyboard Shortcuts', () => {
 
     it('should wire actions to commands', () => {
       let saved = false;
-      registerStandardCommands({ save: () => { saved = true; } });
+      registerStandardCommands({
+        save: () => {
+          saved = true;
+        },
+      });
 
       executeCommand('file.save');
       expect(saved).toBe(true);
@@ -282,7 +301,11 @@ describe('Keyboard Shortcuts', () => {
 
     it('should handle Ctrl+K for command palette', () => {
       let paletteOpened = false;
-      registerStandardCommands({ toggleCommandPalette: () => { paletteOpened = true; } });
+      registerStandardCommands({
+        toggleCommandPalette: () => {
+          paletteOpened = true;
+        },
+      });
 
       const event = createKeyEvent('k', { ctrlKey: true });
       handleKeyEvent(event);
@@ -291,7 +314,11 @@ describe('Keyboard Shortcuts', () => {
 
     it('should register zoom-to-selection with Shift+F', () => {
       let zoomed = false;
-      registerStandardCommands({ zoomToSelection: () => { zoomed = true; } });
+      registerStandardCommands({
+        zoomToSelection: () => {
+          zoomed = true;
+        },
+      });
 
       const event = createKeyEvent('f', { shiftKey: true });
       handleKeyEvent(event);

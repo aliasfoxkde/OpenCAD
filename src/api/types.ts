@@ -99,23 +99,10 @@ export interface DocumentInfo {
 }
 
 /** Re-export key types for consumer convenience */
-export type {
-  FeatureNode,
-  MeshData,
-} from '@/types/cad';
+export type { FeatureNode, MeshData } from '@/types/cad';
 
-export type {
-  Point3D,
-  Bounds3D,
-  MeasurementResult,
-} from '@/cad/analysis/measure';
+export type { Point3D, Bounds3D, MeasurementResult } from '@/cad/analysis/measure';
 
-export type {
-  DocumentMeta,
-  StoredDocument,
-} from '@/cad/io/db';
+export type { DocumentMeta, StoredDocument } from '@/cad/io/db';
 
-export type {
-  FeatureDefinition,
-  ParameterDef,
-} from '@/cad/features/feature-registry';
+export type { FeatureDefinition, ParameterDef } from '@/cad/features/feature-registry';

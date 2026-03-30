@@ -11,8 +11,12 @@ export interface MassProperties {
   volume: number;
   surfaceArea: number;
   boundingBox: {
-    minX: number; minY: number; minZ: number;
-    maxX: number; maxY: number; maxZ: number;
+    minX: number;
+    minY: number;
+    minZ: number;
+    maxX: number;
+    maxY: number;
+    maxZ: number;
   } | null;
   centerOfMass: { x: number; y: number; z: number } | null;
   triangleCount: number;
@@ -24,27 +28,39 @@ export interface MassProperties {
  * Uses the divergence theorem: V = (1/6) * sum(v1 . (v2 x v3))
  */
 function tetrahedronSignedVolume(
-  x1: number, y1: number, z1: number,
-  x2: number, y2: number, z2: number,
-  x3: number, y3: number, z3: number,
+  x1: number,
+  y1: number,
+  z1: number,
+  x2: number,
+  y2: number,
+  z2: number,
+  x3: number,
+  y3: number,
+  z3: number,
 ): number {
-  return (
-    (x1 * (y2 * z3 - y3 * z2) -
-     x2 * (y1 * z3 - y3 * z1) +
-     x3 * (y1 * z2 - y2 * z1)) / 6
-  );
+  return (x1 * (y2 * z3 - y3 * z2) - x2 * (y1 * z3 - y3 * z1) + x3 * (y1 * z2 - y2 * z1)) / 6;
 }
 
 /**
  * Compute the area of a triangle given its three vertices.
  */
 function triangleArea(
-  x1: number, y1: number, z1: number,
-  x2: number, y2: number, z2: number,
-  x3: number, y3: number, z3: number,
+  x1: number,
+  y1: number,
+  z1: number,
+  x2: number,
+  y2: number,
+  z2: number,
+  x3: number,
+  y3: number,
+  z3: number,
 ): number {
-  const ax = x2 - x1, ay = y2 - y1, az = z2 - z1;
-  const bx = x3 - x1, by = y3 - y1, bz = z3 - z1;
+  const ax = x2 - x1,
+    ay = y2 - y1,
+    az = z2 - z1;
+  const bx = x3 - x1,
+    by = y3 - y1,
+    bz = z3 - z1;
   const cx = ay * bz - az * by;
   const cy = az * bx - ax * bz;
   const cz = ax * by - ay * bx;
@@ -58,8 +74,12 @@ export function computeMeshProperties(mesh: MeshData): MassProperties {
   const { vertices, indices } = mesh;
   let volume = 0;
   let surfaceArea = 0;
-  let minX = Infinity, minY = Infinity, minZ = Infinity;
-  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    minZ = Infinity;
+  let maxX = -Infinity,
+    maxY = -Infinity,
+    maxZ = -Infinity;
 
   // Compute bounding box from all vertices
   for (let i = 0; i < vertices.length; i += 3) {
@@ -80,9 +100,15 @@ export function computeMeshProperties(mesh: MeshData): MassProperties {
     const i1 = indices[i + 1]! * 3;
     const i2 = indices[i + 2]! * 3;
 
-    const x1 = vertices[i0]!, y1 = vertices[i0 + 1]!, z1 = vertices[i0 + 2]!;
-    const x2 = vertices[i1]!, y2 = vertices[i1 + 1]!, z2 = vertices[i1 + 2]!;
-    const x3 = vertices[i2]!, y3 = vertices[i2 + 1]!, z3 = vertices[i2 + 2]!;
+    const x1 = vertices[i0]!,
+      y1 = vertices[i0 + 1]!,
+      z1 = vertices[i0 + 2]!;
+    const x2 = vertices[i1]!,
+      y2 = vertices[i1 + 1]!,
+      z2 = vertices[i1 + 2]!;
+    const x3 = vertices[i2]!,
+      y3 = vertices[i2 + 1]!,
+      z3 = vertices[i2 + 2]!;
 
     volume += tetrahedronSignedVolume(x1, y1, z1, x2, y2, z2, x3, y3, z3);
     surfaceArea += triangleArea(x1, y1, z1, x2, y2, z2, x3, y3, z3);
@@ -127,8 +153,12 @@ export function computeAllProperties(features: FeatureNode[]): MassProperties {
 
   let totalVolume = 0;
   let totalSurfaceArea = 0;
-  let minX = Infinity, minY = Infinity, minZ = Infinity;
-  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    minZ = Infinity;
+  let maxX = -Infinity,
+    maxY = -Infinity,
+    maxZ = -Infinity;
   let totalTriangles = 0;
   let totalVertices = 0;
 
@@ -168,10 +198,7 @@ export function computeAllProperties(features: FeatureNode[]): MassProperties {
  * Compute mass properties for a single feature by ID.
  * Returns null if the feature is not found or has no mesh.
  */
-export function computeFeatureProperties(
-  features: FeatureNode[],
-  featureId: string,
-): MassProperties | null {
+export function computeFeatureProperties(features: FeatureNode[], featureId: string): MassProperties | null {
   const feature = features.find((f) => f.id === featureId);
   if (!feature || feature.suppressed) return null;
 

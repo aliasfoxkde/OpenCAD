@@ -83,11 +83,7 @@ export function getAssemblyTransformMatrix(feature: FeatureNode): number[] {
   const r21 = cy * sx;
   const r22 = cx * cy;
 
-  return [
-    r00, r01, r02, px,
-    r10, r11, r12, py,
-    r20, r21, r22, pz,
-  ];
+  return [r00, r01, r02, px, r10, r11, r12, py, r20, r21, r22, pz];
 }
 
 /**

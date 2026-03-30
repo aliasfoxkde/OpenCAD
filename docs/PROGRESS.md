@@ -1,8 +1,8 @@
 # OpenCAD - Progress Tracking
 
 **Last Updated**: 2026-03-30
-**Current Phase**: Enhancement Sprint — Viewport Polish Complete
-**Overall Progress**: 70%
+**Current Phase**: Post-Assembly Gap Analysis & Infrastructure Fixes
+**Overall Progress**: 85%
 
 ---
 
@@ -17,13 +17,41 @@
 | Phase 5: Professional UI | COMPLETE | 95% |
 | Phase 6: File I/O | COMPLETE | 85% |
 | Phase 7: Collaboration | COMPLETE | 80% |
-| Phase 8: Assemblies | PENDING | 0% |
+| Phase 8: Assemblies | COMPLETE | 100% |
 | Phase 9: Drawings | PENDING | 0% |
 | Phase 10: Plugins & AI | COMPLETE | 80% |
 
 ---
 
 ## Session Log
+
+### 2026-03-30 - Session 10: Assembly System Implementation
+
+**Completed all 8 phases of the assembly system:**
+
+- [x] Phase 1: Type System + Feature Registry — `parentId` on FeatureNode, `assembly` FeatureType, registered in feature-registry
+- [x] Phase 2: Tree Utilities + Store Actions — `assembly-tree.ts` (getRootFeatures, getDirectChildren, getDescendants, getAncestors, getEffectiveTransform), moveFeatureToAssembly, enhanced removeFeature/duplicateFeature
+- [x] Phase 3: Mesh Pipeline — Assembly transforms baked into export vertices via getEffectiveTransform + transformMesh, suppressed assembly suppresses descendants
+- [x] Phase 4: Viewport Rendering — Recursive R3F `<group>` nesting for assembly hierarchy, assembly nodes as position/rotation groups
+- [x] Phase 5: Feature Tree UI — Hierarchical display with expand/collapse, drag onto assembly nodes, "Move to Root" context menu, search auto-expands ancestor assemblies
+- [x] Phase 6: Properties Panel — Assembly position/rotation params, "Contains N features" indicator, TransformGizmo uses positionX/Y/Z for assemblies
+- [x] Phase 7: Project Save/Load — parentId serializes correctly, backward compatible with v1 files
+- [x] Phase 8: Edge Cases + Undo — Undo captures parentId via structuredClone, remove assembly removes all descendants
+
+**New Test → Source File Mapping:**
+| Test File | Source File | Tests |
+|-----------|------------|-------|
+| assembly-tree.test.ts | assembly-tree.ts | 11 |
+| feature-to-mesh.test.ts | feature-to-mesh.ts | 7 (assembly transform tests) |
+| cad-store.test.ts | cad-store.ts | 6 (assembly hierarchy tests) |
+| project.test.ts | project.ts | 2 (assembly save/load tests) |
+
+**Build Stats:**
+- 52 test suites, 779 tests, all passing (37 new)
+- 0 TypeScript errors
+- Clean production build
+
+---
 
 ### 2026-03-30 - Session 9: Comprehensive Enhancement Sprint (Phases 1-8 Plan)
 
@@ -97,7 +125,7 @@
 | annotations.test.ts | annotations.ts | 13 |
 
 **Build Stats:**
-- 51 test suites, 742 tests, all passing
+- 52 test suites, 779 tests, all passing (session 10 added 37 assembly tests)
 - 0 TypeScript errors
 - Clean production build
 - New dependency: @react-three/postprocessing
@@ -272,7 +300,7 @@
 | Phase 5: Professional UI | COMPLETE | 75% |
 | Phase 6: File I/O | COMPLETE | 85% |
 | Phase 7: Collaboration | IN PROGRESS | 30% |
-| Phase 8: Assemblies | PENDING | 0% |
+| Phase 8: Assemblies | COMPLETE | 100% |
 | Phase 9: Drawings | PENDING | 0% |
 | Phase 10: Plugins & AI | PENDING | 0% |
 

@@ -72,11 +72,7 @@ export function stopCollabSync(): void {
 // Internal helpers
 // ============================================================
 
-function pushLocalChangesToCRDT(
-  crdtDoc: CRDTDocument,
-  prevFeatures: FeatureNode[],
-  nextFeatures: FeatureNode[],
-): void {
+function pushLocalChangesToCRDT(crdtDoc: CRDTDocument, prevFeatures: FeatureNode[], nextFeatures: FeatureNode[]): void {
   const prevIds = new Set(prevFeatures.map((f) => f.id));
   const nextIds = new Set(nextFeatures.map((f) => f.id));
 

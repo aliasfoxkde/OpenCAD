@@ -137,9 +137,7 @@ export function CollabPanel() {
             background: stateColors[connectionState] ?? '#64748b',
           }}
         />
-        <span style={{ ...styles.stateLabel, color: stateColors[connectionState] }}>
-          {connectionState}
-        </span>
+        <span style={{ ...styles.stateLabel, color: stateColors[connectionState] }}>{connectionState}</span>
       </div>
 
       {connectionState === 'connected' && roomId && (
@@ -174,18 +172,24 @@ export function CollabPanel() {
       <div style={styles.actions}>
         {connectionState === 'disconnected' && (
           <>
-            <button style={styles.btn} onClick={handleShare}>Share Session</button>
-            <button style={styles.btnSecondary} onClick={handleGenerateLink}>Join Session</button>
+            <button style={styles.btn} onClick={handleShare}>
+              Share Session
+            </button>
+            <button style={styles.btnSecondary} onClick={handleGenerateLink}>
+              Join Session
+            </button>
           </>
         )}
         {connectionState === 'connected' && (
-          <button style={styles.btnDanger} onClick={handleLeave}>Leave Session</button>
+          <button style={styles.btnDanger} onClick={handleLeave}>
+            Leave Session
+          </button>
         )}
-        {connectionState === 'connecting' && (
-          <span style={styles.connectingText}>Connecting...</span>
-        )}
+        {connectionState === 'connecting' && <span style={styles.connectingText}>Connecting...</span>}
         {connectionState === 'error' && (
-          <button style={styles.btn} onClick={handleShare}>Retry</button>
+          <button style={styles.btn} onClick={handleShare}>
+            Retry
+          </button>
         )}
       </div>
 
@@ -197,12 +201,25 @@ export function CollabPanel() {
             value={joinId}
             onChange={(e) => setJoinId(e.target.value)}
             placeholder="Enter room ID"
-            onKeyDown={(e) => { if (e.key === 'Enter') handleJoin(); if (e.key === 'Escape') setShowJoin(false); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleJoin();
+              if (e.key === 'Escape') setShowJoin(false);
+            }}
             autoFocus
           />
           <div style={styles.joinActions}>
-            <button style={styles.btnSmall} onClick={handleJoin}>Join</button>
-            <button style={styles.btnSecondarySmall} onClick={() => { setShowJoin(false); setJoinId(''); }}>Cancel</button>
+            <button style={styles.btnSmall} onClick={handleJoin}>
+              Join
+            </button>
+            <button
+              style={styles.btnSecondarySmall}
+              onClick={() => {
+                setShowJoin(false);
+                setJoinId('');
+              }}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}

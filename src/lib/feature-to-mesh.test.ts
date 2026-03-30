@@ -32,30 +32,30 @@ describe('feature-to-mesh', () => {
   });
 
   it('should convert hole feature to mesh', () => {
-    const mesh = featureToMesh(makeFeature({
-      type: 'hole',
-      parameters: { diameter: 6, depth: 10 },
-    }));
+    const mesh = featureToMesh(
+      makeFeature({
+        type: 'hole',
+        parameters: { diameter: 6, depth: 10 },
+      }),
+    );
     expect(mesh).not.toBeNull();
     expect(mesh!.vertices.length).toBeGreaterThan(0);
     expect(mesh!.indices.length).toBeGreaterThan(0);
   });
 
   it('should assign featureId to hole mesh', () => {
-    const mesh = featureToMesh(makeFeature({
-      id: 'hole-42',
-      type: 'hole',
-      parameters: { diameter: 4, depth: 8 },
-    }));
+    const mesh = featureToMesh(
+      makeFeature({
+        id: 'hole-42',
+        type: 'hole',
+        parameters: { diameter: 4, depth: 8 },
+      }),
+    );
     expect(mesh!.featureId).toBe('hole-42');
   });
 
   it('should skip suppressed features', () => {
-    const features = [
-      makeFeature({ id: 'a' }),
-      makeFeature({ id: 'b', suppressed: true }),
-      makeFeature({ id: 'c' }),
-    ];
+    const features = [makeFeature({ id: 'a' }), makeFeature({ id: 'b', suppressed: true }), makeFeature({ id: 'c' })];
     const meshes = featuresToMeshes(features);
     expect(meshes).toHaveLength(2);
     expect(meshes[0]!.featureId).toBe('a');
@@ -71,7 +71,12 @@ describe('feature-to-mesh', () => {
       const features = [
         makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2, originX: -0.5 } }),
         makeFeature({ id: 'box2', parameters: { width: 2, height: 2, depth: 2, originX: 0.5 } }),
-        makeFeature({ id: 'u1', type: 'boolean_union', parameters: { bodyRefs: 'box1,box2' }, dependencies: ['box1', 'box2'] }),
+        makeFeature({
+          id: 'u1',
+          type: 'boolean_union',
+          parameters: { bodyRefs: 'box1,box2' },
+          dependencies: ['box1', 'box2'],
+        }),
       ];
       const meshes = featuresToMeshes(features);
       // Only the union result should be in the export, not the individual boxes
@@ -83,7 +88,12 @@ describe('feature-to-mesh', () => {
       const features = [
         makeFeature({ id: 'target', parameters: { width: 4, height: 4, depth: 4 } }),
         makeFeature({ id: 'tool', parameters: { width: 2, height: 2, depth: 2, originX: 1 } }),
-        makeFeature({ id: 's1', type: 'boolean_subtract', parameters: { targetRef: 'target', toolRef: 'tool' }, dependencies: ['target', 'tool'] }),
+        makeFeature({
+          id: 's1',
+          type: 'boolean_subtract',
+          parameters: { targetRef: 'target', toolRef: 'tool' },
+          dependencies: ['target', 'tool'],
+        }),
       ];
       const meshes = featuresToMeshes(features);
       expect(meshes).toHaveLength(1);
@@ -93,7 +103,12 @@ describe('feature-to-mesh', () => {
     it('should exclude primitives consumed by shell', () => {
       const features = [
         makeFeature({ id: 'box1', parameters: { width: 4, height: 4, depth: 4 } }),
-        makeFeature({ id: 'sh1', type: 'shell', parameters: { targetRef: 'box1', thickness: 0.5 }, dependencies: ['box1'] }),
+        makeFeature({
+          id: 'sh1',
+          type: 'shell',
+          parameters: { targetRef: 'box1', thickness: 0.5 },
+          dependencies: ['box1'],
+        }),
       ];
       const meshes = featuresToMeshes(features);
       expect(meshes).toHaveLength(1);
@@ -103,7 +118,12 @@ describe('feature-to-mesh', () => {
     it('should exclude primitives consumed by pattern_linear', () => {
       const features = [
         makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }),
-        makeFeature({ id: 'p1', type: 'pattern_linear', parameters: { featureRef: 'box1', direction: 'x', count: 3, spacing: 3 }, dependencies: ['box1'] }),
+        makeFeature({
+          id: 'p1',
+          type: 'pattern_linear',
+          parameters: { featureRef: 'box1', direction: 'x', count: 3, spacing: 3 },
+          dependencies: ['box1'],
+        }),
       ];
       const meshes = featuresToMeshes(features);
       expect(meshes).toHaveLength(1);
@@ -113,7 +133,12 @@ describe('feature-to-mesh', () => {
     it('should exclude primitives consumed by mirror', () => {
       const features = [
         makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }),
-        makeFeature({ id: 'm1', type: 'mirror', parameters: { featureRef: 'box1', plane: 'yz' }, dependencies: ['box1'] }),
+        makeFeature({
+          id: 'm1',
+          type: 'mirror',
+          parameters: { featureRef: 'box1', plane: 'yz' },
+          dependencies: ['box1'],
+        }),
       ];
       const meshes = featuresToMeshes(features);
       expect(meshes).toHaveLength(1);
@@ -133,7 +158,13 @@ describe('feature-to-mesh', () => {
     it('should not exclude primitives consumed by suppressed composites', () => {
       const features = [
         makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }),
-        makeFeature({ id: 'u1', type: 'boolean_union', parameters: { bodyRefs: 'box1' }, dependencies: ['box1'], suppressed: true }),
+        makeFeature({
+          id: 'u1',
+          type: 'boolean_union',
+          parameters: { bodyRefs: 'box1' },
+          dependencies: ['box1'],
+          suppressed: true,
+        }),
       ];
       const meshes = featuresToMeshes(features);
       // The union is suppressed, so box1 should still be exported standalone
@@ -144,11 +175,13 @@ describe('feature-to-mesh', () => {
 
   describe('pattern_linear', () => {
     it('should return null when no allFeatures provided', () => {
-      const mesh = featureToMesh(makeFeature({
-        id: 'p1',
-        type: 'pattern_linear',
-        parameters: { featureRef: 'box1', count: 3, spacing: 5, direction: 'x' },
-      }));
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'p1',
+          type: 'pattern_linear',
+          parameters: { featureRef: 'box1', count: 3, spacing: 5, direction: 'x' },
+        }),
+      );
       expect(mesh).toBeNull();
     });
 
@@ -275,11 +308,13 @@ describe('feature-to-mesh', () => {
 
   describe('boolean_union', () => {
     it('should return null when no allFeatures provided', () => {
-      const mesh = featureToMesh(makeFeature({
-        id: 'b1',
-        type: 'boolean_union',
-        parameters: { bodyRefs: 'box1, box2' },
-      }));
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'b1',
+          type: 'boolean_union',
+          parameters: { bodyRefs: 'box1, box2' },
+        }),
+      );
       expect(mesh).toBeNull();
     });
 
@@ -329,11 +364,13 @@ describe('feature-to-mesh', () => {
 
   describe('boolean_subtract', () => {
     it('should return null when no allFeatures provided', () => {
-      const mesh = featureToMesh(makeFeature({
-        id: 'b1',
-        type: 'boolean_subtract',
-        parameters: { targetRef: 'box1', toolRef: 'box2' },
-      }));
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'b1',
+          type: 'boolean_subtract',
+          parameters: { targetRef: 'box1', toolRef: 'box2' },
+        }),
+      );
       expect(mesh).toBeNull();
     });
 
@@ -352,7 +389,10 @@ describe('feature-to-mesh', () => {
 
     it('should produce mesh for subtract of two boxes', () => {
       const box1 = makeFeature({ id: 'box1', parameters: { width: 4, height: 4, depth: 4 } });
-      const box2 = makeFeature({ id: 'box2', parameters: { width: 2, height: 2, depth: 2, originX: 0, originY: 0, originZ: 0 } });
+      const box2 = makeFeature({
+        id: 'box2',
+        parameters: { width: 2, height: 2, depth: 2, originX: 0, originY: 0, originZ: 0 },
+      });
       const mesh = featureToMesh(
         makeFeature({
           id: 'b1',
@@ -414,11 +454,13 @@ describe('feature-to-mesh', () => {
 
   describe('mirror', () => {
     it('should return null when no allFeatures provided', () => {
-      const mesh = featureToMesh(makeFeature({
-        id: 'm1',
-        type: 'mirror',
-        parameters: { featureRef: 'box1', plane: 'yz' },
-      }));
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 'm1',
+          type: 'mirror',
+          parameters: { featureRef: 'box1', plane: 'yz' },
+        }),
+      );
       expect(mesh).toBeNull();
     });
 
@@ -507,11 +549,13 @@ describe('feature-to-mesh', () => {
 
   describe('shell', () => {
     it('should return null without allFeatures', () => {
-      const mesh = featureToMesh(makeFeature({
-        id: 's1',
-        type: 'shell',
-        parameters: { targetRef: 'box1', thickness: 0.5 },
-      }));
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 's1',
+          type: 'shell',
+          parameters: { targetRef: 'box1', thickness: 0.5 },
+        }),
+      );
       expect(mesh).toBeNull();
     });
 
@@ -596,9 +640,7 @@ describe('feature-to-mesh', () => {
       expect(meshes[0]!.featureId).toBe('box1');
 
       // Get the untransformed mesh for comparison
-      const untransformed = featureToMesh(
-        makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }),
-      );
+      const untransformed = featureToMesh(makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }));
       expect(untransformed).not.toBeNull();
 
       // All x vertices should be shifted by 10
@@ -662,9 +704,7 @@ describe('feature-to-mesh', () => {
 
       // Total translation should be 5 + 3 = 8
       const v = meshes[0]!.vertices;
-      const untransformed = featureToMesh(
-        makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }),
-      )!;
+      const untransformed = featureToMesh(makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }))!;
       const uv = untransformed.vertices;
 
       for (let i = 0; i < v.length; i += 3) {
@@ -730,9 +770,7 @@ describe('feature-to-mesh', () => {
       const meshes = featuresToMeshes(features);
       expect(meshes).toHaveLength(1);
 
-      const untransformed = featureToMesh(
-        makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }),
-      )!;
+      const untransformed = featureToMesh(makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }))!;
       const v = meshes[0]!.vertices;
       const uv = untransformed.vertices;
       for (let i = 0; i < v.length; i++) {

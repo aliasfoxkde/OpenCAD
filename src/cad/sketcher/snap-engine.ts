@@ -54,15 +54,19 @@ export function getSnapPoints(el: SketchElement): SnapResult[] {
 
   switch (el.type) {
     case 'line': {
-      const x1 = g.x1 as number, y1 = g.y1 as number;
-      const x2 = g.x2 as number, y2 = g.y2 as number;
+      const x1 = g.x1 as number,
+        y1 = g.y1 as number;
+      const x2 = g.x2 as number,
+        y2 = g.y2 as number;
       points.push({ point: { x: x1, y: y1 }, type: 'endpoint', elementId: el.id, distance: 0 });
       points.push({ point: { x: x2, y: y2 }, type: 'endpoint', elementId: el.id, distance: 0 });
       points.push({ point: { x: (x1 + x2) / 2, y: (y1 + y2) / 2 }, type: 'midpoint', elementId: el.id, distance: 0 });
       break;
     }
     case 'circle': {
-      const cx = g.cx as number, cy = g.cy as number, r = g.r as number;
+      const cx = g.cx as number,
+        cy = g.cy as number,
+        r = g.r as number;
       points.push({ point: { x: cx, y: cy }, type: 'center', elementId: el.id, distance: 0 });
       // Cardinal points on circle
       points.push({ point: { x: cx + r, y: cy }, type: 'endpoint', elementId: el.id, distance: 0 });
@@ -72,9 +76,12 @@ export function getSnapPoints(el: SketchElement): SnapResult[] {
       break;
     }
     case 'arc': {
-      const x1 = g.x1 as number, y1 = g.y1 as number;
-      const x2 = g.x2 as number, y2 = g.y2 as number;
-      const x3 = g.x3 as number, y3 = g.y3 as number;
+      const x1 = g.x1 as number,
+        y1 = g.y1 as number;
+      const x2 = g.x2 as number,
+        y2 = g.y2 as number;
+      const x3 = g.x3 as number,
+        y3 = g.y3 as number;
       points.push({ point: { x: x1, y: y1 }, type: 'endpoint', elementId: el.id, distance: 0 });
       points.push({ point: { x: x3, y: y3 }, type: 'endpoint', elementId: el.id, distance: 0 });
       // Arc center
@@ -85,8 +92,10 @@ export function getSnapPoints(el: SketchElement): SnapResult[] {
       break;
     }
     case 'rectangle': {
-      const x = g.x as number, y = g.y as number;
-      const w = g.width as number, h = g.height as number;
+      const x = g.x as number,
+        y = g.y as number;
+      const w = g.width as number,
+        h = g.height as number;
       // Corners
       points.push({ point: { x, y }, type: 'endpoint', elementId: el.id, distance: 0 });
       points.push({ point: { x: x + w, y }, type: 'endpoint', elementId: el.id, distance: 0 });
@@ -106,7 +115,8 @@ export function getSnapPoints(el: SketchElement): SnapResult[] {
       break;
     }
     case 'ellipse': {
-      const cx = g.cx as number, cy = g.cy as number;
+      const cx = g.cx as number,
+        cy = g.cy as number;
       points.push({ point: { x: cx, y: cy }, type: 'center', elementId: el.id, distance: 0 });
       break;
     }

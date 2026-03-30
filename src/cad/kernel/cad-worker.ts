@@ -18,10 +18,7 @@ import {
 
 let initialized = false;
 
-const primitives = new Map<
-  string,
-  { primitive: string; params: Record<string, number> }
->();
+const primitives = new Map<string, { primitive: string; params: Record<string, number> }>();
 
 function handleMessage(event: MessageEvent<WorkerRequest>): void {
   const request = event.data;

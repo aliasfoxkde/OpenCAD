@@ -41,7 +41,13 @@ describe('ContextMenu Logic', () => {
 
     it('should support item with action', () => {
       let called = false;
-      const item: ContextMenuItem = { id: 'click', label: 'Click Me', action: () => { called = true; } };
+      const item: ContextMenuItem = {
+        id: 'click',
+        label: 'Click Me',
+        action: () => {
+          called = true;
+        },
+      };
       item.action!();
       expect(called).toBe(true);
     });

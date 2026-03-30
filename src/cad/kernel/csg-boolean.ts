@@ -40,9 +40,15 @@ export function booleanTwo(
 
     let op: number;
     switch (operation) {
-      case 'union': op = ADDITION; break;
-      case 'subtract': op = SUBTRACTION; break;
-      case 'intersect': op = INTERSECTION; break;
+      case 'union':
+        op = ADDITION;
+        break;
+      case 'subtract':
+        op = SUBTRACTION;
+        break;
+      case 'intersect':
+        op = INTERSECTION;
+        break;
     }
 
     const result = evaluator.evaluate(brushA, brushB, op);

@@ -6,6 +6,12 @@ import type { ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { booleanTwo } from '../../cad/kernel/csg-boolean';
 import { getConsumedFeatureIds } from '../../lib/feature-to-mesh';
+import {
+  generateFilletCylinderMesh,
+  generateChamferWedgeMesh,
+  generateExtrudeProfileMesh,
+  generateRevolveProfileMesh,
+} from '../../cad/kernel/mesh-generators';
 import { DEG2RAD } from '../../lib/assembly-tree';
 import type { FeatureNode } from '../../types/cad';
 
@@ -18,10 +24,7 @@ const NON_SELECTED_EMISSIVE_INTENSITY = 0;
  * Hook that smoothly lerps emissive intensity on the material
  * when selection state changes.
  */
-function useSelectionGlow(
-  meshRef: React.RefObject<THREE.Mesh | null>,
-  selected: boolean,
-) {
+function useSelectionGlow(meshRef: React.RefObject<THREE.Mesh | null>, selected: boolean) {
   const targetIntensity = selected ? SELECTED_EMISSIVE_INTENSITY : NON_SELECTED_EMISSIVE_INTENSITY;
   const currentIntensity = useRef(selected ? SELECTED_EMISSIVE_INTENSITY : NON_SELECTED_EMISSIVE_INTENSITY);
 
@@ -57,11 +60,7 @@ export function CADModel() {
 
   const consumedIds = useMemo(() => getConsumedFeatureIds(features), [features]);
 
-  return (
-    <group>
-      {renderFeatureTree(features, null, selectedIds, consumedIds)}
-    </group>
-  );
+  return <group>{renderFeatureTree(features, null, selectedIds, consumedIds)}</group>;
 }
 
 /** Recursively render features grouped by assembly hierarchy */
@@ -71,9 +70,7 @@ function renderFeatureTree(
   selectedIds: string[],
   consumedIds: Set<string>,
 ) {
-  const children = parentId
-    ? features.filter((f) => f.parentId === parentId)
-    : features.filter((f) => !f.parentId);
+  const children = parentId ? features.filter((f) => f.parentId === parentId) : features.filter((f) => !f.parentId);
 
   return children.map((f) => {
     if (f.suppressed) return null;
@@ -97,36 +94,23 @@ function renderFeatureTree(
     if (consumedIds.has(f.id)) return null;
 
     if (f.type === 'pattern_linear' || f.type === 'pattern_circular' || f.type === 'mirror') {
-      return (
-        <PatternMeshes
-          key={f.id}
-          feature={f}
-          allFeatures={features}
-          selected={selectedIds.includes(f.id)}
-        />
-      );
+      return <PatternMeshes key={f.id} feature={f} allFeatures={features} selected={selectedIds.includes(f.id)} />;
     }
 
     if (f.type === 'boolean_union' || f.type === 'boolean_subtract' || f.type === 'boolean_intersect') {
-      return (
-        <BooleanMesh
-          key={f.id}
-          feature={f}
-          allFeatures={features}
-          selected={selectedIds.includes(f.id)}
-        />
-      );
+      return <BooleanMesh key={f.id} feature={f} allFeatures={features} selected={selectedIds.includes(f.id)} />;
     }
 
     if (f.type === 'shell') {
-      return (
-        <ShellMesh
-          key={f.id}
-          feature={f}
-          allFeatures={features}
-          selected={selectedIds.includes(f.id)}
-        />
-      );
+      return <ShellMesh key={f.id} feature={f} allFeatures={features} selected={selectedIds.includes(f.id)} />;
+    }
+
+    if (f.type === 'fillet' || f.type === 'chamfer') {
+      return <FilletChamferMesh key={f.id} feature={f} allFeatures={features} selected={selectedIds.includes(f.id)} />;
+    }
+
+    if (f.type === 'cut') {
+      return <CutMesh key={f.id} feature={f} allFeatures={features} selected={selectedIds.includes(f.id)} />;
     }
 
     return (
@@ -579,6 +563,185 @@ function ShellMesh({ feature, allFeatures, selected }: ShellMeshProps) {
   );
 }
 
+interface FilletChamferProps {
+  feature: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean };
+  allFeatures: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean }[];
+  selected: boolean;
+}
+
+/** Renders fillet or chamfer result on a target body using CSG */
+function FilletChamferMesh({ feature, allFeatures, selected }: FilletChamferProps) {
+  if (feature.suppressed) return null;
+
+  const paramsKey = JSON.stringify(feature.parameters);
+  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
+  const meshRef = useRef<THREE.Mesh>(null);
+  useSelectionGlow(meshRef, selected);
+
+  const geometry = useMemo(() => {
+    const targetRef = feature.parameters.targetRef as string;
+    if (!targetRef) return null;
+    const target = allFeatures.find((f) => f.id === targetRef);
+    if (!target || target.suppressed) return null;
+
+    // Get base geometry from createGeometry
+    const baseGeo = createGeometry(target.type, target.parameters);
+    if (!baseGeo) return null;
+
+    const ox = (target.parameters.originX as number) ?? 0;
+    const oy = (target.parameters.originY as number) ?? 0;
+    const oz = (target.parameters.originZ as number) ?? 0;
+    baseGeo.translate(ox, oy, oz);
+    baseGeo.computeBoundingBox();
+    const box = baseGeo.boundingBox!;
+    const min = box.min;
+    const max = box.max;
+
+    const isFillet = feature.type === 'fillet';
+    const value = isFillet
+      ? Math.max(0.001, (feature.parameters.radius as number) ?? 1)
+      : Math.max(0.001, (feature.parameters.distance as number) ?? 0.5);
+
+    // Generate edge decoration meshes along bounding box edges
+    const axes: Array<'x' | 'y' | 'z'> = ['x', 'y', 'z'];
+    const corners: Array<'+' | '-'> = ['+', '-'];
+    const axIdx = (a: 'x' | 'y' | 'z') => (a === 'x' ? 0 : a === 'y' ? 1 : 2);
+
+    let result: THREE.BufferGeometry | null = baseGeo;
+    for (const ax of axes) {
+      const oa = axes.filter((a) => a !== ax) as Array<'x' | 'y' | 'z'>;
+      for (const c1 of corners) {
+        for (const c2 of corners) {
+          const pos: [number, number, number] = [0, 0, 0];
+          pos[axIdx(ax)] = c1 === '+' ? max[ax] : min[ax];
+          pos[axIdx(oa[0]!)] = c2 === '+' ? max[oa[0]!] : min[oa[0]!];
+          pos[axIdx(oa[1]!)] = c2 === '+' ? max[oa[1]!] : min[oa[1]!];
+          const length =
+            Math.abs(max[oa[0]!] - min[oa[0]!]) * 2 +
+            Math.abs(max[oa[1]!] - min[oa[1]!]) * 2;
+
+          let edgeGeo: THREE.BufferGeometry;
+          if (isFillet) {
+            const mesh = generateFilletCylinderMesh(value, length, ax, pos);
+            edgeGeo = new THREE.BufferGeometry();
+            edgeGeo.setAttribute('position', new THREE.BufferAttribute(mesh.vertices, 3));
+            edgeGeo.setAttribute('normal', new THREE.BufferAttribute(mesh.normals, 3));
+            edgeGeo.setIndex(new THREE.BufferAttribute(mesh.indices, 1));
+          } else {
+            const mesh = generateChamferWedgeMesh(value, length, ax, pos, c1);
+            edgeGeo = new THREE.BufferGeometry();
+            edgeGeo.setAttribute('position', new THREE.BufferAttribute(mesh.vertices, 3));
+            edgeGeo.setAttribute('normal', new THREE.BufferAttribute(mesh.normals, 3));
+            edgeGeo.setIndex(new THREE.BufferAttribute(mesh.indices, 1));
+          }
+
+          const next = booleanTwo(result!, edgeGeo, 'union');
+          if (!next) continue;
+          result.dispose();
+          edgeGeo.dispose();
+          result = next;
+        }
+      }
+    }
+
+    return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feature.type, paramsKey, allFeaturesKey]);
+
+  if (!geometry) return null;
+
+  return (
+    <mesh
+      ref={meshRef}
+      geometry={geometry}
+      castShadow
+      receiveShadow
+      userData={{ featureId: feature.id }}
+    >
+      <meshStandardMaterial
+        color={selected ? '#3b82f6' : '#64748b'}
+        emissive={selected ? SELECTED_EMISSIVE : '#000000'}
+        emissiveIntensity={selected ? SELECTED_EMISSIVE_INTENSITY : 0}
+        transparent={selected}
+        opacity={selected ? 0.85 : 1}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
+interface CutMeshProps {
+  feature: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean };
+  allFeatures: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean }[];
+  selected: boolean;
+}
+
+/** Renders a cut (extruded sketch subtracted from target body) */
+function CutMesh({ feature, allFeatures, selected }: CutMeshProps) {
+  if (feature.suppressed) return null;
+
+  const paramsKey = JSON.stringify(feature.parameters);
+  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
+  const meshRef = useRef<THREE.Mesh>(null);
+  useSelectionGlow(meshRef, selected);
+
+  const geometry = useMemo(() => {
+    const targetRef = feature.parameters.targetRef as string;
+    if (!targetRef) return null;
+    const target = allFeatures.find((f) => f.id === targetRef);
+    if (!target || target.suppressed) return null;
+
+    const profile = feature.parameters.profile as Array<[number, number]> | undefined;
+    if (!profile || profile.length < 3) return null;
+
+    const baseGeo = createGeometry(target.type, target.parameters);
+    if (!baseGeo) return null;
+
+    const depth = Math.max(0.001, (feature.parameters.depth as number) ?? 5);
+    const plane = (feature.parameters.plane as 'xy' | 'xz' | 'yz') ?? 'xy';
+    const direction = (feature.parameters.direction as string) ?? 'normal';
+    const ox = (feature.parameters.originX as number) ?? 0;
+    const oy = (feature.parameters.originY as number) ?? 0;
+    const oz = (feature.parameters.originZ as number) ?? 0;
+
+    let actualDepth = depth;
+    if (direction === 'reverse') actualDepth = -depth;
+
+    const cutMeshData = generateExtrudeProfileMesh(profile, actualDepth, plane, [ox, oy, oz]);
+    const cutGeo = new THREE.BufferGeometry();
+    cutGeo.setAttribute('position', new THREE.BufferAttribute(cutMeshData.vertices, 3));
+    cutGeo.setAttribute('normal', new THREE.BufferAttribute(cutMeshData.normals, 3));
+    cutGeo.setIndex(new THREE.BufferAttribute(cutMeshData.indices, 1));
+
+    const result = booleanTwo(baseGeo, cutGeo, 'subtract');
+    baseGeo.dispose();
+    cutGeo.dispose();
+    return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feature.type, paramsKey, allFeaturesKey]);
+
+  if (!geometry) return null;
+
+  return (
+    <mesh
+      ref={meshRef}
+      geometry={geometry}
+      castShadow
+      receiveShadow
+      userData={{ featureId: feature.id }}
+    >
+      <meshStandardMaterial
+        color={selected ? '#3b82f6' : '#64748b'}
+        emissive={selected ? SELECTED_EMISSIVE : '#000000'}
+        emissiveIntensity={selected ? SELECTED_EMISSIVE_INTENSITY : 0}
+        transparent={selected}
+        opacity={selected ? 0.85 : 1}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
 interface BooleanMeshProps {
   feature: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean };
   allFeatures: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean }[];
@@ -596,7 +759,11 @@ function BooleanMesh({ feature, allFeatures, selected }: BooleanMeshProps) {
 
   const geometry = useMemo(() => {
     if (feature.type === 'boolean_union') {
-      const bodyRefs = (feature.parameters.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+      const bodyRefs =
+        (feature.parameters.bodyRefs as string)
+          ?.split(',')
+          .map((s) => s.trim())
+          .filter(Boolean) ?? [];
       const geos: THREE.BufferGeometry[] = [];
       for (const refId of bodyRefs) {
         const ref = allFeatures.find((f) => f.id === refId);
@@ -650,7 +817,11 @@ function BooleanMesh({ feature, allFeatures, selected }: BooleanMeshProps) {
     }
 
     if (feature.type === 'boolean_intersect') {
-      const bodyRefs = (feature.parameters.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+      const bodyRefs =
+        (feature.parameters.bodyRefs as string)
+          ?.split(',')
+          .map((s) => s.trim())
+          .filter(Boolean) ?? [];
       const geos: THREE.BufferGeometry[] = [];
       for (const refId of bodyRefs) {
         const ref = allFeatures.find((f) => f.id === refId);
@@ -746,10 +917,7 @@ function BooleanMesh({ feature, allFeatures, selected }: BooleanMeshProps) {
   );
 }
 
-function createGeometry(
-  type: string,
-  params: Record<string, unknown>,
-): THREE.BufferGeometry | null {
+function createGeometry(type: string, params: Record<string, unknown>): THREE.BufferGeometry | null {
   switch (type) {
     case 'extrude': {
       const width = (params.width as number) ?? 1;
@@ -780,6 +948,51 @@ function createGeometry(
       const diameter = Math.max(0.001, (params.diameter as number) ?? 5);
       const depth = Math.max(0.001, (params.depth as number) ?? 10);
       return new THREE.CylinderGeometry(diameter / 2, diameter / 2, depth, 32);
+    }
+    case 'mesh_import': {
+      const vertices = params._vertices as number[] | undefined;
+      const indices = params._indices as number[] | undefined;
+      if (!vertices || !indices || vertices.length < 3 || indices.length < 3) return null;
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      geo.setIndex(indices);
+      geo.computeVertexNormals();
+      return geo;
+    }
+    case 'extrude_sketch': {
+      const profile = params.profile as Array<[number, number]> | undefined;
+      if (!profile || profile.length < 3) return null;
+      const depth = Math.max(0.001, (params.depth as number) ?? 5);
+      const direction = (params.direction as string) ?? 'normal';
+      const plane = (params.plane as 'xy' | 'xz' | 'yz') ?? 'xy';
+      const ox = (params.originX as number) ?? 0;
+      const oy = (params.originY as number) ?? 0;
+      const oz = (params.originZ as number) ?? 0;
+      let actualDepth = depth;
+      if (direction === 'reverse') actualDepth = -depth;
+      else if (direction === 'symmetric') actualDepth = depth / 2;
+      const mesh = generateExtrudeProfileMesh(profile, actualDepth, plane, [ox, oy, oz]);
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(Array.from(mesh.vertices), 3));
+      geo.setAttribute('normal', new THREE.Float32BufferAttribute(Array.from(mesh.normals), 3));
+      geo.setIndex(Array.from(mesh.indices));
+      return geo;
+    }
+    case 'revolve_sketch': {
+      const profile = params.profile as Array<[number, number]> | undefined;
+      if (!profile || profile.length < 2) return null;
+      const axis = (params.axis as 'x' | 'y' | 'z') ?? 'y';
+      const angle = (params.angle as number) ?? 360;
+      const segments = (params.segments as number) ?? 32;
+      const ox = (params.originX as number) ?? 0;
+      const oy = (params.originY as number) ?? 0;
+      const oz = (params.originZ as number) ?? 0;
+      const mesh = generateRevolveProfileMesh(profile, angle, axis, segments, [ox, oy, oz]);
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(Array.from(mesh.vertices), 3));
+      geo.setAttribute('normal', new THREE.Float32BufferAttribute(Array.from(mesh.normals), 3));
+      geo.setIndex(Array.from(mesh.indices));
+      return geo;
     }
     default:
       return new THREE.BoxGeometry(1, 1, 1);

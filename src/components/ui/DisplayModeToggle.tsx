@@ -51,15 +51,7 @@ export function DisplayModeToggle() {
   );
 }
 
-function ToggleBtn({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
+function ToggleBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       style={{

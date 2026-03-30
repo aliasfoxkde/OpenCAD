@@ -22,10 +22,7 @@ export function TransformGizmo() {
   const controlsRef = useRef<any>(null);
   const dragging = useRef(false);
 
-  const selectedFeature =
-    selectedIds.length === 1
-      ? features.find((f) => f.id === selectedIds[0])
-      : null;
+  const selectedFeature = selectedIds.length === 1 ? features.find((f) => f.id === selectedIds[0]) : null;
 
   // Assembly features use positionX/Y/Z, other features use originX/Y/Z
   const isAssembly = selectedFeature?.type === 'assembly';
@@ -33,15 +30,9 @@ export function TransformGizmo() {
   const posKeyY = isAssembly ? 'positionY' : 'originY';
   const posKeyZ = isAssembly ? 'positionZ' : 'originZ';
 
-  const posX = selectedFeature
-    ? ((selectedFeature.parameters[posKeyX] as number) ?? 0)
-    : 0;
-  const posY = selectedFeature
-    ? ((selectedFeature.parameters[posKeyY] as number) ?? 0)
-    : 0;
-  const posZ = selectedFeature
-    ? ((selectedFeature.parameters[posKeyZ] as number) ?? 0)
-    : 0;
+  const posX = selectedFeature ? ((selectedFeature.parameters[posKeyX] as number) ?? 0) : 0;
+  const posY = selectedFeature ? ((selectedFeature.parameters[posKeyY] as number) ?? 0) : 0;
+  const posZ = selectedFeature ? ((selectedFeature.parameters[posKeyZ] as number) ?? 0) : 0;
 
   const isGizmoVisible = !!selectedFeature && activeTool === 'select';
 
@@ -52,10 +43,13 @@ export function TransformGizmo() {
     }
   }, [posX, posY, posZ, isGizmoVisible]);
 
-  const snapValue = useCallback((v: number): number => {
-    if (!snapToGrid) return v;
-    return Math.round(v / gridSnapSize) * gridSnapSize;
-  }, [snapToGrid, gridSnapSize]);
+  const snapValue = useCallback(
+    (v: number): number => {
+      if (!snapToGrid) return v;
+      return Math.round(v / gridSnapSize) * gridSnapSize;
+    },
+    [snapToGrid, gridSnapSize],
+  );
 
   const handleObjectChange = useCallback(() => {
     if (!meshRef.current || !selectedFeature || !dragging.current) return;
@@ -77,8 +71,12 @@ export function TransformGizmo() {
     <TransformControls
       ref={controlsRef}
       mode="translate"
-      onMouseDown={() => { dragging.current = true; }}
-      onMouseUp={() => { dragging.current = false; }}
+      onMouseDown={() => {
+        dragging.current = true;
+      }}
+      onMouseUp={() => {
+        dragging.current = false;
+      }}
       onObjectChange={handleObjectChange}
     >
       <mesh ref={meshRef} position={[posX, posY, posZ]} visible={false}>

@@ -11,17 +11,9 @@ import type { Point3D, MeshData } from '../types/cad';
 
 function makeBoxMesh(): MeshData {
   return {
-    vertices: new Float32Array([
-      0,0,0, 1,0,0, 1,1,0, 0,1,0,
-      0,0,1, 1,0,1, 1,1,1, 0,1,1,
-    ]),
-    normals: new Float32Array([
-      0,0,-1, 0,0,-1, 0,0,-1, 0,0,-1,
-      0,0,1, 0,0,1, 0,0,1, 0,0,1,
-    ]),
-    indices: new Uint32Array([
-      0,1,2, 0,2,3, 4,7,6, 4,6,5,
-    ]),
+    vertices: new Float32Array([0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1]),
+    normals: new Float32Array([0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1]),
+    indices: new Uint32Array([0, 1, 2, 0, 2, 3, 4, 7, 6, 4, 6, 5]),
     featureId: 'test',
   };
 }

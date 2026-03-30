@@ -3,11 +3,7 @@
  */
 
 import { useCADStore } from '@/stores/cad-store';
-import {
-  getFeatureDefinition,
-  getAllFeatureDefinitions,
-  getDefaultParameters,
-} from '@/cad/features/feature-registry';
+import { getFeatureDefinition, getAllFeatureDefinitions, getDefaultParameters } from '@/cad/features/feature-registry';
 import type { FeatureNode, FeatureType } from '@/types/cad';
 import type { APIResponse, FeatureSummary, FeatureDetail, AvailableFeature } from './types';
 import { nanoid } from 'nanoid';
@@ -57,10 +53,7 @@ export function removeFeature(id: string): APIResponse<void> {
 }
 
 /** Update feature parameters */
-export function modifyFeature(
-  id: string,
-  updates: Partial<FeatureNode>,
-): APIResponse<FeatureNode> {
+export function modifyFeature(id: string, updates: Partial<FeatureNode>): APIResponse<FeatureNode> {
   try {
     const store = useCADStore.getState();
     const existing = store.features.find((f) => f.id === id);

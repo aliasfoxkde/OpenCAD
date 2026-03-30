@@ -93,11 +93,7 @@ export function PropertiesPanel() {
         <div style={styles.sectionTitle}>Primitives</div>
         <div style={styles.primitiveGrid}>
           {primitives.map((p) => (
-            <button
-              key={p.type}
-              style={styles.primitiveBtn}
-              onClick={() => handleCreatePrimitive(p.type)}
-            >
+            <button key={p.type} style={styles.primitiveBtn} onClick={() => handleCreatePrimitive(p.type)}>
               {p.label}
             </button>
           ))}
@@ -177,13 +173,12 @@ export function PropertiesPanel() {
 
           <div style={styles.typeLabel}>
             {featureDef.icon} {featureDef.label}
-            {selectedFeature.suppressed && (
-              <span style={styles.suppressedBadge}>suppressed</span>
-            )}
+            {selectedFeature.suppressed && <span style={styles.suppressedBadge}>suppressed</span>}
           </div>
           {selectedFeature.type === 'assembly' && (
             <div style={styles.assemblyInfo}>
-              Contains {getChildCount(features, selectedFeature.id)} feature{getChildCount(features, selectedFeature.id) !== 1 ? 's' : ''}
+              Contains {getChildCount(features, selectedFeature.id)} feature
+              {getChildCount(features, selectedFeature.id) !== 1 ? 's' : ''}
             </div>
           )}
 
@@ -208,13 +203,13 @@ export function PropertiesPanel() {
             <div style={styles.massItem}>
               <span style={styles.massLabel}>Volume</span>
               <span style={styles.massValue}>
-                {formatPropertyValue(massProps.volume / (conversionFactor ** 3), `${units}³`)}
+                {formatPropertyValue(massProps.volume / conversionFactor ** 3, `${units}³`)}
               </span>
             </div>
             <div style={styles.massItem}>
               <span style={styles.massLabel}>Surface Area</span>
               <span style={styles.massValue}>
-                {formatPropertyValue(massProps.surfaceArea / (conversionFactor ** 2), `${units}²`)}
+                {formatPropertyValue(massProps.surfaceArea / conversionFactor ** 2, `${units}²`)}
               </span>
             </div>
             {massProps.boundingBox && (
@@ -231,7 +226,9 @@ export function PropertiesPanel() {
               <div style={styles.massItem}>
                 <span style={styles.massLabel}>Center</span>
                 <span style={styles.massValue}>
-                  ({(massProps.centerOfMass.x / conversionFactor).toFixed(2)}, {(massProps.centerOfMass.y / conversionFactor).toFixed(2)}, {(massProps.centerOfMass.z / conversionFactor).toFixed(2)}) {units}
+                  ({(massProps.centerOfMass.x / conversionFactor).toFixed(2)},{' '}
+                  {(massProps.centerOfMass.y / conversionFactor).toFixed(2)},{' '}
+                  {(massProps.centerOfMass.z / conversionFactor).toFixed(2)}) {units}
                 </span>
               </div>
             )}
@@ -270,27 +267,49 @@ function ParameterInput({
     case 'number': {
       // Convert mm to display units
       const displayValue = (value as number) / conversionFactor;
-      const displayStep = ((paramDef.step ?? 0.1) / conversionFactor);
+      const displayStep = (paramDef.step ?? 0.1) / conversionFactor;
       const displayMin = paramDef.min != null ? (paramDef.min as number) / conversionFactor : undefined;
       const displayMax = paramDef.max != null ? (paramDef.max as number) / conversionFactor : undefined;
       const displayUnit = paramDef.unit ? units : undefined;
+      const isInvalid =
+        (displayMin != null && displayValue < displayMin) || (displayMax != null && displayValue > displayMax);
+
       return (
         <div style={styles.paramRow}>
           <label style={styles.paramLabel}>
             {paramDef.label}
-            {displayUnit && (
-              <span style={styles.paramUnit}> {displayUnit}</span>
-            )}
+            {displayUnit && <span style={styles.paramUnit}> {displayUnit}</span>}
           </label>
           <input
             type="number"
-            style={styles.paramInput}
+            style={{
+              ...styles.paramInput,
+              ...(isInvalid ? styles.invalidInput : {}),
+            }}
             value={parseFloat(displayValue.toFixed(4))}
             min={displayMin}
             max={displayMax}
             step={parseFloat(displayStep.toFixed(4))}
             onChange={(e) => onChange((parseFloat(e.target.value) || 0) * conversionFactor)}
+            onBlur={(e) => {
+              // Clamp value to valid range on blur
+              let v = parseFloat(e.target.value) || 0;
+              if (displayMin != null && v < displayMin) {
+                v = displayMin;
+                onChange(v * conversionFactor);
+              } else if (displayMax != null && v > displayMax) {
+                v = displayMax;
+                onChange(v * conversionFactor);
+              }
+            }}
           />
+          {isInvalid && (
+            <span style={styles.validationHint}>
+              {displayMin != null && displayValue < displayMin
+                ? `min ${displayMin.toFixed(2)}`
+                : `max ${displayMax?.toFixed(2)}`}
+            </span>
+          )}
         </div>
       );
     }
@@ -314,11 +333,7 @@ function ParameterInput({
       return (
         <div style={styles.paramRow}>
           <label style={styles.paramLabel}>{paramDef.label}</label>
-          <input
-            type="checkbox"
-            checked={value as boolean}
-            onChange={(e) => onChange(e.target.checked)}
-          />
+          <input type="checkbox" checked={value as boolean} onChange={(e) => onChange(e.target.checked)} />
         </div>
       );
 
@@ -326,11 +341,7 @@ function ParameterInput({
       return (
         <div style={styles.paramRow}>
           <label style={styles.paramLabel}>{paramDef.label}</label>
-          <select
-            style={styles.paramSelect}
-            value={value as string}
-            onChange={(e) => onChange(e.target.value)}
-          >
+          <select style={styles.paramSelect} value={value as string} onChange={(e) => onChange(e.target.value)}>
             {paramDef.enumValues?.map((v) => (
               <option key={v} value={v}>
                 {v}
@@ -377,10 +388,10 @@ function ParameterInput({
           </div>
           {refFeature && refDef && (
             <div style={styles.refInfo}>
-              <span style={styles.refType}>{refDef.icon} {refDef.label}</span>
-              {refFeature.suppressed && (
-                <span style={styles.refWarning}>suppressed</span>
-              )}
+              <span style={styles.refType}>
+                {refDef.icon} {refDef.label}
+              </span>
+              {refFeature.suppressed && <span style={styles.refWarning}>suppressed</span>}
             </div>
           )}
           {refId && !refFeature && (
@@ -520,6 +531,15 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#f1f5f9',
     outline: 'none',
     minWidth: 0,
+  },
+  invalidInput: {
+    borderColor: '#ef4444',
+  },
+  validationHint: {
+    fontSize: 9,
+    color: '#ef4444',
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
   },
   paramSelect: {
     flex: 1,

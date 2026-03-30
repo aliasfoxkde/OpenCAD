@@ -28,20 +28,13 @@ function makeFeature(overrides: Partial<FeatureNode> & { id: string }): FeatureN
 describe('assembly-tree', () => {
   describe('getRootFeatures', () => {
     it('returns features with no parentId', () => {
-      const features = [
-        makeFeature({ id: 'a' }),
-        makeFeature({ id: 'b', parentId: 'a' }),
-        makeFeature({ id: 'c' }),
-      ];
+      const features = [makeFeature({ id: 'a' }), makeFeature({ id: 'b', parentId: 'a' }), makeFeature({ id: 'c' })];
       const roots = getRootFeatures(features);
       expect(roots.map((f) => f.id)).toEqual(['a', 'c']);
     });
 
     it('returns all features when none have parentId', () => {
-      const features = [
-        makeFeature({ id: 'a' }),
-        makeFeature({ id: 'b' }),
-      ];
+      const features = [makeFeature({ id: 'a' }), makeFeature({ id: 'b' })];
       expect(getRootFeatures(features)).toHaveLength(2);
     });
   });
@@ -59,10 +52,7 @@ describe('assembly-tree', () => {
     });
 
     it('returns root features when parentId is null', () => {
-      const features = [
-        makeFeature({ id: 'a' }),
-        makeFeature({ id: 'b', parentId: 'a' }),
-      ];
+      const features = [makeFeature({ id: 'a' }), makeFeature({ id: 'b', parentId: 'a' })];
       const roots = getDirectChildren(features, null);
       expect(roots.map((f) => f.id)).toEqual(['a']);
     });
@@ -124,10 +114,7 @@ describe('assembly-tree', () => {
     });
 
     it('returns false when no ancestors are suppressed', () => {
-      const features = [
-        makeFeature({ id: 'asm1', type: 'assembly' }),
-        makeFeature({ id: 'b', parentId: 'asm1' }),
-      ];
+      const features = [makeFeature({ id: 'asm1', type: 'assembly' }), makeFeature({ id: 'b', parentId: 'asm1' })];
       expect(hasSuppressedAncestor(features, 'b')).toBe(false);
     });
 
@@ -139,7 +126,8 @@ describe('assembly-tree', () => {
   describe('getAssemblyTransformMatrix', () => {
     it('returns identity when all params are zero', () => {
       const asm = makeFeature({
-        id: 'asm', type: 'assembly',
+        id: 'asm',
+        type: 'assembly',
         parameters: { positionX: 0, positionY: 0, positionZ: 0, rotationX: 0, rotationY: 0, rotationZ: 0 },
       });
       const m = getAssemblyTransformMatrix(asm);
@@ -155,7 +143,8 @@ describe('assembly-tree', () => {
 
     it('applies translation', () => {
       const asm = makeFeature({
-        id: 'asm', type: 'assembly',
+        id: 'asm',
+        type: 'assembly',
         parameters: { positionX: 5, positionY: 3, positionZ: 1 },
       });
       const m = getAssemblyTransformMatrix(asm);
@@ -170,7 +159,8 @@ describe('assembly-tree', () => {
 
     it('applies 90-degree rotation around Z', () => {
       const asm = makeFeature({
-        id: 'asm', type: 'assembly',
+        id: 'asm',
+        type: 'assembly',
         parameters: { rotationZ: 90 },
       });
       const m = getAssemblyTransformMatrix(asm);
@@ -192,11 +182,14 @@ describe('assembly-tree', () => {
     it('combines nested assembly transforms', () => {
       const features = [
         makeFeature({
-          id: 'asm1', type: 'assembly',
+          id: 'asm1',
+          type: 'assembly',
           parameters: { positionX: 10 },
         }),
         makeFeature({
-          id: 'asm2', type: 'assembly', parentId: 'asm1',
+          id: 'asm2',
+          type: 'assembly',
+          parentId: 'asm1',
           parameters: { positionX: 5 },
         }),
         makeFeature({ id: 'b', parentId: 'asm2' }),
@@ -215,7 +208,8 @@ describe('assembly-tree', () => {
     it('returns true when parent has non-zero transform', () => {
       const features = [
         makeFeature({
-          id: 'asm', type: 'assembly',
+          id: 'asm',
+          type: 'assembly',
           parameters: { positionX: 5 },
         }),
         makeFeature({ id: 'b', parentId: 'asm' }),
@@ -226,7 +220,8 @@ describe('assembly-tree', () => {
     it('returns false when parent has identity transform', () => {
       const features = [
         makeFeature({
-          id: 'asm', type: 'assembly',
+          id: 'asm',
+          type: 'assembly',
           parameters: { positionX: 0, positionY: 0, positionZ: 0, rotationX: 0, rotationY: 0, rotationZ: 0 },
         }),
         makeFeature({ id: 'b', parentId: 'asm' }),

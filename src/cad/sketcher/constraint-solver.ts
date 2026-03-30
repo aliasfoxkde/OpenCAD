@@ -27,10 +27,7 @@ const DAMPING = 0.9;
 /**
  * Solve the constraint system for the given elements and constraints.
  */
-export function solveConstraints(
-  elements: SketchElement[],
-  constraints: SketchConstraint[],
-): SolveResult {
+export function solveConstraints(elements: SketchElement[], constraints: SketchConstraint[]): SolveResult {
   const vars = buildVariables(elements);
   const equations = buildEquations(elements, constraints);
 
@@ -165,140 +162,198 @@ function coincidentEquations(el1: SketchElement, el2: SketchElement): Equation[]
   return [
     {
       evaluate: (v) => (v.get(p1.xId) ?? 0) - (v.get(p2.xId) ?? 0),
-      jacobian: () => new Map([[p1.xId, 1], [p2.xId, -1]]),
+      jacobian: () =>
+        new Map([
+          [p1.xId, 1],
+          [p2.xId, -1],
+        ]),
     },
     {
       evaluate: (v) => (v.get(p1.yId) ?? 0) - (v.get(p2.yId) ?? 0),
-      jacobian: () => new Map([[p1.yId, 1], [p2.yId, -1]]),
+      jacobian: () =>
+        new Map([
+          [p1.yId, 1],
+          [p2.yId, -1],
+        ]),
     },
   ];
 }
 
 function horizontalEquations(el: SketchElement): Equation[] {
   if (el.type !== 'line') return [];
-  return [{
-    evaluate: (v) => (v.get(`${el.id}.y1`) ?? 0) - (v.get(`${el.id}.y2`) ?? 0),
-    jacobian: () => new Map([[`${el.id}.y1`, 1], [`${el.id}.y2`, -1]]),
-  }];
+  return [
+    {
+      evaluate: (v) => (v.get(`${el.id}.y1`) ?? 0) - (v.get(`${el.id}.y2`) ?? 0),
+      jacobian: () =>
+        new Map([
+          [`${el.id}.y1`, 1],
+          [`${el.id}.y2`, -1],
+        ]),
+    },
+  ];
 }
 
 function verticalEquations(el: SketchElement): Equation[] {
   if (el.type !== 'line') return [];
-  return [{
-    evaluate: (v) => (v.get(`${el.id}.x1`) ?? 0) - (v.get(`${el.id}.x2`) ?? 0),
-    jacobian: () => new Map([[`${el.id}.x1`, 1], [`${el.id}.x2`, -1]]),
-  }];
+  return [
+    {
+      evaluate: (v) => (v.get(`${el.id}.x1`) ?? 0) - (v.get(`${el.id}.x2`) ?? 0),
+      jacobian: () =>
+        new Map([
+          [`${el.id}.x1`, 1],
+          [`${el.id}.x2`, -1],
+        ]),
+    },
+  ];
 }
 
 function parallelEquations(el1: SketchElement, el2: SketchElement): Equation[] {
   if (el1.type !== 'line' || el2.type !== 'line') return [];
-  const e1 = el1.id, e2 = el2.id;
-  return [{
-    evaluate: (v) => {
-      const dx1 = (v.get(`${e1}.x2`) ?? 0) - (v.get(`${e1}.x1`) ?? 0);
-      const dy1 = (v.get(`${e1}.y2`) ?? 0) - (v.get(`${e1}.y1`) ?? 0);
-      const dx2 = (v.get(`${e2}.x2`) ?? 0) - (v.get(`${e2}.x1`) ?? 0);
-      const dy2 = (v.get(`${e2}.y2`) ?? 0) - (v.get(`${e2}.y1`) ?? 0);
-      return dx1 * dy2 - dy1 * dx2;
+  const e1 = el1.id,
+    e2 = el2.id;
+  return [
+    {
+      evaluate: (v) => {
+        const dx1 = (v.get(`${e1}.x2`) ?? 0) - (v.get(`${e1}.x1`) ?? 0);
+        const dy1 = (v.get(`${e1}.y2`) ?? 0) - (v.get(`${e1}.y1`) ?? 0);
+        const dx2 = (v.get(`${e2}.x2`) ?? 0) - (v.get(`${e2}.x1`) ?? 0);
+        const dy2 = (v.get(`${e2}.y2`) ?? 0) - (v.get(`${e2}.y1`) ?? 0);
+        return dx1 * dy2 - dy1 * dx2;
+      },
+      jacobian: (v) => {
+        const dx2 = (v.get(`${e2}.x2`) ?? 0) - (v.get(`${e2}.x1`) ?? 0);
+        const dy2 = (v.get(`${e2}.y2`) ?? 0) - (v.get(`${e2}.y1`) ?? 0);
+        const dx1 = (v.get(`${e1}.x2`) ?? 0) - (v.get(`${e1}.x1`) ?? 0);
+        const dy1 = (v.get(`${e1}.y2`) ?? 0) - (v.get(`${e1}.y1`) ?? 0);
+        return new Map([
+          [`${e1}.x1`, -dy2],
+          [`${e1}.y1`, dx2],
+          [`${e1}.x2`, dy2],
+          [`${e1}.y2`, -dx2],
+          [`${e2}.x1`, -dy1],
+          [`${e2}.y1`, dx1],
+          [`${e2}.x2`, dy1],
+          [`${e2}.y2`, -dx1],
+        ]);
+      },
     },
-    jacobian: (v) => {
-      const dx2 = (v.get(`${e2}.x2`) ?? 0) - (v.get(`${e2}.x1`) ?? 0);
-      const dy2 = (v.get(`${e2}.y2`) ?? 0) - (v.get(`${e2}.y1`) ?? 0);
-      const dx1 = (v.get(`${e1}.x2`) ?? 0) - (v.get(`${e1}.x1`) ?? 0);
-      const dy1 = (v.get(`${e1}.y2`) ?? 0) - (v.get(`${e1}.y1`) ?? 0);
-      return new Map([
-        [`${e1}.x1`, -dy2], [`${e1}.y1`, dx2], [`${e1}.x2`, dy2], [`${e1}.y2`, -dx2],
-        [`${e2}.x1`, -dy1], [`${e2}.y1`, dx1], [`${e2}.x2`, dy1], [`${e2}.y2`, -dx1],
-      ]);
-    },
-  }];
+  ];
 }
 
 function perpendicularEquations(el1: SketchElement, el2: SketchElement): Equation[] {
   if (el1.type !== 'line' || el2.type !== 'line') return [];
-  const e1 = el1.id, e2 = el2.id;
-  return [{
-    evaluate: (v) => {
-      const dx1 = (v.get(`${e1}.x2`) ?? 0) - (v.get(`${e1}.x1`) ?? 0);
-      const dy1 = (v.get(`${e1}.y2`) ?? 0) - (v.get(`${e1}.y1`) ?? 0);
-      const dx2 = (v.get(`${e2}.x2`) ?? 0) - (v.get(`${e2}.x1`) ?? 0);
-      const dy2 = (v.get(`${e2}.y2`) ?? 0) - (v.get(`${e2}.y1`) ?? 0);
-      return dx1 * dx2 + dy1 * dy2;
+  const e1 = el1.id,
+    e2 = el2.id;
+  return [
+    {
+      evaluate: (v) => {
+        const dx1 = (v.get(`${e1}.x2`) ?? 0) - (v.get(`${e1}.x1`) ?? 0);
+        const dy1 = (v.get(`${e1}.y2`) ?? 0) - (v.get(`${e1}.y1`) ?? 0);
+        const dx2 = (v.get(`${e2}.x2`) ?? 0) - (v.get(`${e2}.x1`) ?? 0);
+        const dy2 = (v.get(`${e2}.y2`) ?? 0) - (v.get(`${e2}.y1`) ?? 0);
+        return dx1 * dx2 + dy1 * dy2;
+      },
+      jacobian: (v) => {
+        const dx2 = (v.get(`${e2}.x2`) ?? 0) - (v.get(`${e2}.x1`) ?? 0);
+        const dy2 = (v.get(`${e2}.y2`) ?? 0) - (v.get(`${e2}.y1`) ?? 0);
+        const dx1 = (v.get(`${e1}.x2`) ?? 0) - (v.get(`${e1}.x1`) ?? 0);
+        const dy1 = (v.get(`${e1}.y2`) ?? 0) - (v.get(`${e1}.y1`) ?? 0);
+        return new Map([
+          [`${e1}.x1`, -dx2],
+          [`${e1}.y1`, -dy2],
+          [`${e1}.x2`, dx2],
+          [`${e1}.y2`, dy2],
+          [`${e2}.x1`, -dx1],
+          [`${e2}.y1`, -dy1],
+          [`${e2}.x2`, dx1],
+          [`${e2}.y2`, dy1],
+        ]);
+      },
     },
-    jacobian: (v) => {
-      const dx2 = (v.get(`${e2}.x2`) ?? 0) - (v.get(`${e2}.x1`) ?? 0);
-      const dy2 = (v.get(`${e2}.y2`) ?? 0) - (v.get(`${e2}.y1`) ?? 0);
-      const dx1 = (v.get(`${e1}.x2`) ?? 0) - (v.get(`${e1}.x1`) ?? 0);
-      const dy1 = (v.get(`${e1}.y2`) ?? 0) - (v.get(`${e1}.y1`) ?? 0);
-      return new Map([
-        [`${e1}.x1`, -dx2], [`${e1}.y1`, -dy2], [`${e1}.x2`, dx2], [`${e1}.y2`, dy2],
-        [`${e2}.x1`, -dx1], [`${e2}.y1`, -dy1], [`${e2}.x2`, dx1], [`${e2}.y2`, dy1],
-      ]);
-    },
-  }];
+  ];
 }
 
 function distanceEquations(el1: SketchElement, el2: SketchElement, dist: number): Equation[] {
   const p1 = firstPoint(el1);
   const p2 = firstPoint(el2);
   if (!p1 || !p2) return [];
-  return [{
-    evaluate: (v) => {
-      const dx = (v.get(p1.xId) ?? 0) - (v.get(p2.xId) ?? 0);
-      const dy = (v.get(p1.yId) ?? 0) - (v.get(p2.yId) ?? 0);
-      return Math.sqrt(dx * dx + dy * dy) - dist;
+  return [
+    {
+      evaluate: (v) => {
+        const dx = (v.get(p1.xId) ?? 0) - (v.get(p2.xId) ?? 0);
+        const dy = (v.get(p1.yId) ?? 0) - (v.get(p2.yId) ?? 0);
+        return Math.sqrt(dx * dx + dy * dy) - dist;
+      },
+      jacobian: (v) => {
+        const dx = (v.get(p1.xId) ?? 0) - (v.get(p2.xId) ?? 0);
+        const dy = (v.get(p1.yId) ?? 0) - (v.get(p2.yId) ?? 0);
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len < 1e-10) return new Map();
+        return new Map([
+          [p1.xId, dx / len],
+          [p1.yId, dy / len],
+          [p2.xId, -dx / len],
+          [p2.yId, -dy / len],
+        ]);
+      },
     },
-    jacobian: (v) => {
-      const dx = (v.get(p1.xId) ?? 0) - (v.get(p2.xId) ?? 0);
-      const dy = (v.get(p1.yId) ?? 0) - (v.get(p2.yId) ?? 0);
-      const len = Math.sqrt(dx * dx + dy * dy);
-      if (len < 1e-10) return new Map();
-      return new Map([
-        [p1.xId, dx / len], [p1.yId, dy / len],
-        [p2.xId, -dx / len], [p2.yId, -dy / len],
-      ]);
-    },
-  }];
+  ];
 }
 
 function equalEquations(el1: SketchElement, el2: SketchElement): Equation[] {
   if (el1.type === 'line' && el2.type === 'line') {
-    const e1 = el1.id, e2 = el2.id;
-    return [{
-      evaluate: (v) => lineLen(v, e1) - lineLen(v, e2),
-      jacobian: (v) => {
-        const j = new Map<string, number>();
-        const l1 = lineLen(v, e1), l2 = lineLen(v, e2);
-        if (l1 > 1e-10) {
-          const dx = (v.get(`${e1}.x2`) ?? 0) - (v.get(`${e1}.x1`) ?? 0);
-          const dy = (v.get(`${e1}.y2`) ?? 0) - (v.get(`${e1}.y1`) ?? 0);
-          j.set(`${e1}.x2`, dx / l1); j.set(`${e1}.y2`, dy / l1);
-          j.set(`${e1}.x1`, -dx / l1); j.set(`${e1}.y1`, -dy / l1);
-        }
-        if (l2 > 1e-10) {
-          const dx = (v.get(`${e2}.x2`) ?? 0) - (v.get(`${e2}.x1`) ?? 0);
-          const dy = (v.get(`${e2}.y2`) ?? 0) - (v.get(`${e2}.y1`) ?? 0);
-          j.set(`${e2}.x2`, -dx / l2); j.set(`${e2}.y2`, -dy / l2);
-          j.set(`${e2}.x1`, dx / l2); j.set(`${e2}.y1`, dy / l2);
-        }
-        return j;
+    const e1 = el1.id,
+      e2 = el2.id;
+    return [
+      {
+        evaluate: (v) => lineLen(v, e1) - lineLen(v, e2),
+        jacobian: (v) => {
+          const j = new Map<string, number>();
+          const l1 = lineLen(v, e1),
+            l2 = lineLen(v, e2);
+          if (l1 > 1e-10) {
+            const dx = (v.get(`${e1}.x2`) ?? 0) - (v.get(`${e1}.x1`) ?? 0);
+            const dy = (v.get(`${e1}.y2`) ?? 0) - (v.get(`${e1}.y1`) ?? 0);
+            j.set(`${e1}.x2`, dx / l1);
+            j.set(`${e1}.y2`, dy / l1);
+            j.set(`${e1}.x1`, -dx / l1);
+            j.set(`${e1}.y1`, -dy / l1);
+          }
+          if (l2 > 1e-10) {
+            const dx = (v.get(`${e2}.x2`) ?? 0) - (v.get(`${e2}.x1`) ?? 0);
+            const dy = (v.get(`${e2}.y2`) ?? 0) - (v.get(`${e2}.y1`) ?? 0);
+            j.set(`${e2}.x2`, -dx / l2);
+            j.set(`${e2}.y2`, -dy / l2);
+            j.set(`${e2}.x1`, dx / l2);
+            j.set(`${e2}.y1`, dy / l2);
+          }
+          return j;
+        },
       },
-    }];
+    ];
   }
   if (el1.type === 'circle' && el2.type === 'circle') {
-    return [{
-      evaluate: (v) => (v.get(`${el1.id}.r`) ?? 0) - (v.get(`${el2.id}.r`) ?? 0),
-      jacobian: () => new Map([[`${el1.id}.r`, 1], [`${el2.id}.r`, -1]]),
-    }];
+    return [
+      {
+        evaluate: (v) => (v.get(`${el1.id}.r`) ?? 0) - (v.get(`${el2.id}.r`) ?? 0),
+        jacobian: () =>
+          new Map([
+            [`${el1.id}.r`, 1],
+            [`${el2.id}.r`, -1],
+          ]),
+      },
+    ];
   }
   return [];
 }
 
 function fixEquations(_el: SketchElement): Equation[] {
-  return [{
-    evaluate: () => 0,
-    jacobian: () => new Map(),
-  }];
+  return [
+    {
+      evaluate: () => 0,
+      jacobian: () => new Map(),
+    },
+  ];
 }
 
 function midpointEquations(el1: SketchElement, el2: SketchElement): Equation[] {
@@ -310,7 +365,12 @@ function midpointEquations(el1: SketchElement, el2: SketchElement): Equation[] {
         const mx = ((v.get(`${el2.id}.x1`) ?? 0) + (v.get(`${el2.id}.x2`) ?? 0)) / 2;
         return px - mx;
       },
-      jacobian: () => new Map([[`${el1.id}.x`, 1], [`${el2.id}.x1`, -0.5], [`${el2.id}.x2`, -0.5]]),
+      jacobian: () =>
+        new Map([
+          [`${el1.id}.x`, 1],
+          [`${el2.id}.x1`, -0.5],
+          [`${el2.id}.x2`, -0.5],
+        ]),
     },
     {
       evaluate: (v) => {
@@ -318,23 +378,37 @@ function midpointEquations(el1: SketchElement, el2: SketchElement): Equation[] {
         const my = ((v.get(`${el2.id}.y1`) ?? 0) + (v.get(`${el2.id}.y2`) ?? 0)) / 2;
         return py - my;
       },
-      jacobian: () => new Map([[`${el1.id}.y`, 1], [`${el2.id}.y1`, -0.5], [`${el2.id}.y2`, -0.5]]),
+      jacobian: () =>
+        new Map([
+          [`${el1.id}.y`, 1],
+          [`${el2.id}.y1`, -0.5],
+          [`${el2.id}.y2`, -0.5],
+        ]),
     },
   ];
 }
 
 // === Helpers ===
 
-interface PointRef { xId: string; yId: string }
+interface PointRef {
+  xId: string;
+  yId: string;
+}
 
 function firstPoint(el: SketchElement): PointRef | null {
   switch (el.type) {
-    case 'point': return { xId: `${el.id}.x`, yId: `${el.id}.y` };
-    case 'line': return { xId: `${el.id}.x1`, yId: `${el.id}.y1` };
-    case 'circle': return { xId: `${el.id}.cx`, yId: `${el.id}.cy` };
-    case 'rectangle': return { xId: `${el.id}.x`, yId: `${el.id}.y` };
-    case 'arc': return { xId: `${el.id}.x1`, yId: `${el.id}.y1` };
-    default: return null;
+    case 'point':
+      return { xId: `${el.id}.x`, yId: `${el.id}.y` };
+    case 'line':
+      return { xId: `${el.id}.x1`, yId: `${el.id}.y1` };
+    case 'circle':
+      return { xId: `${el.id}.cx`, yId: `${el.id}.cy` };
+    case 'rectangle':
+      return { xId: `${el.id}.x`, yId: `${el.id}.y` };
+    case 'arc':
+      return { xId: `${el.id}.x1`, yId: `${el.id}.y1` };
+    default:
+      return null;
   }
 }
 
@@ -373,7 +447,10 @@ function solveLinearSystem(
     let maxRow = row;
     for (let r = row + 1; r < n; r++) {
       const val = Math.abs(matrix[r]?.[col] ?? 0);
-      if (val > maxVal) { maxVal = val; maxRow = r; }
+      if (val > maxVal) {
+        maxVal = val;
+        maxRow = r;
+      }
     }
     if (maxVal < 1e-12) continue; // Skip zero columns
     if (maxRow !== row) {

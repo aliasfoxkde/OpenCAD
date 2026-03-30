@@ -3,13 +3,7 @@ import { importOBJ } from './obj-importer';
 
 describe('importOBJ', () => {
   it('parses vertices and faces with normals', () => {
-    const obj = [
-      'v 0 0 0',
-      'v 1 0 0',
-      'v 0 1 0',
-      'vn 0 0 1',
-      'f 1//1 2//1 3//1',
-    ].join('\n');
+    const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'vn 0 0 1', 'f 1//1 2//1 3//1'].join('\n');
 
     const result = importOBJ(obj, 'test');
     expect(result.name).toBe('test');
@@ -19,16 +13,9 @@ describe('importOBJ', () => {
   });
 
   it('handles faces with v/vt/vn format', () => {
-    const obj = [
-      'v 0 0 0',
-      'v 1 0 0',
-      'v 0 1 0',
-      'vt 0 0',
-      'vt 1 0',
-      'vt 0 1',
-      'vn 0 0 1',
-      'f 1/1/1 2/2/1 3/3/1',
-    ].join('\n');
+    const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'vt 0 0', 'vt 1 0', 'vt 0 1', 'vn 0 0 1', 'f 1/1/1 2/2/1 3/3/1'].join(
+      '\n',
+    );
 
     const result = importOBJ(obj);
     expect(result.mesh.vertices.length).toBe(9);
@@ -36,12 +23,7 @@ describe('importOBJ', () => {
   });
 
   it('uses default normal when none provided', () => {
-    const obj = [
-      'v 0 0 0',
-      'v 1 0 0',
-      'v 0 1 0',
-      'f 1 2 3',
-    ].join('\n');
+    const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n');
 
     const result = importOBJ(obj);
     expect(result.mesh.vertices.length).toBe(9);
@@ -54,15 +36,9 @@ describe('importOBJ', () => {
 
   it('deduplicates shared vertex/normal combos', () => {
     // Two triangles sharing an edge with the same normal
-    const obj = [
-      'v 0 0 0',
-      'v 1 0 0',
-      'v 0 1 0',
-      'v 1 1 0',
-      'vn 0 0 1',
-      'f 1//1 2//1 3//1',
-      'f 2//1 4//1 3//1',
-    ].join('\n');
+    const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'v 1 1 0', 'vn 0 0 1', 'f 1//1 2//1 3//1', 'f 2//1 4//1 3//1'].join(
+      '\n',
+    );
 
     const result = importOBJ(obj);
     // Vertex 2 and 3 are shared, so we should have 4 unique verts, not 6
@@ -72,14 +48,7 @@ describe('importOBJ', () => {
 
   it('triangulates n-gon faces (fan triangulation)', () => {
     // Quad face with 4 vertices
-    const obj = [
-      'v 0 0 0',
-      'v 1 0 0',
-      'v 1 1 0',
-      'v 0 1 0',
-      'vn 0 0 1',
-      'f 1//1 2//1 3//1 4//1',
-    ].join('\n');
+    const obj = ['v 0 0 0', 'v 1 0 0', 'v 1 1 0', 'v 0 1 0', 'vn 0 0 1', 'f 1//1 2//1 3//1 4//1'].join('\n');
 
     const result = importOBJ(obj);
     // Quad should produce 2 triangles
@@ -112,16 +81,9 @@ describe('importOBJ', () => {
   });
 
   it('ignores empty and comment lines', () => {
-    const obj = [
-      '# This is a comment',
-      '',
-      '  ',
-      'v 0 0 0',
-      'v 1 0 0',
-      'v 0 1 0',
-      'vn 0 0 1',
-      'f 1//1 2//1 3//1',
-    ].join('\n');
+    const obj = ['# This is a comment', '', '  ', 'v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'vn 0 0 1', 'f 1//1 2//1 3//1'].join(
+      '\n',
+    );
 
     const result = importOBJ(obj);
     expect(result.mesh.vertices.length).toBe(9);
@@ -129,15 +91,7 @@ describe('importOBJ', () => {
   });
 
   it('handles faces with v/vt format (no normal)', () => {
-    const obj = [
-      'v 0 0 0',
-      'v 1 0 0',
-      'v 0 1 0',
-      'vt 0 0',
-      'vt 1 0',
-      'vt 0 1',
-      'f 1/1 2/2 3/3',
-    ].join('\n');
+    const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'vt 0 0', 'vt 1 0', 'vt 0 1', 'f 1/1 2/2 3/3'].join('\n');
 
     const result = importOBJ(obj);
     expect(result.mesh.vertices.length).toBe(9);

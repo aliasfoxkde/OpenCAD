@@ -91,9 +91,7 @@ export const useCollabStore = create<CollabStore>((set) => ({
 
   updatePeer: (peerId, updates) =>
     set((state) => ({
-      peers: state.peers.map((p) =>
-        p.peerId === peerId ? { ...p, ...updates, lastSeen: Date.now() } : p,
-      ),
+      peers: state.peers.map((p) => (p.peerId === peerId ? { ...p, ...updates, lastSeen: Date.now() } : p)),
     })),
 
   removePeer: (peerId) =>

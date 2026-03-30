@@ -1,14 +1,21 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createDocument, listAllDocuments, openDocument, saveCurrentDocument, removeDocument, generateDocumentId } from './document-api';
+import {
+  createDocument,
+  listAllDocuments,
+  openDocument,
+  saveCurrentDocument,
+  removeDocument,
+  generateDocumentId,
+} from './document-api';
 
 // Mock the db module
 vi.mock('@/cad/io/db', () => ({
   saveDocument: vi.fn().mockResolvedValue(undefined),
   loadDocument: vi.fn().mockResolvedValue({ id: 'doc-1', name: 'Test', features: [] }),
   deleteDocument: vi.fn().mockResolvedValue(undefined),
-  listDocuments: vi.fn().mockResolvedValue([
-    { id: 'doc-1', name: 'Test', created: 1000, modified: 2000, featureCount: 3 },
-  ]),
+  listDocuments: vi
+    .fn()
+    .mockResolvedValue([{ id: 'doc-1', name: 'Test', created: 1000, modified: 2000, featureCount: 3 }]),
   createDocumentId: vi.fn().mockReturnValue('generated-id'),
   createNewDocument: vi.fn().mockReturnValue({ id: 'doc-new', name: 'Untitled', features: [], units: 'mm' }),
   closeDB: vi.fn().mockResolvedValue(undefined),

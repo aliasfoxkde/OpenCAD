@@ -42,18 +42,10 @@ export function SectionPlane() {
       return;
     }
 
-    const normalVec = new THREE.Vector3(
-      normal === 'x' ? 1 : 0,
-      normal === 'y' ? 1 : 0,
-      normal === 'z' ? 1 : 0,
-    );
+    const normalVec = new THREE.Vector3(normal === 'x' ? 1 : 0, normal === 'y' ? 1 : 0, normal === 'z' ? 1 : 0);
     clippingPlane.setFromNormalAndCoplanarPoint(
       normalVec,
-      new THREE.Vector3(
-        normal === 'x' ? offset : 0,
-        normal === 'y' ? offset : 0,
-        normal === 'z' ? offset : 0,
-      ),
+      new THREE.Vector3(normal === 'x' ? offset : 0, normal === 'y' ? offset : 0, normal === 'z' ? offset : 0),
     );
 
     scene.traverse((child) => {
@@ -76,13 +68,7 @@ export function SectionPlane() {
   return <SectionPlaneVisual normal={normal} offset={offset} />;
 }
 
-function SectionPlaneVisual({
-  normal,
-  offset,
-}: {
-  normal: 'x' | 'y' | 'z';
-  offset: number;
-}) {
+function SectionPlaneVisual({ normal, offset }: { normal: 'x' | 'y' | 'z'; offset: number }) {
   const { rotation, position } = useMemo(() => {
     const rot = new THREE.Euler();
     const pos = new THREE.Vector3();
@@ -112,13 +98,7 @@ function SectionPlaneVisual({
     <group position={position} rotation={rotation}>
       <mesh renderOrder={999}>
         <planeGeometry args={[PLANE_SIZE, PLANE_SIZE]} />
-        <meshBasicMaterial
-          color="#22d3ee"
-          transparent
-          opacity={0.08}
-          side={THREE.DoubleSide}
-          depthWrite={false}
-        />
+        <meshBasicMaterial color="#22d3ee" transparent opacity={0.08} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>
       <lineSegments>
         <edgesGeometry args={[new THREE.PlaneGeometry(PLANE_SIZE, PLANE_SIZE)]} />

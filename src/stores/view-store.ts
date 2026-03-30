@@ -36,26 +36,32 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
   requestZoomToSelection: () => set((s) => ({ zoomToSelectionRequested: s.zoomToSelectionRequested + 1 })),
   setLeftPanelWidth: (width) => set({ leftPanelWidth: width }),
   setRightPanelWidth: (width) => set({ rightPanelWidth: width }),
-  toggleSectionPlane: () => set((s) => ({
-    sectionPlane: { ...s.sectionPlane, enabled: !s.sectionPlane.enabled },
-  })),
-  setSectionPlaneNormal: (normal) => set((s) => ({
-    sectionPlane: { ...s.sectionPlane, normal },
-  })),
-  setSectionPlaneOffset: (offset) => set((s) => ({
-    sectionPlane: { ...s.sectionPlane, offset },
-  })),
-  addMeasurePoint: (point) => set((s) => ({
-    measurePoints: [...s.measurePoints.slice(-1), point],
-  })),
+  toggleSectionPlane: () =>
+    set((s) => ({
+      sectionPlane: { ...s.sectionPlane, enabled: !s.sectionPlane.enabled },
+    })),
+  setSectionPlaneNormal: (normal) =>
+    set((s) => ({
+      sectionPlane: { ...s.sectionPlane, normal },
+    })),
+  setSectionPlaneOffset: (offset) =>
+    set((s) => ({
+      sectionPlane: { ...s.sectionPlane, offset },
+    })),
+  addMeasurePoint: (point) =>
+    set((s) => ({
+      measurePoints: [...s.measurePoints.slice(-1), point],
+    })),
   clearMeasurePoints: () => set({ measurePoints: [] }),
   toggleSnap: () => set((s) => ({ snapToGrid: !s.snapToGrid })),
   setGridSnapSize: (size) => set({ gridSnapSize: size }),
-  addAnnotation: (annotation: DimensionAnnotation) => set((s) => ({
-    annotations: [...s.annotations, annotation],
-  })),
-  removeAnnotation: (id: string) => set((s) => ({
-    annotations: s.annotations.filter((a) => a.id !== id),
-  })),
+  addAnnotation: (annotation: DimensionAnnotation) =>
+    set((s) => ({
+      annotations: [...s.annotations, annotation],
+    })),
+  removeAnnotation: (id: string) =>
+    set((s) => ({
+      annotations: s.annotations.filter((a) => a.id !== id),
+    })),
   clearAnnotations: () => set({ annotations: [] }),
 }));

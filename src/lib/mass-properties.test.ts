@@ -2,11 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { computeMeshProperties } from './mass-properties';
 import type { MeshData } from '../types/cad';
 
-function makeMesh(
-  vertices: number[],
-  indices: number[],
-  normals?: number[],
-): MeshData {
+function makeMesh(vertices: number[], indices: number[], normals?: number[]): MeshData {
   return {
     vertices: new Float32Array(vertices),
     normals: normals ? new Float32Array(normals) : new Float32Array(vertices.length),
@@ -21,23 +17,17 @@ describe('computeMeshProperties', () => {
     const mesh = makeMesh(
       [
         // Front face
-        -1, -1, 1,  1, -1, 1,  1, 1, 1,
-        -1, -1, 1,  1, 1, 1,  -1, 1, 1,
+        -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1,
         // Back face
-        1, -1, -1,  -1, -1, -1,  -1, 1, -1,
-        1, -1, -1,  -1, 1, -1,  1, 1, -1,
+        1, -1, -1, -1, -1, -1, -1, 1, -1, 1, -1, -1, -1, 1, -1, 1, 1, -1,
         // Top face
-        -1, 1, 1,  1, 1, 1,  1, 1, -1,
-        -1, 1, 1,  1, 1, -1,  -1, 1, -1,
+        -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, 1, -1,
         // Bottom face
-        -1, -1, -1,  1, -1, -1,  1, -1, 1,
-        -1, -1, -1,  1, -1, 1,  -1, -1, 1,
+        -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, -1, 1, -1, 1, -1, -1, 1,
         // Right face
-        1, -1, 1,  1, -1, -1,  1, 1, -1,
-        1, -1, 1,  1, 1, -1,  1, 1, 1,
+        1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, 1, 1, -1, 1, 1, 1,
         // Left face
-        -1, -1, -1,  -1, -1, 1,  -1, 1, 1,
-        -1, -1, -1,  -1, 1, 1,  -1, 1, -1,
+        -1, -1, -1, -1, -1, 1, -1, 1, 1, -1, -1, -1, -1, 1, 1, -1, 1, -1,
       ],
       Array.from({ length: 36 }, (_, i) => i),
     );
@@ -50,18 +40,10 @@ describe('computeMeshProperties', () => {
   it('computes surface area of a unit cube', () => {
     const mesh = makeMesh(
       [
-        -1, -1, 1,  1, -1, 1,  1, 1, 1,
-        -1, -1, 1,  1, 1, 1,  -1, 1, 1,
-        1, -1, -1,  -1, -1, -1,  -1, 1, -1,
-        1, -1, -1,  -1, 1, -1,  1, 1, -1,
-        -1, 1, 1,  1, 1, 1,  1, 1, -1,
-        -1, 1, 1,  1, 1, -1,  -1, 1, -1,
-        -1, -1, -1,  1, -1, -1,  1, -1, 1,
-        -1, -1, -1,  1, -1, 1,  -1, -1, 1,
-        1, -1, 1,  1, -1, -1,  1, 1, -1,
-        1, -1, 1,  1, 1, -1,  1, 1, 1,
-        -1, -1, -1,  -1, -1, 1,  -1, 1, 1,
-        -1, -1, -1,  -1, 1, 1,  -1, 1, -1,
+        -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, -1, -1, -1, 1,
+        -1, 1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1,
+        -1, -1, 1, -1, 1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, 1, 1, -1, 1, 1, 1, -1, -1, -1, -1, -1, 1,
+        -1, 1, 1, -1, -1, -1, -1, 1, 1, -1, 1, -1,
       ],
       Array.from({ length: 36 }, (_, i) => i),
     );
@@ -72,10 +54,7 @@ describe('computeMeshProperties', () => {
   });
 
   it('computes bounding box', () => {
-    const mesh = makeMesh(
-      [0, 0, 0, 2, 0, 0, 1, 3, 0],
-      [0, 1, 2],
-    );
+    const mesh = makeMesh([0, 0, 0, 2, 0, 0, 1, 3, 0], [0, 1, 2]);
 
     const props = computeMeshProperties(mesh);
     expect(props.boundingBox).not.toBeNull();
@@ -88,10 +67,7 @@ describe('computeMeshProperties', () => {
   });
 
   it('computes center of mass as bounding box centroid', () => {
-    const mesh = makeMesh(
-      [0, 0, 0, 4, 0, 0, 2, 6, 0],
-      [0, 1, 2],
-    );
+    const mesh = makeMesh([0, 0, 0, 4, 0, 0, 2, 6, 0], [0, 1, 2]);
 
     const props = computeMeshProperties(mesh);
     expect(props.centerOfMass).not.toBeNull();
@@ -101,10 +77,7 @@ describe('computeMeshProperties', () => {
   });
 
   it('computes triangle and vertex counts', () => {
-    const mesh = makeMesh(
-      [0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0],
-      [0, 1, 2, 0, 2, 3],
-    );
+    const mesh = makeMesh([0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0], [0, 1, 2, 0, 2, 3]);
 
     const props = computeMeshProperties(mesh);
     expect(props.triangleCount).toBe(2);
@@ -124,10 +97,7 @@ describe('computeMeshProperties', () => {
   });
 
   it('computes volume for a single triangle (tetrahedron with origin)', () => {
-    const mesh = makeMesh(
-      [1, 0, 0, 0, 1, 0, 0, 0, 1],
-      [0, 1, 2],
-    );
+    const mesh = makeMesh([1, 0, 0, 0, 1, 0, 0, 0, 1], [0, 1, 2]);
 
     const props = computeMeshProperties(mesh);
     // The signed volume of the tetrahedron (origin, v1, v2, v3) is 1/6
@@ -136,13 +106,10 @@ describe('computeMeshProperties', () => {
 
   it('computes surface area for equilateral triangle', () => {
     const s = 2;
-    const h = s * Math.sqrt(3) / 2;
-    const mesh = makeMesh(
-      [0, 0, 0, s, 0, 0, s / 2, h, 0],
-      [0, 1, 2],
-    );
+    const h = (s * Math.sqrt(3)) / 2;
+    const mesh = makeMesh([0, 0, 0, s, 0, 0, s / 2, h, 0], [0, 1, 2]);
 
     const props = computeMeshProperties(mesh);
-    expect(props.surfaceArea).toBeCloseTo(s * h / 2, 0.001);
+    expect(props.surfaceArea).toBeCloseTo((s * h) / 2, 0.001);
   });
 });

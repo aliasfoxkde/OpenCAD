@@ -20,9 +20,7 @@ vi.mock('@/cad/io/db', () => ({
     autoSave: false,
   }),
   deleteDocument: vi.fn().mockResolvedValue(undefined),
-  listDocuments: vi.fn().mockResolvedValue([
-    { id: 'doc-1', name: 'Test', created: 1, modified: 2, featureCount: 3 },
-  ]),
+  listDocuments: vi.fn().mockResolvedValue([{ id: 'doc-1', name: 'Test', created: 1, modified: 2, featureCount: 3 }]),
   createDocumentId: vi.fn(() => 'generated-id'),
   createNewDocument: vi.fn(() => ({
     id: 'new-doc',
@@ -111,20 +109,31 @@ vi.mock('@/cad/analysis/measure', () => ({
   distance3D: vi.fn(() => 14.14),
   angleBetween: vi.fn(() => 0.785),
   computeBounds: vi.fn(() => ({
-    minX: 0, minY: 0, minZ: 0, maxX: 10, maxY: 20, maxZ: 30,
+    minX: 0,
+    minY: 0,
+    minZ: 0,
+    maxX: 10,
+    maxY: 20,
+    maxZ: 30,
   })),
   computeCentroid: vi.fn(() => ({ x: 5, y: 10, z: 15 })),
   computeSurfaceArea: vi.fn(() => 1200),
   computeVolume: vi.fn(() => 6000),
   measureDistance: vi.fn(() => ({
-    value: 14.14, unit: 'mm', label: 'Distance',
+    value: 14.14,
+    unit: 'mm',
+    label: 'Distance',
   })),
   measureAngle: vi.fn(() => ({
-    value: 45, unit: 'deg', label: 'Angle',
+    value: 45,
+    unit: 'deg',
+    label: 'Angle',
   })),
   measureBoundingBox: vi.fn(() => ({
     bounds: { minX: 0, minY: 0, minZ: 0, maxX: 10, maxY: 20, maxZ: 30 },
-    width: 10, height: 20, depth: 30,
+    width: 10,
+    height: 20,
+    depth: 30,
   })),
   getMassProperties: vi.fn(() => ({
     centroid: { x: 5, y: 10, z: 15 },

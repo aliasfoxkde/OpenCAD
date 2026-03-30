@@ -116,9 +116,7 @@ describe('cad-worker', () => {
     self.onmessage!({
       data: { type: 'tessellate', id: 'del-1' },
     } as MessageEvent);
-    expect(mockPostMessage).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'tessellation_error' }),
-    );
+    expect(mockPostMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'tessellation_error' }));
   });
 
   it('should return error for unknown request type', async () => {

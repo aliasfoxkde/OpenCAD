@@ -123,91 +123,97 @@ export function SketchCanvas() {
   }, [active, elements, constraints, selectedIds, hoveredId, cursor, snap, drawing]);
 
   // Mouse handlers
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left - canvas.width / 2;
-    const y = -(e.clientY - rect.top - canvas.height / 2); // Flip Y for CAD
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left - canvas.width / 2;
+      const y = -(e.clientY - rect.top - canvas.height / 2); // Flip Y for CAD
 
-    const point: Point2D = { x, y };
-    setCursor(point);
+      const point: Point2D = { x, y };
+      setCursor(point);
 
-    // Find snap
-    const snapResult = findSnap({
-      elements,
-      cursor: point,
-      gridSize: GRID_SIZE,
-    });
-    setSnap(snapResult);
+      // Find snap
+      const snapResult = findSnap({
+        elements,
+        cursor: point,
+        gridSize: GRID_SIZE,
+      });
+      setSnap(snapResult);
 
-    // Check hover
-    if (tool === 'select') {
-      const hit = hitTest(point, elements);
-      setHovered(hit);
-    }
-  }, [elements, tool]);
-
-  const handleClick = useCallback((_e: React.MouseEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const point = snap?.point ?? cursor;
-    if (!point) return;
-
-    switch (tool) {
-      case 'select': {
+      // Check hover
+      if (tool === 'select') {
         const hit = hitTest(point, elements);
-        select(hit ? [hit] : []);
-        break;
+        setHovered(hit);
       }
-      case 'constraint': {
-        if (!pendingConstraintType) break;
-        const hit = hitTest(point, elements);
-        if (!hit) break;
-        const requiredCount = CONSTRAINT_ELEMENT_COUNT[pendingConstraintType] ?? 2;
-        const newSelection = [...selectedIds, hit];
-        if (newSelection.length >= requiredCount) {
-          addConstraint({
-            type: pendingConstraintType,
-            elements: newSelection.slice(0, requiredCount),
-          });
-          select([]);
-          setPendingConstraintType(null);
-        } else {
-          select(newSelection);
+    },
+    [elements, tool],
+  );
+
+  const handleClick = useCallback(
+    (_e: React.MouseEvent) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const point = snap?.point ?? cursor;
+      if (!point) return;
+
+      switch (tool) {
+        case 'select': {
+          const hit = hitTest(point, elements);
+          select(hit ? [hit] : []);
+          break;
         }
-        break;
-      }
-      case 'line':
-      case 'circle':
-      case 'arc':
-      case 'rectangle':
-      case 'ellipse':
-      case 'spline':
-      case 'point': {
-        if (!drawing) {
-          startDrawing(tool, point);
-        } else {
-          if (needsTwoPoints(tool) && drawing.points.length === 1) {
-            continueDrawing(point);
-            finishDrawing();
-          } else if (tool === 'arc' && drawing.points.length < 2) {
-            continueDrawing(point);
-          } else if (tool === 'arc' && drawing.points.length === 2) {
-            continueDrawing(point);
-            finishDrawing();
-          } else if (tool === 'spline') {
-            continueDrawing(point);
+        case 'constraint': {
+          if (!pendingConstraintType) break;
+          const hit = hitTest(point, elements);
+          if (!hit) break;
+          const requiredCount = CONSTRAINT_ELEMENT_COUNT[pendingConstraintType] ?? 2;
+          const newSelection = [...selectedIds, hit];
+          if (newSelection.length >= requiredCount) {
+            addConstraint({
+              type: pendingConstraintType,
+              elements: newSelection.slice(0, requiredCount),
+            });
+            select([]);
+            setPendingConstraintType(null);
           } else {
-            finishDrawing();
+            select(newSelection);
           }
+          break;
         }
-        break;
+        case 'line':
+        case 'circle':
+        case 'arc':
+        case 'rectangle':
+        case 'ellipse':
+        case 'spline':
+        case 'point': {
+          if (!drawing) {
+            startDrawing(tool, point);
+          } else {
+            if (needsTwoPoints(tool) && drawing.points.length === 1) {
+              continueDrawing(point);
+              finishDrawing();
+            } else if (tool === 'arc' && drawing.points.length < 2) {
+              continueDrawing(point);
+            } else if (tool === 'arc' && drawing.points.length === 2) {
+              continueDrawing(point);
+              finishDrawing();
+            } else if (tool === 'spline') {
+              continueDrawing(point);
+            } else {
+              finishDrawing();
+            }
+          }
+          break;
+        }
       }
-    }
-  }, [tool, cursor, snap, drawing, elements, selectedIds, pendingConstraintType]);
+    },
+    [tool, cursor, snap, drawing, elements, selectedIds, pendingConstraintType],
+  );
 
   const handleDblClick = useCallback(() => {
     // Finish spline or multi-point shapes
@@ -305,12 +311,7 @@ function drawAxes(ctx: CanvasRenderingContext2D, w: number, h: number) {
   ctx.stroke();
 }
 
-function drawElement(
-  ctx: CanvasRenderingContext2D,
-  el: SketchElement,
-  isSelected: boolean,
-  isHovered: boolean,
-) {
+function drawElement(ctx: CanvasRenderingContext2D, el: SketchElement, isSelected: boolean, isHovered: boolean) {
   const color = el.construction
     ? COLORS.construction
     : isSelected
@@ -355,9 +356,12 @@ function drawElement(
       const cx = canvas.width / 2;
       const cy = canvas.height / 2;
       // 3-point arc: compute center, radius, start/end angles
-      const x1 = g.x1 as number, y1 = g.y1 as number;
-      const x2 = g.x2 as number, y2 = g.y2 as number;
-      const x3 = g.x3 as number, y3 = g.y3 as number;
+      const x1 = g.x1 as number,
+        y1 = g.y1 as number;
+      const x2 = g.x2 as number,
+        y2 = g.y2 as number;
+      const x3 = g.x3 as number,
+        y3 = g.y3 as number;
       // Use canvas arc with computed values
       drawThreePointArc(ctx, cx, cy, x1, y1, x2, y2, x3, y3);
       break;
@@ -406,10 +410,14 @@ function drawCenterPoint(ctx: CanvasRenderingContext2D, x: number, y: number) {
 
 function drawThreePointArc(
   ctx: CanvasRenderingContext2D,
-  canvasCx: number, canvasCy: number,
-  x1: number, y1: number,
-  x2: number, y2: number,
-  x3: number, y3: number,
+  canvasCx: number,
+  canvasCy: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  x3: number,
+  y3: number,
 ) {
   // Compute center and radius from 3 points
   const d = 2 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));
@@ -489,12 +497,7 @@ function drawPreview(
         ctx.lineTo(cx + target.x, cy - target.y);
         ctx.stroke();
       } else if (points.length === 2) {
-        drawThreePointArc(
-          ctx, cx, cy,
-          points[0]!.x, points[0]!.y,
-          points[1]!.x, points[1]!.y,
-          target.x, target.y,
-        );
+        drawThreePointArc(ctx, cx, cy, points[0]!.x, points[0]!.y, points[1]!.x, points[1]!.y, target.x, target.y);
       }
       break;
     }
@@ -515,10 +518,7 @@ function drawPreview(
   ctx.setLineDash([]);
 }
 
-function drawSnapIndicator(
-  ctx: CanvasRenderingContext2D,
-  snap: { point: Point2D; type: string },
-) {
+function drawSnapIndicator(ctx: CanvasRenderingContext2D, snap: { point: Point2D; type: string }) {
   const canvas = ctx.canvas;
   const cx = canvas.width / 2;
   const cy = canvas.height / 2;
@@ -568,11 +568,7 @@ function drawSnapIndicator(
   }
 }
 
-function drawConstraint(
-  ctx: CanvasRenderingContext2D,
-  constraint: SketchConstraint,
-  elements: SketchElement[],
-) {
+function drawConstraint(ctx: CanvasRenderingContext2D, constraint: SketchConstraint, elements: SketchElement[]) {
   const canvas = ctx.canvas;
   const cx = canvas.width / 2;
   const cy = canvas.height / 2;
@@ -656,11 +652,10 @@ function isNearElement(point: Point2D, el: SketchElement, threshold: number): bo
 
   switch (el.type) {
     case 'line': {
-      return distToSegment(
-        point,
-        { x: g.x1 as number, y: g.y1 as number },
-        { x: g.x2 as number, y: g.y2 as number },
-      ) < threshold;
+      return (
+        distToSegment(point, { x: g.x1 as number, y: g.y1 as number }, { x: g.x2 as number, y: g.y2 as number }) <
+        threshold
+      );
     }
     case 'circle': {
       const dx = point.x - (g.cx as number);
@@ -669,14 +664,28 @@ function isNearElement(point: Point2D, el: SketchElement, threshold: number): bo
       return dist < threshold;
     }
     case 'rectangle': {
-      const rx = g.x as number, ry = g.y as number;
-      const rw = g.width as number, rh = g.height as number;
+      const rx = g.x as number,
+        ry = g.y as number;
+      const rw = g.width as number,
+        rh = g.height as number;
       // Check if near any edge
       const edges: [Point2D, Point2D][] = [
-        [{ x: rx, y: ry }, { x: rx + rw, y: ry }],
-        [{ x: rx + rw, y: ry }, { x: rx + rw, y: ry + rh }],
-        [{ x: rx + rw, y: ry + rh }, { x: rx, y: ry + rh }],
-        [{ x: rx, y: ry + rh }, { x: rx, y: ry }],
+        [
+          { x: rx, y: ry },
+          { x: rx + rw, y: ry },
+        ],
+        [
+          { x: rx + rw, y: ry },
+          { x: rx + rw, y: ry + rh },
+        ],
+        [
+          { x: rx + rw, y: ry + rh },
+          { x: rx, y: ry + rh },
+        ],
+        [
+          { x: rx, y: ry + rh },
+          { x: rx, y: ry },
+        ],
       ];
       return edges.some(([a, b]) => distToSegment(point, a, b) < threshold);
     }

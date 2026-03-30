@@ -45,9 +45,7 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
     set((state) => {
       pushState(state.features, state.selectedIds);
       return {
-        features: state.features.map((f) =>
-          f.id === id ? { ...f, ...updates } : f,
-        ),
+        features: state.features.map((f) => (f.id === id ? { ...f, ...updates } : f)),
         dirty: true,
       };
     }),
@@ -73,14 +71,11 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
     set((state) => {
       pushState(state.features, state.selectedIds);
       return {
-        features: state.features.map((f) =>
-          f.id === featureId ? { ...f, parentId: parentId ?? undefined } : f,
-        ),
+        features: state.features.map((f) => (f.id === featureId ? { ...f, parentId: parentId ?? undefined } : f)),
         dirty: true,
       };
     }),
-  select: (ids, target) =>
-    set({ selectedIds: ids, selectionTarget: target ?? null }),
+  select: (ids, target) => set({ selectedIds: ids, selectionTarget: target ?? null }),
   clearSelection: () => set({ selectedIds: [], selectionTarget: null }),
   setActiveTool: (tool) => set({ activeTool: tool }),
   setSketchMode: (active) => set({ isSketchMode: active }),
@@ -103,18 +98,14 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
       const prev = undo(state.features, state.selectedIds);
       if (!prev) return state;
       // Only restore selection for IDs that still exist in the restored features
-      const validIds = prev.selectedIds.filter((id) =>
-        prev.features.some((f) => f.id === id),
-      );
+      const validIds = prev.selectedIds.filter((id) => prev.features.some((f) => f.id === id));
       return { features: prev.features, selectedIds: validIds, dirty: true };
     }),
   redo: () =>
     set((state) => {
       const next = redo(state.features, state.selectedIds);
       if (!next) return state;
-      const validIds = next.selectedIds.filter((id) =>
-        next.features.some((f) => f.id === id),
-      );
+      const validIds = next.selectedIds.filter((id) => next.features.some((f) => f.id === id));
       return { features: next.features, selectedIds: validIds, dirty: true };
     }),
   setUnits: (units) => set({ units }),

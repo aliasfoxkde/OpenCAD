@@ -64,9 +64,7 @@ export function deserializeProject(json: string): OpenCADProject {
  * Helper to trigger a browser file download.
  */
 export function downloadFile(data: string | ArrayBuffer, filename: string, mimeType: string): void {
-  const blob = typeof data === 'string'
-    ? new Blob([data], { type: mimeType })
-    : new Blob([data], { type: mimeType });
+  const blob = typeof data === 'string' ? new Blob([data], { type: mimeType }) : new Blob([data], { type: mimeType });
 
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -86,7 +84,10 @@ export function openFile(accept: string): Promise<{ name: string; data: ArrayBuf
     input.accept = accept;
     input.onchange = () => {
       const file = input.files?.[0];
-      if (!file) { reject(new Error('No file selected')); return; }
+      if (!file) {
+        reject(new Error('No file selected'));
+        return;
+      }
 
       const reader = new FileReader();
       reader.onload = () => {

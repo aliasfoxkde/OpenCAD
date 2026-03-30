@@ -44,7 +44,9 @@ describe('CollabStore', () => {
 
     it('should clear peers on join', () => {
       useCollabStore.setState({
-        peers: [{ peerId: 'old', displayName: 'Old', color: '#000', cursor: null, selection: [], lastSeen: Date.now() }],
+        peers: [
+          { peerId: 'old', displayName: 'Old', color: '#000', cursor: null, selection: [], lastSeen: Date.now() },
+        ],
       });
       useCollabStore.getState().joinSession('room', 'p1', 'A', '#000');
       expect(useCollabStore.getState().peers).toEqual([]);
@@ -91,9 +93,11 @@ describe('CollabStore', () => {
 
   describe('updatePeer', () => {
     it('should update an existing peer', () => {
-      useCollabStore.getState().setPeers([
-        { peerId: 'p2', displayName: 'Bob', color: '#ef4444', cursor: null, selection: [], lastSeen: 1000 },
-      ]);
+      useCollabStore
+        .getState()
+        .setPeers([
+          { peerId: 'p2', displayName: 'Bob', color: '#ef4444', cursor: null, selection: [], lastSeen: 1000 },
+        ]);
       useCollabStore.getState().updatePeer('p2', { cursor: { x: 1, y: 2, z: 3 } });
       const peer = useCollabStore.getState().peers.find((p) => p.peerId === 'p2');
       expect(peer?.cursor).toEqual({ x: 1, y: 2, z: 3 });
@@ -147,15 +151,11 @@ describe('CollabStore', () => {
 
   describe('updateLocalPresence', () => {
     it('should not crash when updating cursor', () => {
-      expect(() =>
-        useCollabStore.getState().updateLocalPresence({ cursor: { x: 1, y: 2, z: 3 } }),
-      ).not.toThrow();
+      expect(() => useCollabStore.getState().updateLocalPresence({ cursor: { x: 1, y: 2, z: 3 } })).not.toThrow();
     });
 
     it('should not crash when updating selection', () => {
-      expect(() =>
-        useCollabStore.getState().updateLocalPresence({ selection: ['f1', 'f2'] }),
-      ).not.toThrow();
+      expect(() => useCollabStore.getState().updateLocalPresence({ selection: ['f1', 'f2'] })).not.toThrow();
     });
   });
 });

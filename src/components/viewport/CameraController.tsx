@@ -76,12 +76,10 @@ export function zoomCamera(direction: 'in' | 'out') {
   const viewDir = new THREE.Vector3().subVectors(lookAt, camera).normalize();
   const distance = camera.distanceTo(lookAt);
 
-  const newDistance = direction === 'in'
-    ? Math.max(0.1, distance / ZOOM_FACTOR)
-    : Math.min(1000, distance * ZOOM_FACTOR);
+  const newDistance =
+    direction === 'in' ? Math.max(0.1, distance / ZOOM_FACTOR) : Math.min(1000, distance * ZOOM_FACTOR);
 
-  const newPos = new THREE.Vector3()
-    .subVectors(lookAt, viewDir.multiplyScalar(newDistance));
+  const newPos = new THREE.Vector3().subVectors(lookAt, viewDir.multiplyScalar(newDistance));
 
   animTarget.pos.copy(newPos);
   animTarget.lookAt.copy(lookAt);

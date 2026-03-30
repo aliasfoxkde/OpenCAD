@@ -121,7 +121,15 @@ describe('IndexedDB Persistence', () => {
       const doc = createTestDoc({
         features: [
           { id: 'f1', type: 'extrude', name: 'Box', parameters: {}, dependencies: [], children: [], suppressed: false },
-          { id: 'f2', type: 'fillet', name: 'Fillet', parameters: {}, dependencies: [], children: [], suppressed: false },
+          {
+            id: 'f2',
+            type: 'fillet',
+            name: 'Fillet',
+            parameters: {},
+            dependencies: [],
+            children: [],
+            suppressed: false,
+          },
         ],
       });
       await saveDocument(doc);

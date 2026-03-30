@@ -151,9 +151,20 @@ registerFeature({
   requiresSketch: true,
   parameters: [
     { name: 'sketchRef', label: 'Sketch', type: 'reference', default: '', required: true },
+    { name: 'profile', label: 'Profile', type: 'string', default: '', description: 'JSON: [[x,y], ...] 2D polygon points' },
+    { name: 'plane', label: 'Plane', type: 'enum', default: 'xy', enumValues: ['xy', 'xz', 'yz'] },
     { name: 'depth', label: 'Depth', type: 'number', default: 5, min: 0.01, step: 0.1, unit: 'mm' },
-    { name: 'direction', label: 'Direction', type: 'enum', default: 'normal', enumValues: ['normal', 'reverse', 'symmetric'] },
+    {
+      name: 'direction',
+      label: 'Direction',
+      type: 'enum',
+      default: 'normal',
+      enumValues: ['normal', 'reverse', 'symmetric'],
+    },
     { name: 'draft', label: 'Draft Angle', type: 'number', default: 0, min: -45, max: 45, step: 1, unit: '°' },
+    { name: 'originX', label: 'Origin X', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originY', label: 'Origin Y', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originZ', label: 'Origin Z', type: 'number', default: 0, step: 0.1, unit: 'mm' },
   ],
 });
 
@@ -166,8 +177,13 @@ registerFeature({
   requiresSketch: true,
   parameters: [
     { name: 'sketchRef', label: 'Sketch', type: 'reference', default: '', required: true },
+    { name: 'profile', label: 'Profile', type: 'string', default: '', description: 'JSON: [[r,h], ...] 2D profile (distance, height)' },
     { name: 'axis', label: 'Axis', type: 'enum', default: 'y', enumValues: ['x', 'y', 'z'] },
     { name: 'angle', label: 'Angle', type: 'number', default: 360, min: 0.01, max: 360, step: 1, unit: '°' },
+    { name: 'segments', label: 'Segments', type: 'number', default: 32, min: 6, max: 128, step: 1 },
+    { name: 'originX', label: 'Origin X', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originY', label: 'Origin Y', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originZ', label: 'Origin Z', type: 'number', default: 0, step: 0.1, unit: 'mm' },
   ],
 });
 
@@ -181,8 +197,20 @@ registerFeature({
   requiresBody: true,
   parameters: [
     { name: 'sketchRef', label: 'Sketch', type: 'reference', default: '', required: true },
+    { name: 'targetRef', label: 'Target Body', type: 'reference', default: '', required: true },
+    { name: 'profile', label: 'Profile', type: 'string', default: '', description: 'JSON: [[x,y], ...] 2D polygon points' },
+    { name: 'plane', label: 'Plane', type: 'enum', default: 'xy', enumValues: ['xy', 'xz', 'yz'] },
     { name: 'depth', label: 'Depth', type: 'number', default: 5, min: 0.01, step: 0.1, unit: 'mm' },
-    { name: 'direction', label: 'Direction', type: 'enum', default: 'normal', enumValues: ['normal', 'reverse', 'symmetric'] },
+    {
+      name: 'direction',
+      label: 'Direction',
+      type: 'enum',
+      default: 'normal',
+      enumValues: ['normal', 'reverse', 'symmetric'],
+    },
+    { name: 'originX', label: 'Origin X', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originY', label: 'Origin Y', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originZ', label: 'Origin Z', type: 'number', default: 0, step: 0.1, unit: 'mm' },
   ],
 });
 
@@ -207,7 +235,14 @@ registerFeature({
   description: 'Create a loft between two or more profiles',
   requiresSketch: true,
   parameters: [
-    { name: 'profileRefs', label: 'Profiles', type: 'string', default: '', required: true, description: 'Comma-separated sketch IDs' },
+    {
+      name: 'profileRefs',
+      label: 'Profiles',
+      type: 'string',
+      default: '',
+      required: true,
+      description: 'Comma-separated sketch IDs',
+    },
   ],
 });
 
@@ -222,7 +257,13 @@ registerFeature({
   requiresBody: true,
   parameters: [
     { name: 'radius', label: 'Radius', type: 'number', default: 1, min: 0.01, step: 0.1, unit: 'mm' },
-    { name: 'edgeIndices', label: 'Edges', type: 'string', default: '', description: 'Comma-separated edge indices (empty = all edges)' },
+    {
+      name: 'edgeIndices',
+      label: 'Edges',
+      type: 'string',
+      default: '',
+      description: 'Comma-separated edge indices (empty = all edges)',
+    },
   ],
 });
 
@@ -266,7 +307,14 @@ registerFeature({
   description: 'Join two or more bodies into one',
   requiresBody: true,
   parameters: [
-    { name: 'bodyRefs', label: 'Bodies', type: 'string', default: '', required: true, description: 'Comma-separated feature IDs to union' },
+    {
+      name: 'bodyRefs',
+      label: 'Bodies',
+      type: 'string',
+      default: '',
+      required: true,
+      description: 'Comma-separated feature IDs to union',
+    },
   ],
 });
 
@@ -291,7 +339,14 @@ registerFeature({
   description: 'Keep only the intersection of two bodies',
   requiresBody: true,
   parameters: [
-    { name: 'bodyRefs', label: 'Bodies', type: 'string', default: '', required: true, description: 'Comma-separated feature IDs' },
+    {
+      name: 'bodyRefs',
+      label: 'Bodies',
+      type: 'string',
+      default: '',
+      required: true,
+      description: 'Comma-separated feature IDs',
+    },
   ],
 });
 
@@ -352,9 +407,33 @@ registerFeature({
   parameters: [
     { name: 'diameter', label: 'Diameter', type: 'number', default: 5, min: 0.1, step: 0.1, unit: 'mm' },
     { name: 'depth', label: 'Depth', type: 'number', default: 10, min: 0.1, step: 0.1, unit: 'mm' },
-    { name: 'type', label: 'Hole Type', type: 'enum', default: 'simple', enumValues: ['simple', 'counterbore', 'countersink'] },
-    { name: 'cbDiameter', label: 'CB Diameter', type: 'number', default: 8, min: 0.1, step: 0.1, unit: 'mm', description: 'Counterbore/Countersink diameter' },
-    { name: 'cbDepth', label: 'CB Depth', type: 'number', default: 3, min: 0.1, step: 0.1, unit: 'mm', description: 'Counterbore/Countersink depth' },
+    {
+      name: 'type',
+      label: 'Hole Type',
+      type: 'enum',
+      default: 'simple',
+      enumValues: ['simple', 'counterbore', 'countersink'],
+    },
+    {
+      name: 'cbDiameter',
+      label: 'CB Diameter',
+      type: 'number',
+      default: 8,
+      min: 0.1,
+      step: 0.1,
+      unit: 'mm',
+      description: 'Counterbore/Countersink diameter',
+    },
+    {
+      name: 'cbDepth',
+      label: 'CB Depth',
+      type: 'number',
+      default: 3,
+      min: 0.1,
+      step: 0.1,
+      unit: 'mm',
+      description: 'Counterbore/Countersink depth',
+    },
     { name: 'originX', label: 'Origin X', type: 'number', default: 0, step: 0.1, unit: 'mm' },
     { name: 'originY', label: 'Origin Y', type: 'number', default: 0, step: 0.1, unit: 'mm' },
     { name: 'originZ', label: 'Origin Z', type: 'number', default: 0, step: 0.1, unit: 'mm' },
@@ -373,8 +452,50 @@ registerFeature({
     { name: 'positionX', label: 'Position X', type: 'number', default: 0, step: 0.1, unit: 'mm' },
     { name: 'positionY', label: 'Position Y', type: 'number', default: 0, step: 0.1, unit: 'mm' },
     { name: 'positionZ', label: 'Position Z', type: 'number', default: 0, step: 0.1, unit: 'mm' },
-    { name: 'rotationX', label: 'Rotation X', type: 'number', default: 0, min: -360, max: 360, step: 1, unit: '\u00B0' },
-    { name: 'rotationY', label: 'Rotation Y', type: 'number', default: 0, min: -360, max: 360, step: 1, unit: '\u00B0' },
-    { name: 'rotationZ', label: 'Rotation Z', type: 'number', default: 0, min: -360, max: 360, step: 1, unit: '\u00B0' },
+    {
+      name: 'rotationX',
+      label: 'Rotation X',
+      type: 'number',
+      default: 0,
+      min: -360,
+      max: 360,
+      step: 1,
+      unit: '\u00B0',
+    },
+    {
+      name: 'rotationY',
+      label: 'Rotation Y',
+      type: 'number',
+      default: 0,
+      min: -360,
+      max: 360,
+      step: 1,
+      unit: '\u00B0',
+    },
+    {
+      name: 'rotationZ',
+      label: 'Rotation Z',
+      type: 'number',
+      default: 0,
+      min: -360,
+      max: 360,
+      step: 1,
+      unit: '\u00B0',
+    },
+  ],
+});
+
+// --- Imported Mesh ---
+
+registerFeature({
+  type: 'mesh_import',
+  label: 'Imported Mesh',
+  icon: '📦',
+  category: 'primitives',
+  description: 'Mesh geometry imported from an external file (STL, OBJ)',
+  parameters: [
+    { name: 'vertexCount', label: 'Vertex Count', type: 'number', default: 0 },
+    { name: 'faceCount', label: 'Face Count', type: 'number', default: 0 },
+    { name: 'sourceFile', label: 'Source File', type: 'string', default: '' },
   ],
 });

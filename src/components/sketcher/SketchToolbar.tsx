@@ -106,10 +106,12 @@ export function SketchToolbar() {
       </div>
 
       <div style={styles.status}>
-        <span style={{
-          ...styles.dofIndicator,
-          color: isFullyConstrained ? '#22c55e' : '#fbbf24',
-        }}>
+        <span
+          style={{
+            ...styles.dofIndicator,
+            color: isFullyConstrained ? '#22c55e' : '#fbbf24',
+          }}
+        >
           {isFullyConstrained ? 'Fully Constrained' : `${degreesOfFreedom} DOF`}
         </span>
       </div>
@@ -119,8 +121,12 @@ export function SketchToolbar() {
           <div style={styles.confirmDialog}>
             <div style={styles.confirmText}>Discard sketch?</div>
             <div style={styles.confirmButtons}>
-              <button style={styles.confirmYes} onClick={confirmDiscard}>Discard</button>
-              <button style={styles.confirmNo} onClick={() => setConfirmExit(false)}>Keep</button>
+              <button style={styles.confirmYes} onClick={confirmDiscard}>
+                Discard
+              </button>
+              <button style={styles.confirmNo} onClick={() => setConfirmExit(false)}>
+                Keep
+              </button>
             </div>
           </div>
         ) : (

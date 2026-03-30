@@ -10,16 +10,8 @@ import type { MeshData } from '../../types/cad';
 function createTestMesh(): MeshData {
   // Simple triangle
   return {
-    vertices: new Float32Array([
-      0, 0, 0,
-      1, 0, 0,
-      0, 1, 0,
-    ]),
-    normals: new Float32Array([
-      0, 0, 1,
-      0, 0, 1,
-      0, 0, 1,
-    ]),
+    vertices: new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    normals: new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1]),
     indices: new Uint32Array([0, 1, 2]),
     featureId: 'test',
   };
@@ -29,20 +21,34 @@ function createBoxMesh(): MeshData {
   // Box with 8 vertices, 12 triangles
   const hw = 0.5;
   const vertices = new Float32Array([
-    -hw, -hw, -hw, hw, -hw, -hw, hw, hw, -hw, -hw, hw, -hw,
-    -hw, -hw, hw, hw, -hw, hw, hw, hw, hw, -hw, hw, hw,
+    -hw,
+    -hw,
+    -hw,
+    hw,
+    -hw,
+    -hw,
+    hw,
+    hw,
+    -hw,
+    -hw,
+    hw,
+    -hw,
+    -hw,
+    -hw,
+    hw,
+    hw,
+    -hw,
+    hw,
+    hw,
+    hw,
+    hw,
+    -hw,
+    hw,
+    hw,
   ]);
-  const normals = new Float32Array([
-    0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1,
-    0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
-  ]);
+  const normals = new Float32Array([0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1]);
   const indices = new Uint32Array([
-    0, 2, 1, 0, 3, 2,
-    4, 5, 6, 4, 6, 7,
-    0, 1, 5, 0, 5, 4,
-    2, 3, 7, 2, 7, 6,
-    0, 4, 7, 0, 7, 3,
-    1, 2, 6, 1, 6, 5,
+    0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 0, 1, 5, 0, 5, 4, 2, 3, 7, 2, 7, 6, 0, 4, 7, 0, 7, 3, 1, 2, 6, 1, 6, 5,
   ]);
   return { vertices, normals, indices, featureId: 'box' };
 }
@@ -72,13 +78,18 @@ describe('STL Exporter', () => {
     offset += 12;
 
     // First vertex (0, 0, 0)
-    expect(view.getFloat32(offset, true)).toBeCloseTo(0); offset += 4;
-    expect(view.getFloat32(offset, true)).toBeCloseTo(0); offset += 4;
-    expect(view.getFloat32(offset, true)).toBeCloseTo(0); offset += 4;
+    expect(view.getFloat32(offset, true)).toBeCloseTo(0);
+    offset += 4;
+    expect(view.getFloat32(offset, true)).toBeCloseTo(0);
+    offset += 4;
+    expect(view.getFloat32(offset, true)).toBeCloseTo(0);
+    offset += 4;
 
     // Second vertex (1, 0, 0)
-    expect(view.getFloat32(offset, true)).toBeCloseTo(1); offset += 4;
-    expect(view.getFloat32(offset, true)).toBeCloseTo(0); offset += 4;
+    expect(view.getFloat32(offset, true)).toBeCloseTo(1);
+    offset += 4;
+    expect(view.getFloat32(offset, true)).toBeCloseTo(0);
+    offset += 4;
     expect(view.getFloat32(offset, true)).toBeCloseTo(0);
   });
 
@@ -318,21 +329,25 @@ describe('Project Save/Load', () => {
     const original = {
       name: 'RoundTrip',
       units: 'in' as const,
-      features: [{
-        id: 'f1',
-        type: 'extrude' as const,
-        name: 'Extrude 1',
-        parameters: { depth: 10 },
-        dependencies: [],
-        children: [],
-        suppressed: false,
-      }],
-      sketches: [{
-        id: 's1',
-        plane: 'xy' as const,
-        elements: [],
-        constraints: [],
-      }],
+      features: [
+        {
+          id: 'f1',
+          type: 'extrude' as const,
+          name: 'Extrude 1',
+          parameters: { depth: 10 },
+          dependencies: [],
+          children: [],
+          suppressed: false,
+        },
+      ],
+      sketches: [
+        {
+          id: 's1',
+          plane: 'xy' as const,
+          elements: [],
+          constraints: [],
+        },
+      ],
     };
 
     const json = serializeProject(original);

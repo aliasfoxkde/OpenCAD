@@ -72,21 +72,15 @@ export function StatusBar() {
 
   return (
     <div style={styles.bar}>
-      <StatusBarButton
-        label="Tree"
-        active={leftPanelOpen}
-        onClick={toggleLeftPanel}
-      />
-      <StatusBarButton
-        label="Props"
-        active={rightPanelOpen}
-        onClick={toggleRightPanel}
-      />
+      <StatusBarButton label="Tree" active={leftPanelOpen} onClick={toggleLeftPanel} />
+      <StatusBarButton label="Props" active={rightPanelOpen} onClick={toggleRightPanel} />
       <span style={styles.separator}>|</span>
       <span style={styles.toolLabel}>{formatToolName(activeTool)}</span>
       {dirty && <span style={styles.dirtyDot}>*</span>}
       <span style={styles.separator}>|</span>
-      <span style={styles.item}>{features.length} feature{features.length !== 1 ? 's' : ''}</span>
+      <span style={styles.item}>
+        {features.length} feature{features.length !== 1 ? 's' : ''}
+      </span>
       {selectedIds.length > 0 && (
         <>
           <span style={styles.separator}>|</span>
@@ -119,15 +113,7 @@ export function StatusBar() {
   );
 }
 
-function StatusBarButton({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
+function StatusBarButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       style={{

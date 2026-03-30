@@ -6,6 +6,8 @@ import {
   generateConeMesh,
   generateTorusMesh,
   generateHoleMesh,
+  generateExtrudeProfileMesh,
+  generateRevolveProfileMesh,
 } from './mesh-generators';
 
 /** Validate mesh integrity: index bounds, normal lengths, vertex count consistency */
@@ -41,14 +43,23 @@ function validateMesh(mesh: { vertices: Float32Array; normals: Float32Array; ind
 
 /** Compute axis-aligned bounding box of vertices */
 function computeBounds(vertices: Float32Array) {
-  let minX = Infinity, minY = Infinity, minZ = Infinity;
-  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    minZ = Infinity;
+  let maxX = -Infinity,
+    maxY = -Infinity,
+    maxZ = -Infinity;
 
   for (let i = 0; i < vertices.length; i += 3) {
-    const x = vertices[i]!, y = vertices[i + 1]!, z = vertices[i + 2]!;
-    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
-    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
-    minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+    const x = vertices[i]!,
+      y = vertices[i + 1]!,
+      z = vertices[i + 2]!;
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+    minZ = Math.min(minZ, z);
+    maxZ = Math.max(maxZ, z);
   }
 
   return { minX, minY, minZ, maxX, maxY, maxZ };
@@ -170,7 +181,8 @@ describe('MeshGenerators', () => {
       for (let i = 2; i < 2 + 33; i++) {
         const x = mesh.vertices[i * 3]!;
         const z = mesh.vertices[i * 3 + 2]!;
-        if (i < 34) { // bottom ring vertices
+        if (i < 34) {
+          // bottom ring vertices
           const r = Math.sqrt(x * x + z * z);
           expect(r).toBeCloseTo(5, 2);
         }
@@ -295,5 +307,102 @@ describe('MeshGenerators', () => {
         });
       });
     }
+  });
+});
+
+describe('generateExtrudeProfileMesh', () => {
+  it('should generate a valid mesh from a rectangular profile', () => {
+    const profile: Array<[number, number]> = [
+      [0, 0], [2, 0], [2, 1], [0, 1],
+    ];
+    const mesh = generateExtrudeProfileMesh(profile, 3, 'xy');
+    validateMesh(mesh, 'rectangle extrude');
+    expect(mesh.indices.length / 3).toBeGreaterThanOrEqual(12);
+    for (let i = 0; i < mesh.vertices.length; i += 3) {
+      expect(mesh.vertices[i]!).toBeGreaterThanOrEqual(-0.01);
+      expect(mesh.vertices[i]!).toBeLessThanOrEqual(2.01);
+      expect(mesh.vertices[i + 1]!).toBeGreaterThanOrEqual(-0.01);
+      expect(mesh.vertices[i + 1]!).toBeLessThanOrEqual(1.01);
+      expect(mesh.vertices[i + 2]!).toBeGreaterThanOrEqual(-0.01);
+      expect(mesh.vertices[i + 2]!).toBeLessThanOrEqual(3.01);
+    }
+  });
+
+  it('should generate a valid mesh on xz plane', () => {
+    const profile: Array<[number, number]> = [
+      [0, 0], [2, 0], [2, 1], [0, 1],
+    ];
+    const mesh = generateExtrudeProfileMesh(profile, 3, 'xz');
+    validateMesh(mesh, 'rectangle extrude xz');
+    expect(mesh.indices.length / 3).toBeGreaterThanOrEqual(12);
+  });
+
+  it('should generate a valid mesh on yz plane', () => {
+    const profile: Array<[number, number]> = [
+      [0, 0], [2, 0], [2, 1], [0, 1],
+    ];
+    const mesh = generateExtrudeProfileMesh(profile, 3, 'yz');
+    validateMesh(mesh, 'rectangle extrude yz');
+    expect(mesh.indices.length / 3).toBeGreaterThanOrEqual(12);
+  });
+
+  it('should handle triangular profile', () => {
+    const profile: Array<[number, number]> = [
+      [0, 0], [1, 0], [0.5, 1],
+    ];
+    const mesh = generateExtrudeProfileMesh(profile, 2, 'xy');
+    validateMesh(mesh, 'triangle extrude');
+    expect(mesh.indices.length / 3).toBeGreaterThanOrEqual(6);
+  });
+
+  it('should return empty mesh for insufficient points', () => {
+    expect(generateExtrudeProfileMesh([], 1, 'xy').vertices.length).toBe(0);
+    expect(generateExtrudeProfileMesh([[0, 0]], 1, 'xy').vertices.length).toBe(0);
+    expect(generateExtrudeProfileMesh([[0, 0], [1, 0]], 1, 'xy').vertices.length).toBe(0);
+  });
+
+  it('should respect origin offset', () => {
+    const profile: Array<[number, number]> = [
+      [0, 0], [1, 0], [1, 1], [0, 1],
+    ];
+    const mesh = generateExtrudeProfileMesh(profile, 2, 'xy', [5, 10, 15]);
+    validateMesh(mesh, 'rectangle with offset');
+    for (let i = 0; i < mesh.vertices.length; i += 3) {
+      expect(mesh.vertices[i]!).toBeGreaterThanOrEqual(4.99);
+      expect(mesh.vertices[i + 1]!).toBeGreaterThanOrEqual(9.99);
+      expect(mesh.vertices[i + 2]!).toBeGreaterThanOrEqual(14.99);
+    }
+  });
+});
+
+describe('generateRevolveProfileMesh', () => {
+  it('should generate a valid mesh from a profile', () => {
+    const profile: Array<[number, number]> = [
+      [0.5, 0], [0.5, 1], [1, 1], [1, 0],
+    ];
+    const mesh = generateRevolveProfileMesh(profile, 360, 'y', 16);
+    validateMesh(mesh, 'full revolution');
+    expect(mesh.indices.length / 3).toBeGreaterThan(0);
+  });
+
+  it('should generate a partial revolution', () => {
+    const profile: Array<[number, number]> = [
+      [0.5, 0], [0.5, 1],
+    ];
+    const mesh = generateRevolveProfileMesh(profile, 180, 'y', 16);
+    validateMesh(mesh, 'half revolution');
+    expect(mesh.indices.length / 3).toBeGreaterThan(0);
+  });
+
+  it('should revolve around different axes', () => {
+    const profile: Array<[number, number]> = [
+      [0.5, 0], [0.5, 1],
+    ];
+    validateMesh(generateRevolveProfileMesh(profile, 360, 'x', 8), 'revolve x');
+    validateMesh(generateRevolveProfileMesh(profile, 360, 'z', 8), 'revolve z');
+  });
+
+  it('should return empty mesh for insufficient points', () => {
+    expect(generateRevolveProfileMesh([], 360, 'y').vertices.length).toBe(0);
   });
 });

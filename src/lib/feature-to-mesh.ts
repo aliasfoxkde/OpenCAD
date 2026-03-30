@@ -14,6 +14,10 @@ import {
   generateConeMesh,
   generateTorusMesh,
   generateHoleMesh,
+  generateFilletCylinderMesh,
+  generateChamferWedgeMesh,
+  generateExtrudeProfileMesh,
+  generateRevolveProfileMesh,
 } from '../cad/kernel/mesh-generators';
 import * as THREE from 'three';
 import { booleanTwo } from '../cad/kernel/csg-boolean';
@@ -60,18 +64,24 @@ function rotationMatrix(axis: 'x' | 'y' | 'z', angle: number): number[] {
   const c = Math.cos(angle);
   const s = Math.sin(angle);
   switch (axis) {
-    case 'x': return [1, 0, 0, 0, 0, c, -s, 0, 0, s, c, 0];
-    case 'y': return [c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0];
-    case 'z': return [c, -s, 0, 0, s, c, 0, 0, 0, 0, 1, 0];
+    case 'x':
+      return [1, 0, 0, 0, 0, c, -s, 0, 0, s, c, 0];
+    case 'y':
+      return [c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0];
+    case 'z':
+      return [c, -s, 0, 0, s, c, 0, 0, 0, 0, 1, 0];
   }
 }
 
 /** Build reflection matrix across a plane */
 function reflectionMatrix(plane: string): number[] {
   switch (plane) {
-    case 'xz': return [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0];
-    case 'xy': return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0];
-    default:  return [-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]; // 'yz'
+    case 'xz':
+      return [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0];
+    case 'xy':
+      return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0];
+    default:
+      return [-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]; // 'yz'
   }
 }
 
@@ -145,6 +155,97 @@ export function featureToMesh(feature: FeatureNode, allFeatures?: FeatureNode[])
       const mesh = generateHoleMesh(diameter, depth);
       mesh.featureId = feature.id;
       return mesh;
+    }
+    case 'mesh_import': {
+      const vertices = feature.parameters._vertices as number[] | undefined;
+      const indices = feature.parameters._indices as number[] | undefined;
+      if (!vertices || !indices || vertices.length < 3 || indices.length < 3) return null;
+      return {
+        vertices: new Float32Array(vertices),
+        normals: new Float32Array(vertices.length), // filled by export
+        indices: new Uint32Array(indices),
+        featureId: feature.id,
+      };
+    }
+    case 'extrude_sketch': {
+      const profile = feature.parameters.profile as Array<[number, number]> | undefined;
+      if (!profile || profile.length < 3) return null;
+      const depth = Math.max(0.001, (feature.parameters.depth as number) ?? 5);
+      const direction = (feature.parameters.direction as string) ?? 'normal';
+      const plane = (feature.parameters.plane as 'xy' | 'xz' | 'yz') ?? 'xy';
+      const ox = (feature.parameters.originX as number) ?? 0;
+      const oy = (feature.parameters.originY as number) ?? 0;
+      const oz = (feature.parameters.originZ as number) ?? 0;
+
+      let actualDepth = depth;
+      if (direction === 'reverse') actualDepth = -depth;
+      else if (direction === 'symmetric') actualDepth = depth / 2;
+
+      const mesh = generateExtrudeProfileMesh(profile, actualDepth, plane, [ox, oy, oz]);
+      mesh.featureId = feature.id;
+
+      if (direction === 'symmetric') {
+        // Create a mirrored copy for the other half
+        const mirrorMesh = generateExtrudeProfileMesh(profile, -actualDepth, plane, [ox, oy, oz]);
+        const mirrorGeo = meshDataToGeometry(mirrorMesh);
+        const baseGeo = meshDataToGeometry(mesh);
+        const combined = booleanTwo(baseGeo, mirrorGeo, 'union');
+        if (combined) {
+          baseGeo.dispose();
+          mirrorGeo.dispose();
+          return geometryToMeshData(combined, feature.id);
+        }
+      }
+
+      return mesh;
+    }
+    case 'revolve_sketch': {
+      const profile = feature.parameters.profile as Array<[number, number]> | undefined;
+      if (!profile || profile.length < 2) return null;
+      const axis = (feature.parameters.axis as 'x' | 'y' | 'z') ?? 'y';
+      const angle = (feature.parameters.angle as number) ?? 360;
+      const segments = (feature.parameters.segments as number) ?? 32;
+      const ox = (feature.parameters.originX as number) ?? 0;
+      const oy = (feature.parameters.originY as number) ?? 0;
+      const oz = (feature.parameters.originZ as number) ?? 0;
+
+      const mesh = generateRevolveProfileMesh(profile, angle, axis, segments, [ox, oy, oz]);
+      mesh.featureId = feature.id;
+      return mesh;
+    }
+    case 'cut': {
+      if (!allFeatures) return null;
+      const targetRef = feature.parameters.targetRef as string;
+      if (!targetRef) return null;
+      const targetFeature = allFeatures.find((f) => f.id === targetRef);
+      if (!targetFeature || targetFeature.suppressed) return null;
+
+      const profile = feature.parameters.profile as Array<[number, number]> | undefined;
+      if (!profile || profile.length < 3) return null;
+      const depth = Math.max(0.001, (feature.parameters.depth as number) ?? 5);
+      const plane = (feature.parameters.plane as 'xy' | 'xz' | 'yz') ?? 'xy';
+      const direction = (feature.parameters.direction as string) ?? 'normal';
+      const ox = (feature.parameters.originX as number) ?? 0;
+      const oy = (feature.parameters.originY as number) ?? 0;
+      const oz = (feature.parameters.originZ as number) ?? 0;
+
+      let actualDepth = depth;
+      if (direction === 'reverse') actualDepth = -depth;
+
+      // Get base body mesh
+      const baseMesh = featureToMesh(targetFeature, allFeatures);
+      if (!baseMesh) return null;
+      const baseGeo = meshDataToGeometry(baseMesh);
+
+      // Create cutting tool mesh
+      const cutMesh = generateExtrudeProfileMesh(profile, actualDepth, plane, [ox, oy, oz]);
+      const cutGeo = meshDataToGeometry(cutMesh);
+
+      // CSG subtract
+      const result = booleanTwo(baseGeo, cutGeo, 'subtract');
+      baseGeo.dispose();
+      cutGeo.dispose();
+      return result ? geometryToMeshData(result, feature.id) : null;
     }
     case 'pattern_linear': {
       if (!allFeatures) return null;
@@ -242,7 +343,11 @@ export function featureToMesh(feature: FeatureNode, allFeatures?: FeatureNode[])
     }
     case 'boolean_union': {
       if (!allFeatures) return null;
-      const bodyRefs = (feature.parameters.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+      const bodyRefs =
+        (feature.parameters.bodyRefs as string)
+          ?.split(',')
+          .map((s) => s.trim())
+          .filter(Boolean) ?? [];
       const geos: THREE.BufferGeometry[] = [];
       for (const refId of bodyRefs) {
         const ref = allFeatures.find((f) => f.id === refId);
@@ -293,7 +398,11 @@ export function featureToMesh(feature: FeatureNode, allFeatures?: FeatureNode[])
     }
     case 'boolean_intersect': {
       if (!allFeatures) return null;
-      const bodyRefs = (feature.parameters.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+      const bodyRefs =
+        (feature.parameters.bodyRefs as string)
+          ?.split(',')
+          .map((s) => s.trim())
+          .filter(Boolean) ?? [];
       const geos: THREE.BufferGeometry[] = [];
       for (const refId of bodyRefs) {
         const ref = allFeatures.find((f) => f.id === refId);
@@ -348,6 +457,136 @@ export function featureToMesh(feature: FeatureNode, allFeatures?: FeatureNode[])
       if (!result) return null;
       return geometryToMeshData(result!, feature.id);
     }
+    case 'fillet': {
+      if (!allFeatures) return null;
+      const targetRef = feature.parameters.targetRef as string;
+      if (!targetRef) return null;
+      const targetFeature = allFeatures.find((f) => f.id === targetRef);
+      if (!targetFeature || targetFeature.suppressed) return null;
+
+      const filletRadius = Math.max(0.001, (feature.parameters.radius as number) ?? 1);
+      const edgeIndices = (feature.parameters.edgeIndices as string)?.trim();
+      const baseMesh = featureToMesh(targetFeature, allFeatures);
+      if (!baseMesh) return null;
+
+      // Translate base mesh by its origin
+      const baseGeo = meshDataToGeometry(baseMesh);
+      const ox = (targetFeature.parameters.originX as number) ?? 0;
+      const oy = (targetFeature.parameters.originY as number) ?? 0;
+      const oz = (targetFeature.parameters.originZ as number) ?? 0;
+      baseGeo.translate(ox, oy, oz);
+      baseGeo.computeBoundingBox();
+      const box = baseGeo.boundingBox!;
+      const min = box.min;
+      const max = box.max;
+
+      // Generate fillet cylinders along bounding box edges
+      const axes: Array<'x' | 'y' | 'z'> = ['x', 'y', 'z'];
+      const corners: Array<'+' | '-'> = ['+', '-'];
+      const edges: Array<{ axis: 'x' | 'y' | 'z'; length: number; pos: [number, number, number] }> = [];
+
+      // 12 edges of the bounding box: 4 per axis
+      const axIdx = (a: 'x' | 'y' | 'z') => (a === 'x' ? 0 : a === 'y' ? 1 : 2);
+      for (const ax of axes) {
+        const oa = axes.filter((a) => a !== ax) as Array<'x' | 'y' | 'z'>;
+        for (const c1 of corners) {
+          for (const c2 of corners) {
+            const pos: [number, number, number] = [0, 0, 0];
+            pos[axIdx(ax)] = c1 === '+' ? max[ax] : min[ax];
+            pos[axIdx(oa[0]!)] = c2 === '+' ? max[oa[0]!] : min[oa[0]!];
+            pos[axIdx(oa[1]!)] = c2 === '+' ? max[oa[1]!] : min[oa[1]!];
+            const length =
+              Math.abs(max[oa[0]!] - min[oa[0]!]) * 2 + Math.abs(max[oa[1]!] - min[oa[1]!]) * 2;
+            edges.push({ axis: ax, length, pos });
+          }
+        }
+      }
+
+      // Filter by edgeIndices if specified
+      let filteredEdges = edges;
+      if (edgeIndices) {
+        const idxArr = edgeIndices.split(',').map((s) => parseInt(s.trim())).filter((n) => !isNaN(n));
+        if (idxArr.length > 0) {
+          filteredEdges = idxArr.map((idx) => edges[idx % edges.length]).filter(Boolean) as typeof edges;
+        }
+      }
+
+      // CSG union base with fillet cylinders
+      let result: THREE.BufferGeometry | null = baseGeo;
+      for (const edge of filteredEdges) {
+        const filletMesh = generateFilletCylinderMesh(filletRadius, edge.length, edge.axis, edge.pos);
+        const filletGeo = meshDataToGeometry(filletMesh);
+        const next = booleanTwo(result!, filletGeo, 'union');
+        if (!next) continue;
+        result.dispose();
+        result = next;
+      }
+
+      return result ? geometryToMeshData(result, feature.id) : null;
+    }
+    case 'chamfer': {
+      if (!allFeatures) return null;
+      const targetRef = feature.parameters.targetRef as string;
+      if (!targetRef) return null;
+      const targetFeature = allFeatures.find((f) => f.id === targetRef);
+      if (!targetFeature || targetFeature.suppressed) return null;
+
+      const chamferDist = Math.max(0.001, (feature.parameters.distance as number) ?? 0.5);
+      const edgeIndices = (feature.parameters.edgeIndices as string)?.trim();
+      const baseMesh = featureToMesh(targetFeature, allFeatures);
+      if (!baseMesh) return null;
+
+      const baseGeo = meshDataToGeometry(baseMesh);
+      const ox = (targetFeature.parameters.originX as number) ?? 0;
+      const oy = (targetFeature.parameters.originY as number) ?? 0;
+      const oz = (targetFeature.parameters.originZ as number) ?? 0;
+      baseGeo.translate(ox, oy, oz);
+      baseGeo.computeBoundingBox();
+      const box = baseGeo.boundingBox!;
+      const min = box.min;
+      const max = box.max;
+
+      // Generate chamfer wedges along bounding box edges (same 12 edges as fillet)
+      const axes: Array<'x' | 'y' | 'z'> = ['x', 'y', 'z'];
+      const corners: Array<'+' | '-'> = ['+', '-'];
+      const edges: Array<{ axis: 'x' | 'y' | 'z'; length: number; pos: [number, number, number]; corner: '+' | '-' }> = [];
+
+      const axIdx = (a: 'x' | 'y' | 'z') => (a === 'x' ? 0 : a === 'y' ? 1 : 2);
+      for (const ax of axes) {
+        const oa = axes.filter((a) => a !== ax) as Array<'x' | 'y' | 'z'>;
+        for (const c1 of corners) {
+          for (const c2 of corners) {
+            const pos: [number, number, number] = [0, 0, 0];
+            pos[axIdx(ax)] = c1 === '+' ? max[ax] : min[ax];
+            pos[axIdx(oa[0]!)] = c2 === '+' ? max[oa[0]!] : min[oa[0]!];
+            pos[axIdx(oa[1]!)] = c2 === '+' ? max[oa[1]!] : min[oa[1]!];
+            const length =
+              Math.abs(max[oa[0]!] - min[oa[0]!]) * 2 + Math.abs(max[oa[1]!] - min[oa[1]!]) * 2;
+            edges.push({ axis: ax, length, pos, corner: c1 });
+          }
+        }
+      }
+
+      let filteredEdges = edges;
+      if (edgeIndices) {
+        const idxArr = edgeIndices.split(',').map((s) => parseInt(s.trim())).filter((n) => !isNaN(n));
+        if (idxArr.length > 0) {
+          filteredEdges = idxArr.map((idx) => edges[idx % edges.length]).filter(Boolean) as typeof edges;
+        }
+      }
+
+      let result: THREE.BufferGeometry | null = baseGeo;
+      for (const edge of filteredEdges) {
+        const chamferMesh = generateChamferWedgeMesh(chamferDist, edge.length, edge.axis, edge.pos, edge.corner);
+        const chamferGeo = meshDataToGeometry(chamferMesh);
+        const next = booleanTwo(result!, chamferGeo, 'union');
+        if (!next) continue;
+        result.dispose();
+        result = next;
+      }
+
+      return result ? geometryToMeshData(result, feature.id) : null;
+    }
     default:
       return null;
   }
@@ -358,14 +597,13 @@ export function getConsumedFeatureIds(features: FeatureNode[]): Set<string> {
   const consumedIds = new Set<string>();
   for (const f of features) {
     if (f.suppressed) continue;
-    if (
-      f.type.startsWith('boolean_') ||
-      f.type === 'shell' ||
-      f.type.startsWith('pattern_') ||
-      f.type === 'mirror'
-    ) {
+    if (f.type.startsWith('boolean_') || f.type === 'shell' || f.type.startsWith('pattern_') || f.type === 'mirror' || f.type === 'fillet' || f.type === 'chamfer' || f.type === 'cut') {
       for (const depId of f.dependencies) consumedIds.add(depId);
-      const bodyRefs = (f.parameters.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+      const bodyRefs =
+        (f.parameters.bodyRefs as string)
+          ?.split(',')
+          .map((s) => s.trim())
+          .filter(Boolean) ?? [];
       for (const refId of bodyRefs) consumedIds.add(refId);
       if (f.parameters.targetRef) consumedIds.add(f.parameters.targetRef as string);
       if (f.parameters.toolRef) consumedIds.add(f.parameters.toolRef as string);

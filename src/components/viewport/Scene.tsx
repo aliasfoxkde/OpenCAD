@@ -49,23 +49,8 @@ export function Scene() {
   );
 }
 
-function AxisLine({
-  end,
-  color,
-}: {
-  end: [number, number, number];
-  color: string;
-}) {
-  const points = useMemo(
-    () => [new THREE.Vector3(0, 0, 0), new THREE.Vector3(...end)],
-    [end],
-  );
+function AxisLine({ end, color }: { end: [number, number, number]; color: string }) {
+  const points = useMemo(() => [new THREE.Vector3(0, 0, 0), new THREE.Vector3(...end)], [end]);
 
-  return (
-    <Line
-      points={points}
-      color={color}
-      lineWidth={2}
-    />
-  );
+  return <Line points={points} color={color} lineWidth={2} />;
 }
