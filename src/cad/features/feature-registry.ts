@@ -90,6 +90,9 @@ registerFeature({
     { name: 'radius', label: 'Radius', type: 'number', default: 0.5, min: 0.01, step: 0.1, unit: 'mm' },
     { name: 'height', label: 'Height', type: 'number', default: 2, min: 0.01, step: 0.1, unit: 'mm' },
     { name: 'segments', label: 'Segments', type: 'number', default: 32, min: 6, max: 128, step: 1 },
+    { name: 'originX', label: 'Origin X', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originY', label: 'Origin Y', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originZ', label: 'Origin Z', type: 'number', default: 0, step: 0.1, unit: 'mm' },
   ],
 });
 
@@ -101,6 +104,9 @@ registerFeature({
   description: 'Create a sphere',
   parameters: [
     { name: 'radius', label: 'Radius', type: 'number', default: 1, min: 0.01, step: 0.1, unit: 'mm' },
+    { name: 'originX', label: 'Origin X', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originY', label: 'Origin Y', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originZ', label: 'Origin Z', type: 'number', default: 0, step: 0.1, unit: 'mm' },
   ],
 });
 
@@ -113,6 +119,9 @@ registerFeature({
   parameters: [
     { name: 'radius', label: 'Base Radius', type: 'number', default: 0.5, min: 0.01, step: 0.1, unit: 'mm' },
     { name: 'height', label: 'Height', type: 'number', default: 2, min: 0.01, step: 0.1, unit: 'mm' },
+    { name: 'originX', label: 'Origin X', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originY', label: 'Origin Y', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originZ', label: 'Origin Z', type: 'number', default: 0, step: 0.1, unit: 'mm' },
   ],
 });
 
@@ -125,6 +134,9 @@ registerFeature({
   parameters: [
     { name: 'radius', label: 'Radius', type: 'number', default: 0.5, min: 0.01, step: 0.1, unit: 'mm' },
     { name: 'tube', label: 'Tube Radius', type: 'number', default: 0.15, min: 0.01, step: 0.01, unit: 'mm' },
+    { name: 'originX', label: 'Origin X', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originY', label: 'Origin Y', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originZ', label: 'Origin Z', type: 'number', default: 0, step: 0.1, unit: 'mm' },
   ],
 });
 
@@ -343,5 +355,8 @@ registerFeature({
     { name: 'type', label: 'Hole Type', type: 'enum', default: 'simple', enumValues: ['simple', 'counterbore', 'countersink'] },
     { name: 'cbDiameter', label: 'CB Diameter', type: 'number', default: 8, min: 0.1, step: 0.1, unit: 'mm', description: 'Counterbore/Countersink diameter' },
     { name: 'cbDepth', label: 'CB Depth', type: 'number', default: 3, min: 0.1, step: 0.1, unit: 'mm', description: 'Counterbore/Countersink depth' },
+    { name: 'originX', label: 'Origin X', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originY', label: 'Origin Y', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'originZ', label: 'Origin Z', type: 'number', default: 0, step: 0.1, unit: 'mm' },
   ],
 });
