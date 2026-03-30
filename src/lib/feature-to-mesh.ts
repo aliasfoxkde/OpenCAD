@@ -315,6 +315,38 @@ export function featureToMesh(feature: FeatureNode, allFeatures?: FeatureNode[])
       }
       return geometryToMeshData(result!, feature.id);
     }
+    case 'shell': {
+      if (!allFeatures) return null;
+      const targetRef = feature.parameters.targetRef as string;
+      if (!targetRef) return null;
+      const targetFeature = allFeatures.find((f) => f.id === targetRef);
+      if (!targetFeature || targetFeature.suppressed) return null;
+      const outerMesh = featureToMesh(targetFeature);
+      if (!outerMesh) return null;
+      const outerGeo = meshDataToGeometry(outerMesh);
+      const thickness = Math.max(0.001, (feature.parameters.thickness as number) ?? 1);
+      const tox = (targetFeature.parameters.originX as number) ?? 0;
+      const toy = (targetFeature.parameters.originY as number) ?? 0;
+      const toz = (targetFeature.parameters.originZ as number) ?? 0;
+      outerGeo.translate(tox, toy, toz);
+      const innerMesh = featureToMesh(targetFeature);
+      if (!innerMesh) return null;
+      const innerGeo = meshDataToGeometry(innerMesh);
+      outerGeo.computeBoundingBox();
+      const box = outerGeo.boundingBox!;
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+      const dx = Math.max(0.5, box.max.x - box.min.x - 2 * thickness) / Math.max(0.001, box.max.x - box.min.x);
+      const dy = Math.max(0.5, box.max.y - box.min.y - 2 * thickness) / Math.max(0.001, box.max.y - box.min.y);
+      const dz = Math.max(0.5, box.max.z - box.min.z - 2 * thickness) / Math.max(0.001, box.max.z - box.min.z);
+      innerGeo.translate(tox, toy, toz);
+      innerGeo.translate(-center.x, -center.y, -center.z);
+      innerGeo.scale(dx, dy, dz);
+      innerGeo.translate(center.x, center.y, center.z);
+      const result = booleanTwo(outerGeo, innerGeo, 'subtract');
+      if (!result) return null;
+      return geometryToMeshData(result!, feature.id);
+    }
     default:
       return null;
   }

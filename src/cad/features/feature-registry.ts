@@ -238,6 +238,7 @@ registerFeature({
   description: 'Hollow out a solid body',
   requiresBody: true,
   parameters: [
+    { name: 'targetRef', label: 'Target Body', type: 'reference', default: '', required: true },
     { name: 'thickness', label: 'Wall Thickness', type: 'number', default: 1, min: 0.1, step: 0.1, unit: 'mm' },
     { name: 'removeFaces', label: 'Remove Faces', type: 'string', default: '', description: 'Face indices to remove' },
   ],

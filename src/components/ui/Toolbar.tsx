@@ -36,6 +36,7 @@ const tools: { id: ToolType; label: string; shortcut: string }[] = [
   { id: 'pattern_linear', label: 'Lin Pattern', shortcut: '' },
   { id: 'pattern_circular', label: 'Circ Pattern', shortcut: '' },
   { id: 'mirror', label: 'Mirror', shortcut: '' },
+  { id: 'shell', label: 'Shell', shortcut: '' },
   { id: 'measure', label: 'Measure', shortcut: 'M' },
   { id: 'section', label: 'Section', shortcut: '' },
 ];
@@ -88,6 +89,22 @@ export function Toolbar() {
       const dependencies = selectedIds.length > 0 ? [...selectedIds] : [];
       addFeatureAndSelect({
         id, type: toolId as FeatureType, name,
+        parameters: defaults, dependencies, children: [], suppressed: false,
+      });
+      setActiveTool('select');
+      return;
+    }
+
+    if (toolId === 'shell') {
+      const defaults = getDefaultParameters('shell');
+      const id = nanoid();
+      const selectedId = useCADStore.getState().selectedIds[0];
+      if (selectedId) {
+        defaults.targetRef = selectedId;
+      }
+      const dependencies = selectedId ? [selectedId] : [];
+      addFeatureAndSelect({
+        id, type: 'shell' as FeatureType, name: `Shell ${features.length + 1}`,
         parameters: defaults, dependencies, children: [], suppressed: false,
       });
       setActiveTool('select');

@@ -210,16 +210,20 @@ describe('FeatureEngine', () => {
       });
     });
 
-    it('should compute shell bounds', () => {
+    it('should compute shell bounds from target body', () => {
       const features = [
-        makeFeature('f1', 'shell', { thickness: 3 }),
+        makeFeature('f1', 'extrude', { width: 4, height: 6, depth: 2 }),
+        makeFeature('s1', 'shell', { targetRef: 'f1', thickness: 1 }, ['f1']),
       ];
       const result = engine.rebuildAll(features);
-      const bounds = result.results.get('f1')?.bounds;
-      expect(bounds).toEqual({
-        minX: -3, minY: -3, minZ: -3,
-        maxX: 3, maxY: 3, maxZ: 3,
-      });
+      const bounds = result.results.get('s1')?.bounds;
+      // Shell bounds should match the target body's bounds
+      const targetBounds = result.results.get('f1')?.bounds;
+      expect(bounds).toBeDefined();
+      expect(bounds!.minX).toBeCloseTo(targetBounds!.minX);
+      expect(bounds!.maxX).toBeCloseTo(targetBounds!.maxX);
+      expect(bounds!.minY).toBeCloseTo(targetBounds!.minY);
+      expect(bounds!.maxY).toBeCloseTo(targetBounds!.maxY);
     });
 
     it('should compute hole bounds', () => {
@@ -359,7 +363,8 @@ describe('FeatureEngine', () => {
 
     it('should validate shell requires positive thickness', () => {
       const features = [
-        makeFeature('f1', 'shell', { thickness: 0 }),
+        makeFeature('f1', 'extrude', { width: 2, height: 2, depth: 2 }),
+        makeFeature('s1', 'shell', { targetRef: 'f1', thickness: 0 }, ['f1']),
       ];
       const result = engine.rebuildAll(features);
       expect(result.errors[0]).toContain('Wall thickness must be positive');
@@ -496,6 +501,39 @@ describe('FeatureEngine', () => {
       expect(result.errors).toEqual([]);
       const bounds = result.results.get('m1')?.bounds;
       expect(bounds).toBeDefined();
+    });
+
+    // --- Shell ---
+
+    it('should validate shell requires targetRef', () => {
+      const features = [
+        makeFeature('f1', 'shell', { thickness: 1 }),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors[0]).toContain('Missing required parameter');
+    });
+
+    it('should evaluate shell with valid targetRef', () => {
+      const features = [
+        makeFeature('f1', 'extrude', { width: 4, height: 3, depth: 2, originX: 1 }),
+        makeFeature('s1', 'shell', { targetRef: 'f1', thickness: 0.5 }, ['f1']),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors).toEqual([]);
+      const bounds = result.results.get('s1')?.bounds;
+      expect(bounds).toBeDefined();
+      // Shell bounds should match the target body's bounds
+      const targetBounds = result.results.get('f1')?.bounds;
+      expect(bounds!.minX).toBeCloseTo(targetBounds!.minX);
+      expect(bounds!.maxX).toBeCloseTo(targetBounds!.maxX);
+    });
+
+    it('should fail shell when targetRef dependency is missing', () => {
+      const features = [
+        makeFeature('s1', 'shell', { targetRef: 'nonexistent', thickness: 1 }, ['nonexistent']),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors[0]).toContain('Missing dependency');
     });
   });
 });

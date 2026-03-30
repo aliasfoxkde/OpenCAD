@@ -296,6 +296,20 @@ export function AppLayout() {
     state.setActiveTool('select');
   }, []);
 
+  const handleInsertShell = useCallback(() => {
+    const state = useCADStore.getState();
+    const defaults = getDefaultParameters('shell');
+    const id = nanoid();
+    const selectedId = state.selectedIds[0];
+    if (selectedId) defaults.targetRef = selectedId;
+    const dependencies = selectedId ? [selectedId] : [];
+    state.addFeatureAndSelect({
+      id, type: 'shell', name: `Shell ${state.features.length + 1}`,
+      parameters: defaults, dependencies, children: [], suppressed: false,
+    });
+    state.setActiveTool('select');
+  }, []);
+
   const handleSetCamera = useCallback((preset: string) => {
     useViewStore.getState().setCameraPreset(preset);
   }, []);
@@ -392,6 +406,7 @@ export function AppLayout() {
         onInsert={handleInsertPrimitive}
         onInsertPattern={handleInsertPattern}
         onInsertBoolean={handleInsertBoolean}
+        onInsertShell={handleInsertShell}
         onSetCamera={handleSetCamera}
         onAbout={() => setAboutOpen(true)}
       />
@@ -622,12 +637,14 @@ function MenuBar({
   onInsert,
   onInsertPattern,
   onInsertBoolean,
+  onInsertShell,
   onSetCamera,
   onAbout,
 }: {
   onInsert: (toolType: ToolType) => void;
   onInsertPattern: (patternType: 'pattern_linear' | 'pattern_circular' | 'mirror') => void;
   onInsertBoolean: (boolType: 'boolean_union' | 'boolean_subtract' | 'boolean_intersect') => void;
+  onInsertShell: () => void;
   onSetCamera: (preset: string) => void;
   onAbout: () => void;
 }) {
@@ -733,6 +750,8 @@ function MenuBar({
         { type: 'item', label: 'Union', action: () => onInsertBoolean('boolean_union') },
         { type: 'item', label: 'Subtract', action: () => onInsertBoolean('boolean_subtract') },
         { type: 'item', label: 'Intersect', action: () => onInsertBoolean('boolean_intersect') },
+        { type: 'separator' },
+        { type: 'item', label: 'Shell', action: () => onInsertShell() },
         { type: 'separator' },
         { type: 'item', label: 'Linear Pattern', action: () => onInsertPattern('pattern_linear') },
         { type: 'item', label: 'Circular Pattern', action: () => onInsertPattern('pattern_circular') },

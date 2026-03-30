@@ -121,6 +121,7 @@ export type ToolType =
   | 'cut'
   | 'fillet'
   | 'chamfer'
+  | 'shell'
   | 'measure'
   | 'section'
   | 'hole'

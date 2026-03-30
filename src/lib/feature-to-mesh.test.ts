@@ -428,4 +428,63 @@ describe('feature-to-mesh', () => {
       expect(mesh).toBeNull();
     });
   });
+
+  describe('shell', () => {
+    it('should return null without allFeatures', () => {
+      const mesh = featureToMesh(makeFeature({
+        id: 's1',
+        type: 'shell',
+        parameters: { targetRef: 'box1', thickness: 0.5 },
+      }));
+      expect(mesh).toBeNull();
+    });
+
+    it('should return null when targetRef is empty', () => {
+      const refBox = makeFeature({ id: 'box1', parameters: { width: 4, height: 4, depth: 4 } });
+      const mesh = featureToMesh(
+        makeFeature({ id: 's1', type: 'shell', parameters: { targetRef: '', thickness: 0.5 } }),
+        [refBox],
+      );
+      expect(mesh).toBeNull();
+    });
+
+    it('should return null when target feature is suppressed', () => {
+      const refBox = makeFeature({ id: 'box1', parameters: { width: 4, height: 4, depth: 4 }, suppressed: true });
+      const mesh = featureToMesh(
+        makeFeature({ id: 's1', type: 'shell', parameters: { targetRef: 'box1', thickness: 0.5 } }),
+        [refBox],
+      );
+      expect(mesh).toBeNull();
+    });
+
+    it('should produce a mesh for a shell on a box', () => {
+      const refBox = makeFeature({ id: 'box1', parameters: { width: 4, height: 4, depth: 4 } });
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 's1',
+          type: 'shell',
+          parameters: { targetRef: 'box1', thickness: 0.5 },
+        }),
+        [refBox],
+      );
+      expect(mesh).not.toBeNull();
+      expect(mesh!.vertices.length).toBeGreaterThan(0);
+      expect(mesh!.indices.length).toBeGreaterThan(0);
+      expect(mesh!.featureId).toBe('s1');
+    });
+
+    it('should produce a mesh for a shell on a positioned box', () => {
+      const refBox = makeFeature({ id: 'box1', parameters: { width: 4, height: 4, depth: 4, originX: 3, originY: 2 } });
+      const mesh = featureToMesh(
+        makeFeature({
+          id: 's1',
+          type: 'shell',
+          parameters: { targetRef: 'box1', thickness: 0.5 },
+        }),
+        [refBox],
+      );
+      expect(mesh).not.toBeNull();
+      expect(mesh!.featureId).toBe('s1');
+    });
+  });
 });

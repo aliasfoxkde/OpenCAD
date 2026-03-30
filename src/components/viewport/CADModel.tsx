@@ -13,21 +13,24 @@ export function CADModel() {
   const features = useCADStore((s) => s.features);
   const selectedIds = useCADStore((s) => s.selectedIds);
 
-  // Separate simple features from pattern/mirror/boolean features
-  const { simpleFeatures, patternFeatures, booleanFeatures } = useMemo(() => {
+  // Separate simple features from pattern/mirror/boolean/shell features
+  const { simpleFeatures, patternFeatures, booleanFeatures, shellFeatures } = useMemo(() => {
     const simple: typeof features = [];
     const patterns: typeof features = [];
     const booleans: typeof features = [];
+    const shells: typeof features = [];
     for (const f of features) {
       if (f.type === 'pattern_linear' || f.type === 'pattern_circular' || f.type === 'mirror') {
         patterns.push(f);
       } else if (f.type === 'boolean_union' || f.type === 'boolean_subtract' || f.type === 'boolean_intersect') {
         booleans.push(f);
+      } else if (f.type === 'shell') {
+        shells.push(f);
       } else {
         simple.push(f);
       }
     }
-    return { simpleFeatures: simple, patternFeatures: patterns, booleanFeatures: booleans };
+    return { simpleFeatures: simple, patternFeatures: patterns, booleanFeatures: booleans, shellFeatures: shells };
   }, [features]);
 
   return (
@@ -52,6 +55,14 @@ export function CADModel() {
       ))}
       {booleanFeatures.map((feature) => (
         <BooleanMesh
+          key={feature.id}
+          feature={feature}
+          allFeatures={features}
+          selected={selectedIds.includes(feature.id)}
+        />
+      ))}
+      {shellFeatures.map((feature) => (
+        <ShellMesh
           key={feature.id}
           feature={feature}
           allFeatures={features}
@@ -341,6 +352,126 @@ function PatternInstance({
       castShadow
       receiveShadow
       userData={{ featureId }}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+    >
+      <meshStandardMaterial
+        color={selected ? '#3b82f6' : '#64748b'}
+        transparent={selected}
+        opacity={selected ? 0.85 : 1}
+        wireframe={isWireframe}
+        side={THREE.DoubleSide}
+      />
+      {showEdges && (
+        <meshBasicMaterial
+          color={selected ? '#60a5fa' : '#475569'}
+          wireframe
+          transparent
+          opacity={0.3}
+          side={THREE.DoubleSide}
+        />
+      )}
+    </mesh>
+  );
+}
+
+interface ShellMeshProps {
+  feature: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean };
+  allFeatures: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean }[];
+  selected: boolean;
+}
+
+/** Renders the result of shelling out a referenced body */
+function ShellMesh({ feature, allFeatures, selected }: ShellMeshProps) {
+  if (feature.suppressed) return null;
+
+  const paramsKey = JSON.stringify(feature.parameters);
+  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
+
+  const geometry = useMemo(() => {
+    const targetRef = feature.parameters.targetRef as string;
+    if (!targetRef) return null;
+
+    const targetFeature = allFeatures.find((f) => f.id === targetRef);
+    if (!targetFeature || targetFeature.suppressed) return null;
+
+    const outerGeo = createGeometry(targetFeature.type, targetFeature.parameters);
+    if (!outerGeo) return null;
+
+    const thickness = Math.max(0.001, (feature.parameters.thickness as number) ?? 1);
+
+    const tox = (targetFeature.parameters.originX as number) ?? 0;
+    const toy = (targetFeature.parameters.originY as number) ?? 0;
+    const toz = (targetFeature.parameters.originZ as number) ?? 0;
+    outerGeo.translate(tox, toy, toz);
+
+    // Create inner geometry by scaling down from center
+    const innerGeo = createGeometry(targetFeature.type, targetFeature.parameters);
+    if (!innerGeo) return null;
+
+    // Compute bounding box to get center
+    outerGeo.computeBoundingBox();
+    const box = outerGeo.boundingBox!;
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+
+    // Scale inner geometry toward center by thickness on each side
+    innerGeo.translate(tox, toy, toz);
+    const dx = Math.max(0.5, box.max.x - box.min.x - 2 * thickness) / Math.max(0.001, box.max.x - box.min.x);
+    const dy = Math.max(0.5, box.max.y - box.min.y - 2 * thickness) / Math.max(0.001, box.max.y - box.min.y);
+    const dz = Math.max(0.5, box.max.z - box.min.z - 2 * thickness) / Math.max(0.001, box.max.z - box.min.z);
+
+    innerGeo.translate(-center.x, -center.y, -center.z);
+    innerGeo.scale(dx, dy, dz);
+    innerGeo.translate(center.x, center.y, center.z);
+
+    const result = booleanTwo(outerGeo, innerGeo, 'subtract');
+    return result ?? null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paramsKey, allFeaturesKey, feature.type]);
+
+  if (!geometry) return null;
+
+  const displayMode = useViewStore((s) => s.displayMode);
+  const isWireframe = displayMode === 'wireframe';
+  const showEdges = displayMode === 'shaded_edges';
+  const pointerDownPos = useRef<{ x: number; y: number } | null>(null);
+
+  const handlePointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    pointerDownPos.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  const handlePointerUp = useCallback(
+    (e: ThreeEvent<PointerEvent>) => {
+      if (!pointerDownPos.current) return;
+      const ddx = e.clientX - pointerDownPos.current.x;
+      const ddy = e.clientY - pointerDownPos.current.y;
+      const dist = Math.sqrt(ddx * ddx + ddy * ddy);
+      pointerDownPos.current = null;
+      if (dist > CLICK_THRESHOLD) return;
+
+      const { select } = useCADStore.getState();
+      if (e.shiftKey) {
+        const current = useCADStore.getState().selectedIds;
+        if (current.includes(feature.id)) {
+          select(current.filter((id) => id !== feature.id));
+        } else {
+          select([...current, feature.id]);
+        }
+      } else {
+        select([feature.id]);
+      }
+    },
+    [feature.id],
+  );
+
+  return (
+    <mesh
+      geometry={geometry}
+      castShadow
+      receiveShadow
+      userData={{ featureId: feature.id }}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
     >

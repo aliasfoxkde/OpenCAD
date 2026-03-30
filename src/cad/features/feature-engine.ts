@@ -311,6 +311,12 @@ export class FeatureEngine {
         };
       }
       case 'shell': {
+        // Shell bounds are the target body's bounds
+        const targetId = p.targetRef as string;
+        if (targetId) {
+          const targetResult = this.results.get(targetId);
+          if (targetResult?.bounds) return targetResult.bounds;
+        }
         const t = p.thickness as number;
         return {
           minX: ox - t, minY: oy - t, minZ: oz - t,
