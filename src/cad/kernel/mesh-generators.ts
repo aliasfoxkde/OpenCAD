@@ -874,7 +874,7 @@ export function generateLoftMesh(
   const verts: number[] = [];
   for (let p = 0; p < numProfiles; p++) {
     const y = p * 2; // spacing of 2 units between profiles
-    for (const [x, _, z] of profiles[p]!) {
+    for (const [x, , z] of profiles[p]!) {
       verts.push(x, y, z);
     }
   }

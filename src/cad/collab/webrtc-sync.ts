@@ -197,7 +197,7 @@ export class CollaborationSync {
           });
         }
       }, 2000);
-    } catch (err) {
+    } catch {
       this.setState({
         connectionState: 'error',
         reconnectAttempts: this.state.reconnectAttempts + 1,
