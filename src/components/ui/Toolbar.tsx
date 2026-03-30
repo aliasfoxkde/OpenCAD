@@ -3,7 +3,8 @@ import { getDefaultParameters } from '../../cad/features';
 import { nanoid } from 'nanoid';
 import { DisplayModeToggle } from './DisplayModeToggle';
 import { useToast } from './Toast';
-import type { ToolType, FeatureType } from '../../types/cad';
+import type { FeatureType } from '../../types/cad';
+import type { ToolType } from '../../types/cad';
 
 /** Map primitive ToolType to feature-registry type */
 const primitiveTypeMap: Partial<Record<ToolType, FeatureType>> = {
@@ -28,6 +29,8 @@ const tools: { id: ToolType; label: string; shortcut: string }[] = [
   { id: 'hole', label: 'Hole', shortcut: 'H' },
   { id: 'fillet', label: 'Fillet', shortcut: '' },
   { id: 'chamfer', label: 'Chamfer', shortcut: '' },
+  { id: 'pattern_linear', label: 'Lin Pattern', shortcut: '' },
+  { id: 'pattern_circular', label: 'Circ Pattern', shortcut: '' },
   { id: 'measure', label: 'Measure', shortcut: 'M' },
   { id: 'section', label: 'Section', shortcut: '' },
 ];
@@ -42,6 +45,24 @@ export function Toolbar() {
     const comingSoon = ['fillet', 'chamfer', 'section'] as ToolType[];
     if (comingSoon.includes(toolId)) {
       useToast().addToast(`${toolId.charAt(0).toUpperCase() + toolId.slice(1)} tool coming soon`, 'warning');
+      return;
+    }
+
+    if (toolId === 'pattern_linear' || toolId === 'pattern_circular') {
+      const defaults = getDefaultParameters(toolId);
+      const id = nanoid();
+      const label = toolId === 'pattern_linear' ? 'Linear Pattern' : 'Circular Pattern';
+      const name = `${label} ${features.length + 1}`;
+      const selectedId = useCADStore.getState().selectedIds[0];
+      if (selectedId) {
+        defaults.featureRef = selectedId;
+      }
+      const dependencies = selectedId ? [selectedId] : [];
+      addFeatureAndSelect({
+        id, type: toolId as FeatureType, name,
+        parameters: defaults, dependencies, children: [], suppressed: false,
+      });
+      setActiveTool('select');
       return;
     }
 

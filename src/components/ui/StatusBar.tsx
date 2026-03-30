@@ -2,6 +2,19 @@ import { useCADStore, useCanUndoRedo } from '../../stores/cad-store';
 import { useViewStore } from '../../stores/view-store';
 import { useUIStore } from '../../stores/ui-store';
 
+/** Build selection info string from store state */
+export function buildSelectionInfo(
+  selectedIds: string[],
+  features: { id: string; name: string; type: string }[],
+): string {
+  if (selectedIds.length === 0) return 'none';
+  if (selectedIds.length === 1) {
+    const feature = features.find((f) => f.id === selectedIds[0]);
+    return feature ? `${feature.name} (${feature.type})` : selectedIds[0]!;
+  }
+  return `${selectedIds.length} features`;
+}
+
 export function StatusBar() {
   const activeTool = useCADStore((s) => s.activeTool);
   const features = useCADStore((s) => s.features);
@@ -14,16 +27,7 @@ export function StatusBar() {
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel);
   const toggleRightPanel = useUIStore((s) => s.toggleRightPanel);
 
-  // Build selection info
-  let selectionInfo: string;
-  if (selectedIds.length === 0) {
-    selectionInfo = 'none';
-  } else if (selectedIds.length === 1) {
-    const feature = features.find((f) => f.id === selectedIds[0]);
-    selectionInfo = feature ? `${feature.name} (${feature.type})` : selectedIds[0]!;
-  } else {
-    selectionInfo = `${selectedIds.length} features`;
-  }
+  const selectionInfo = buildSelectionInfo(selectedIds, features);
 
   return (
     <div style={styles.bar}>

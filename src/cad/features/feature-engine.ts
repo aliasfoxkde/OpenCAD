@@ -213,6 +213,16 @@ export class FeatureEngine {
         if ((p.depth as number) <= 0) return 'Hole depth must be positive';
         return null;
       }
+      case 'pattern_linear': {
+        if ((p.count as number) < 1) return 'Count must be at least 1';
+        if ((p.spacing as number) <= 0) return 'Spacing must be positive';
+        return null;
+      }
+      case 'pattern_circular': {
+        if ((p.count as number) < 1) return 'Count must be at least 1';
+        if ((p.angle as number) <= 0) return 'Total angle must be positive';
+        return null;
+      }
       default:
         return null;
     }
@@ -294,6 +304,28 @@ export class FeatureEngine {
         return {
           minX: ox - d, minY: oy, minZ: oz - d,
           maxX: ox + d, maxY: oy + depth, maxZ: oz + d,
+        };
+      }
+      case 'pattern_linear': {
+        const dir = (p.direction as string) ?? 'x';
+        const count = Math.max(1, Math.round((p.count as number) ?? 3));
+        const spacing = (p.spacing as number) ?? 5;
+        const extent = (count - 1) * spacing;
+        return {
+          minX: dir === 'x' ? ox : ox - 1,
+          minY: dir === 'y' ? oy : oy - 1,
+          minZ: dir === 'z' ? oz : oz - 1,
+          maxX: dir === 'x' ? ox + extent : ox + 1,
+          maxY: dir === 'y' ? oy + extent : oy + 1,
+          maxZ: dir === 'z' ? oz + extent : oz + 1,
+        };
+      }
+      case 'pattern_circular': {
+        // Circular patterns rotate around origin, so bounds are symmetric
+        const r = 1; // approximate extent
+        return {
+          minX: ox - r, minY: oy - r, minZ: oz - r,
+          maxX: ox + r, maxY: oy + r, maxZ: oz + r,
         };
       }
       default:

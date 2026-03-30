@@ -148,6 +148,27 @@ export function AppLayout() {
     state.setActiveTool('select');
   }, []);
 
+  const handleInsertPattern = useCallback((patternType: 'pattern_linear' | 'pattern_circular') => {
+    const state = useCADStore.getState();
+    const defaults = getDefaultParameters(patternType);
+    const id = nanoid();
+    const label = patternType === 'pattern_linear' ? 'Linear Pattern' : 'Circular Pattern';
+    const name = `${label} ${state.features.length + 1}`;
+
+    // Reference the first selected feature, if any
+    const selectedId = state.selectedIds[0];
+    if (selectedId) {
+      defaults.featureRef = selectedId;
+    }
+
+    const dependencies = selectedId ? [selectedId] : [];
+    state.addFeatureAndSelect({
+      id, type: patternType, name,
+      parameters: defaults, dependencies, children: [], suppressed: false,
+    });
+    state.setActiveTool('select');
+  }, []);
+
   const handleSetCamera = useCallback((preset: string) => {
     useViewStore.getState().setCameraPreset(preset);
   }, []);
@@ -242,6 +263,7 @@ export function AppLayout() {
     <div style={styles.root}>
       <MenuBar
         onInsert={handleInsertPrimitive}
+        onInsertPattern={handleInsertPattern}
         onSetCamera={handleSetCamera}
         onAbout={() => setAboutOpen(true)}
       />
@@ -470,10 +492,12 @@ function DropZone({ children, onContextMenu }: { children: React.ReactNode; onCo
 
 function MenuBar({
   onInsert,
+  onInsertPattern,
   onSetCamera,
   onAbout,
 }: {
   onInsert: (toolType: ToolType) => void;
+  onInsertPattern: (patternType: 'pattern_linear' | 'pattern_circular') => void;
   onSetCamera: (preset: string) => void;
   onAbout: () => void;
 }) {
@@ -573,6 +597,9 @@ function MenuBar({
         { type: 'item', label: 'Cone', action: () => onInsert('cone') },
         { type: 'item', label: 'Torus', action: () => onInsert('torus') },
         { type: 'item', label: 'Hole', action: () => onInsert('hole') },
+        { type: 'separator' },
+        { type: 'item', label: 'Linear Pattern', action: () => onInsertPattern('pattern_linear') },
+        { type: 'item', label: 'Circular Pattern', action: () => onInsertPattern('pattern_circular') },
       ],
     },
     {

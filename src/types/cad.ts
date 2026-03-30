@@ -123,7 +123,9 @@ export type ToolType =
   | 'chamfer'
   | 'measure'
   | 'section'
-  | 'hole';
+  | 'hole'
+  | 'pattern_linear'
+  | 'pattern_circular';
 
 /** Display mode for the viewport */
 export type DisplayMode = 'wireframe' | 'shaded' | 'shaded_edges';

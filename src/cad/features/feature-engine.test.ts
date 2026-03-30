@@ -233,6 +233,43 @@ describe('FeatureEngine', () => {
         maxX: 3, maxY: 10, maxZ: 3,
       });
     });
+
+    it('should compute linear pattern bounds along x', () => {
+      const features = [
+        makeFeature('f1', 'extrude', { width: 2, height: 2, depth: 2 }),
+        makeFeature('p1', 'pattern_linear', { featureRef: 'f1', count: 4, spacing: 5, direction: 'x' }, ['f1']),
+      ];
+      const result = engine.rebuildAll(features);
+      const bounds = result.results.get('p1')?.bounds;
+      expect(bounds).toBeDefined();
+      expect(bounds!.maxX).toBe(15); // (4-1) * 5
+      expect(bounds!.minX).toBe(0);
+    });
+
+    it('should compute linear pattern bounds along y', () => {
+      const features = [
+        makeFeature('f1', 'extrude', { width: 2, height: 2, depth: 2 }),
+        makeFeature('p1', 'pattern_linear', { featureRef: 'f1', count: 3, spacing: 10, direction: 'y' }, ['f1']),
+      ];
+      const result = engine.rebuildAll(features);
+      const bounds = result.results.get('p1')?.bounds;
+      expect(bounds).toBeDefined();
+      expect(bounds!.maxY).toBe(20); // (3-1) * 10
+      expect(bounds!.minY).toBe(0);
+    });
+
+    it('should compute circular pattern bounds', () => {
+      const features = [
+        makeFeature('f1', 'extrude', { width: 2, height: 2, depth: 2 }),
+        makeFeature('p1', 'pattern_circular', { featureRef: 'f1', count: 6, angle: 360, axis: 'z' }, ['f1']),
+      ];
+      const result = engine.rebuildAll(features);
+      const bounds = result.results.get('p1')?.bounds;
+      expect(bounds).toBeDefined();
+      // Circular patterns have symmetric bounds around origin
+      expect(bounds!.minX).toBeLessThan(0);
+      expect(bounds!.maxX).toBeGreaterThan(0);
+    });
   });
 
   describe('rebuildFrom', () => {
@@ -314,6 +351,38 @@ describe('FeatureEngine', () => {
       ];
       const result = engine.rebuildAll(features);
       expect(result.errors[0]).toContain('Wall thickness must be positive');
+    });
+
+    it('should validate pattern_linear requires positive spacing', () => {
+      const features = [
+        makeFeature('f1', 'pattern_linear', { featureRef: 'missing', count: 3, spacing: -1 }),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors[0]).toContain('Spacing must be positive');
+    });
+
+    it('should validate pattern_linear requires count >= 1', () => {
+      const features = [
+        makeFeature('f1', 'pattern_linear', { featureRef: 'missing', count: 0, spacing: 5 }),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors[0]).toContain('Count must be at least 1');
+    });
+
+    it('should validate pattern_circular requires positive angle', () => {
+      const features = [
+        makeFeature('f1', 'pattern_circular', { featureRef: 'missing', count: 6, angle: 0 }),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors[0]).toContain('Total angle must be positive');
+    });
+
+    it('should validate pattern_circular requires count >= 1', () => {
+      const features = [
+        makeFeature('f1', 'pattern_circular', { featureRef: 'missing', count: -1, angle: 360 }),
+      ];
+      const result = engine.rebuildAll(features);
+      expect(result.errors[0]).toContain('Count must be at least 1');
     });
   });
 });

@@ -12,9 +12,23 @@ export function CADModel() {
   const features = useCADStore((s) => s.features);
   const selectedIds = useCADStore((s) => s.selectedIds);
 
+  // Separate simple features from pattern features
+  const { simpleFeatures, patternFeatures } = useMemo(() => {
+    const simple: typeof features = [];
+    const patterns: typeof features = [];
+    for (const f of features) {
+      if (f.type === 'pattern_linear' || f.type === 'pattern_circular') {
+        patterns.push(f);
+      } else {
+        simple.push(f);
+      }
+    }
+    return { simpleFeatures: simple, patternFeatures: patterns };
+  }, [features]);
+
   return (
     <group>
-      {features.map((feature) => (
+      {simpleFeatures.map((feature) => (
         <FeatureMesh
           key={feature.id}
           featureId={feature.id}
@@ -22,6 +36,14 @@ export function CADModel() {
           params={feature.parameters}
           selected={selectedIds.includes(feature.id)}
           suppressed={feature.suppressed}
+        />
+      ))}
+      {patternFeatures.map((feature) => (
+        <PatternMeshes
+          key={feature.id}
+          feature={feature}
+          allFeatures={features}
+          selected={selectedIds.includes(feature.id)}
         />
       ))}
     </group>
@@ -90,6 +112,198 @@ function FeatureMesh({ featureId, type, params, selected, suppressed }: FeatureM
     <mesh
       geometry={geometry}
       position={[posX, posY, posZ]}
+      castShadow
+      receiveShadow
+      userData={{ featureId }}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+    >
+      <meshStandardMaterial
+        color={selected ? '#3b82f6' : '#64748b'}
+        transparent={selected}
+        opacity={selected ? 0.85 : 1}
+        wireframe={isWireframe}
+        side={THREE.DoubleSide}
+      />
+      {showEdges && (
+        <meshBasicMaterial
+          color={selected ? '#60a5fa' : '#475569'}
+          wireframe
+          transparent
+          opacity={0.3}
+          side={THREE.DoubleSide}
+        />
+      )}
+    </mesh>
+  );
+}
+
+/** Compute transforms for a linear pattern */
+function getLinearPatternTransforms(params: Record<string, unknown>): THREE.Matrix4[] {
+  const direction = (params.direction as string) ?? 'x';
+  const count = Math.max(1, Math.round((params.count as number) ?? 3));
+  const spacing = (params.spacing as number) ?? 5;
+
+  const transforms: THREE.Matrix4[] = [];
+  for (let i = 0; i < count; i++) {
+    const offset = i * spacing;
+    const m = new THREE.Matrix4();
+    switch (direction) {
+      case 'y':
+        m.setPosition(0, offset, 0);
+        break;
+      case 'z':
+        m.setPosition(0, 0, offset);
+        break;
+      default: // 'x'
+        m.setPosition(offset, 0, 0);
+        break;
+    }
+    transforms.push(m);
+  }
+  return transforms;
+}
+
+/** Compute transforms for a circular pattern */
+function getCircularPatternTransforms(params: Record<string, unknown>): THREE.Matrix4[] {
+  const axis = (params.axis as string) ?? 'z';
+  const count = Math.max(1, Math.round((params.count as number) ?? 6));
+  const totalAngle = ((params.angle as number) ?? 360) * (Math.PI / 180);
+
+  const transforms: THREE.Matrix4[] = [];
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * totalAngle;
+    const m = new THREE.Matrix4();
+    switch (axis) {
+      case 'x':
+        m.makeRotationX(angle);
+        break;
+      case 'y':
+        m.makeRotationY(angle);
+        break;
+      default: // 'z'
+        m.makeRotationZ(angle);
+        break;
+    }
+    transforms.push(m);
+  }
+  return transforms;
+}
+
+interface PatternMeshesProps {
+  feature: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean };
+  allFeatures: { id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean }[];
+  selected: boolean;
+}
+
+/** Renders pattern instances as transformed copies of the referenced feature */
+function PatternMeshes({ feature, allFeatures, selected }: PatternMeshesProps) {
+  if (feature.suppressed) return null;
+
+  const paramsKey = JSON.stringify(feature.parameters);
+  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
+
+  const instances = useMemo(() => {
+    const featureRef = feature.parameters.featureRef as string;
+    if (!featureRef) return null;
+
+    const refFeature = allFeatures.find((f) => f.id === featureRef);
+    if (!refFeature || refFeature.suppressed) return null;
+
+    const baseGeometry = createGeometry(refFeature.type, refFeature.parameters);
+    if (!baseGeometry) return null;
+
+    const transforms =
+      feature.type === 'pattern_linear'
+        ? getLinearPatternTransforms(feature.parameters)
+        : getCircularPatternTransforms(feature.parameters);
+
+    const refPosX = (refFeature.parameters.originX as number) ?? 0;
+    const refPosY = (refFeature.parameters.originY as number) ?? 0;
+    const refPosZ = (refFeature.parameters.originZ as number) ?? 0;
+
+    return { baseGeometry, transforms, refPos: [refPosX, refPosY, refPosZ] as [number, number, number] };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paramsKey, allFeaturesKey, feature.type]);
+
+  if (!instances) return null;
+
+  const displayMode = useViewStore((s) => s.displayMode);
+  const isWireframe = displayMode === 'wireframe';
+  const showEdges = displayMode === 'shaded_edges';
+
+  return (
+    <>
+      {instances.transforms.map((transform, i) => (
+        <PatternInstance
+          key={i}
+          featureId={feature.id}
+          geometry={instances.baseGeometry}
+          transform={transform}
+          refPos={instances.refPos}
+          selected={selected}
+          isWireframe={isWireframe}
+          showEdges={showEdges}
+        />
+      ))}
+    </>
+  );
+}
+
+function PatternInstance({
+  featureId,
+  geometry,
+  transform,
+  refPos,
+  selected,
+  isWireframe,
+  showEdges,
+}: {
+  featureId: string;
+  geometry: THREE.BufferGeometry;
+  transform: THREE.Matrix4;
+  refPos: [number, number, number];
+  selected: boolean;
+  isWireframe: boolean;
+  showEdges: boolean;
+}) {
+  const pointerDownPos = useRef<{ x: number; y: number } | null>(null);
+
+  const handlePointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    pointerDownPos.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  const handlePointerUp = useCallback(
+    (e: ThreeEvent<PointerEvent>) => {
+      if (!pointerDownPos.current) return;
+      const dx = e.clientX - pointerDownPos.current.x;
+      const dy = e.clientY - pointerDownPos.current.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      pointerDownPos.current = null;
+      if (dist > CLICK_THRESHOLD) return;
+
+      const { select } = useCADStore.getState();
+      if (e.shiftKey) {
+        const current = useCADStore.getState().selectedIds;
+        if (current.includes(featureId)) {
+          select(current.filter((id) => id !== featureId));
+        } else {
+          select([...current, featureId]);
+        }
+      } else {
+        select([featureId]);
+      }
+    },
+    [featureId],
+  );
+
+  return (
+    <mesh
+      geometry={geometry}
+      position={refPos}
+      matrixAutoUpdate={false}
+      matrix={transform}
       castShadow
       receiveShadow
       userData={{ featureId }}
