@@ -20,7 +20,7 @@ interface ConfirmState extends ConfirmOptions {
 }
 
 // Module-level state
-let confirmListeners = new Set<(state: ConfirmState | null) => void>();
+const confirmListeners = new Set<(state: ConfirmState | null) => void>();
 let activeState: ConfirmState | null = null;
 
 function notifyListeners() {

@@ -8,7 +8,7 @@ import { createDocument, saveCurrentDocument } from '@/api/document-api';
 import { exportToFormat, downloadExport, serializeToOCAD, deserializeFromOCAD } from '@/api/export-api';
 import { useCADStore } from '@/stores/cad-store';
 import { featuresToMeshes } from '@/lib/feature-to-mesh';
-import { useToast } from '@/components/ui/Toast';
+import { getToast } from '@/components/ui/Toast';
 import { confirm } from '@/components/ui/ConfirmDialog';
 import { nanoid } from 'nanoid';
 
@@ -27,9 +27,9 @@ export async function handleNewDocument(): Promise<void> {
   if (result.success && result.data) {
     useCADStore.getState().loadFeatures(result.data.features);
     useCADStore.getState().setDocument(result.data.id, result.data.name);
-    useToast().addToast('New document created', 'success');
+    getToast().addToast('New document created', 'success');
   } else {
-    useToast().addToast('Failed to create document', 'error');
+    getToast().addToast('Failed to create document', 'error');
   }
 }
 
@@ -51,7 +51,7 @@ export async function handleOpenDocument(): Promise<void> {
     const project = deserializeFromOCAD(json);
     useCADStore.getState().loadFeatures(project.features);
     useCADStore.getState().setDocument(nanoid(), project.name);
-    useToast().addToast(`Opened ${name}`, 'success');
+    getToast().addToast(`Opened ${name}`, 'success');
   } catch {
     // User cancelled or invalid file — silent
   }
@@ -77,9 +77,9 @@ export async function handleSaveDocument(): Promise<boolean> {
   });
   if (result.success) {
     useCADStore.setState({ dirty: false });
-    useToast().addToast(`Saved ${state.documentName}`, 'success');
+    getToast().addToast(`Saved ${state.documentName}`, 'success');
   } else {
-    useToast().addToast('Failed to save document', 'error');
+    getToast().addToast('Failed to save document', 'error');
   }
   return result.success;
 }
@@ -111,10 +111,10 @@ export function handleExport(format: 'stl' | 'obj' | 'glb' | '3mf' | 'ocad'): vo
   try {
     const result = exportToFormat({ format, meshes });
     downloadExport(result);
-    useToast().addToast(`Exported as ${format.toUpperCase()}`, 'success');
+    getToast().addToast(`Exported as ${format.toUpperCase()}`, 'success');
   } catch (err) {
     console.error('Export failed:', err);
-    useToast().addToast(`Export to ${format.toUpperCase()} failed`, 'error');
+    getToast().addToast(`Export to ${format.toUpperCase()} failed`, 'error');
   }
 }
 
@@ -141,7 +141,7 @@ export function captureThumbnail(): string | null {
 export function handleScreenshot(): void {
   const canvas = document.querySelector('canvas');
   if (!canvas) {
-    useToast().addToast('No viewport found', 'error');
+    getToast().addToast('No viewport found', 'error');
     return;
   }
   try {
@@ -151,10 +151,10 @@ export function handleScreenshot(): void {
     const state = useCADStore.getState();
     a.download = `${state.documentName || 'opencad'}-screenshot.png`;
     a.click();
-    useToast().addToast('Screenshot saved', 'success');
+    getToast().addToast('Screenshot saved', 'success');
   } catch (err) {
     console.error('Screenshot failed:', err);
-    useToast().addToast('Screenshot failed', 'error');
+    getToast().addToast('Screenshot failed', 'error');
   }
 }
 
@@ -199,7 +199,7 @@ export async function handleImportFile(): Promise<void> {
       suppressed: false,
     };
     useCADStore.getState().addFeatureAndSelect(feature);
-    useToast().addToast(`Imported ${name} (${(indices.length / 3).toFixed(0)} faces)`, 'success');
+    getToast().addToast(`Imported ${name} (${(indices.length / 3).toFixed(0)} faces)`, 'success');
   } catch {
     // User cancelled or import failed
   }

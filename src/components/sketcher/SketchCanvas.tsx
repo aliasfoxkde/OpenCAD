@@ -431,7 +431,7 @@ function drawThreePointArc(
   const endAngle = Math.atan2(y3 - uy, x3 - ux);
 
   // Determine direction
-  let cross = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
+  const cross = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
   const ccw = cross > 0;
 
   // In canvas coords, Y is flipped

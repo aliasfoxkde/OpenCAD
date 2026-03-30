@@ -145,7 +145,7 @@ function FeatureMeasurement({
         const centroid = {
           x: 0, y: 0, z: 0,
         };
-        let count = mesh.vertices.length / 3;
+        const count = mesh.vertices.length / 3;
         for (let i = 0; i < mesh.vertices.length; i += 3) {
           centroid.x += mesh.vertices[i]!;
           centroid.y += mesh.vertices[i + 1]!;

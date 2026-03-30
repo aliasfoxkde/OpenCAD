@@ -123,7 +123,7 @@ export async function getLatestSnapshot(documentId: string): Promise<SnapshotEnt
   const index = tx.store.index('documentId');
   const entries: SnapshotEntry[] = [];
 
-  let cursor = await index.openCursor(documentId, 'prev');
+  const cursor = await index.openCursor(documentId, 'prev');
   if (cursor) {
     entries.push(cursor.value as SnapshotEntry);
   }

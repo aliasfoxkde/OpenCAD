@@ -25,10 +25,10 @@ interface ToastContextValue {
 }
 
 // Module-level state (works outside React tree)
-let toastListeners = new Set<(toasts: Toast[]) => void>();
+const toastListeners = new Set<(toasts: Toast[]) => void>();
 let activeToasts: Toast[] = [];
 let toastIdCounter = 0;
-let dismissTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const dismissTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 function notifyListeners() {
   for (const listener of toastListeners) {
@@ -67,13 +67,17 @@ function clearAll() {
   notifyListeners();
 }
 
-export function useToast(): Omit<ToastContextValue, 'toasts'> {
+/** Get toast API (safe to call outside React components) */
+export function getToast(): Omit<ToastContextValue, 'toasts'> {
   return {
     addToast,
     removeToast,
     clearAll,
   };
 }
+
+/** @deprecated Use getToast() instead — this is not a React hook */
+export const useToast = getToast;
 
 /** Toast colors by type */
 const TOAST_COLORS: Record<ToastType, { bg: string; border: string; icon: string }> = {
