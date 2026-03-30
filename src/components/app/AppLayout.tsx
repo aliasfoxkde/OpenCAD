@@ -204,6 +204,7 @@ export function AppLayout() {
       { id: 'toggle_grid', label: 'Toggle Grid', shortcut: 'G', action: () => useViewStore.getState().toggleGrid() },
       { id: 'toggle_wireframe', label: 'Toggle Wireframe', shortcut: 'W', action: () => useViewStore.getState().toggleWireframe() },
       { id: 'toggle_shadows', label: 'Toggle Shadows', action: () => useViewStore.getState().toggleShadows() },
+      { id: 'toggle_section', label: 'Toggle Section Plane', action: () => useViewStore.getState().toggleSectionPlane() },
     );
 
     setContextMenu({ x: e.clientX, y: e.clientY, items });
@@ -715,6 +716,8 @@ function MenuBar({
         { type: 'item', label: 'Toggle Shadows', action: () => useViewStore.getState().toggleShadows() },
         { type: 'item', label: 'Fit View', shortcut: 'F', action: () => useViewStore.getState().requestFitView() },
         { type: 'item', label: 'Zoom to Selection', shortcut: 'Shift+F', action: () => useViewStore.getState().requestZoomToSelection() },
+        { type: 'separator' },
+        { type: 'item', label: 'Section Plane', action: () => useViewStore.getState().toggleSectionPlane() },
       ],
     },
     {
@@ -740,7 +743,7 @@ function MenuBar({
       label: 'Tools',
       items: [
         { type: 'item', label: 'Measure', shortcut: 'M', action: () => useCADStore.getState().setActiveTool('measure') },
-        { type: 'item', label: 'Section', action: () => useCADStore.getState().setActiveTool('section') },
+        { type: 'item', label: 'Section Plane', action: () => useViewStore.getState().toggleSectionPlane() },
         { type: 'separator' },
         { type: 'item', label: 'Command Palette', shortcut: 'Ctrl+K', action: () => useUIStore.getState().toggleCommandPalette() },
         { type: 'separator' },
