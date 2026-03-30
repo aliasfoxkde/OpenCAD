@@ -4,6 +4,7 @@ import { useMemo, useRef, useCallback } from 'react';
 import type { ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { booleanTwo } from '../../cad/kernel/csg-boolean';
+import { getConsumedFeatureIds } from '../../lib/feature-to-mesh';
 
 /** Distance threshold (pixels) to distinguish click from drag */
 const CLICK_THRESHOLD = 5;
@@ -20,23 +21,7 @@ export function CADModel() {
     const patterns: typeof features = [];
     const booleans: typeof features = [];
     const shells: typeof features = [];
-    const consumedIds = new Set<string>();
-    for (const f of features) {
-      if (f.suppressed) continue;
-      if (
-        f.type.startsWith('boolean_') ||
-        f.type === 'shell' ||
-        f.type.startsWith('pattern_') ||
-        f.type === 'mirror'
-      ) {
-        for (const depId of f.dependencies) consumedIds.add(depId);
-        const bodyRefs = (f.parameters.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
-        for (const refId of bodyRefs) consumedIds.add(refId);
-        if (f.parameters.targetRef) consumedIds.add(f.parameters.targetRef as string);
-        if (f.parameters.toolRef) consumedIds.add(f.parameters.toolRef as string);
-        if (f.parameters.featureRef) consumedIds.add(f.parameters.featureRef as string);
-      }
-    }
+    const consumedIds = getConsumedFeatureIds(features);
     for (const f of features) {
       if (f.type === 'pattern_linear' || f.type === 'pattern_circular' || f.type === 'mirror') {
         patterns.push(f);
