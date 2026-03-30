@@ -8,7 +8,7 @@ import { useCollabStore } from '../../stores/collab-store';
 import { useCADStore } from '../../stores/cad-store';
 import { getCollaborationSync, generateRoomId } from '../../cad/collab/webrtc-sync';
 import { startCollabSync, stopCollabSync } from '../../cad/collab/crdt-cad-bridge';
-import { addFeature as addCRDTFeature } from '../../cad/collab/crdt-store';
+import { addFeature as addCRDTFeature, closeCRDTDocument } from '../../cad/collab/crdt-store';
 
 export function CollabPanel() {
   const connectionState = useCollabStore((s) => s.connectionState);
@@ -86,6 +86,7 @@ export function CollabPanel() {
   const handleLeave = useCallback(() => {
     stopCollabSync();
     sync.leaveSession();
+    closeCRDTDocument();
     leaveSession();
   }, [sync, leaveSession]);
 

@@ -8,6 +8,7 @@ import { createDocument, saveCurrentDocument } from '@/api/document-api';
 import { exportToFormat, downloadExport, serializeToOCAD, deserializeFromOCAD } from '@/api/export-api';
 import { useCADStore } from '@/stores/cad-store';
 import { featuresToMeshes } from '@/lib/feature-to-mesh';
+import { useToast } from '@/components/ui/Toast';
 import { nanoid } from 'nanoid';
 
 /** Create a new document and switch to it */
@@ -16,6 +17,9 @@ export async function handleNewDocument(): Promise<void> {
   if (result.success && result.data) {
     useCADStore.getState().loadFeatures(result.data.features);
     useCADStore.getState().setDocument(result.data.id, result.data.name);
+    useToast().addToast('New document created', 'success');
+  } else {
+    useToast().addToast('Failed to create document', 'error');
   }
 }
 
@@ -23,11 +27,12 @@ export async function handleNewDocument(): Promise<void> {
 export async function handleOpenDocument(): Promise<void> {
   const { openFile } = await import('@/cad/io/project');
   try {
-    const { data } = await openFile('.ocad,.json');
+    const { data, name } = await openFile('.ocad,.json');
     const json = typeof data === 'string' ? data : new TextDecoder().decode(data);
     const project = deserializeFromOCAD(json);
     useCADStore.getState().loadFeatures(project.features);
     useCADStore.getState().setDocument(nanoid(), project.name);
+    useToast().addToast(`Opened ${name}`, 'success');
   } catch {
     // User cancelled or invalid file — silent
   }
@@ -50,6 +55,11 @@ export async function handleSaveDocument(): Promise<boolean> {
     modified: Date.now(),
     autoSave: false,
   });
+  if (result.success) {
+    useToast().addToast(`Saved ${state.documentName}`, 'success');
+  } else {
+    useToast().addToast('Failed to save document', 'error');
+  }
   return result.success;
 }
 
@@ -80,9 +90,10 @@ export function handleExport(format: 'stl' | 'obj' | 'glb' | 'ocad'): void {
   try {
     const result = exportToFormat({ format, meshes });
     downloadExport(result);
+    useToast().addToast(`Exported as ${format.toUpperCase()}`, 'success');
   } catch (err) {
-    // Export failed — silent (could add toast here)
     console.error('Export failed:', err);
+    useToast().addToast(`Export to ${format.toUpperCase()} failed`, 'error');
   }
 }
 
@@ -114,6 +125,7 @@ export async function handleImportFile(): Promise<void> {
       suppressed: false,
     };
     useCADStore.getState().addFeatureAndSelect(feature);
+    useToast().addToast(`Imported ${name}`, 'success');
   } catch {
     // User cancelled or import failed
   }
