@@ -13,6 +13,7 @@ import {
   generateSphereMesh,
   generateConeMesh,
   generateTorusMesh,
+  generateHoleMesh,
 } from './mesh-generators';
 
 let initialized = false;
@@ -83,6 +84,8 @@ function generatePlaceholderMesh(
       return generateConeMesh(params.radius ?? 0.5, params.height ?? 1);
     case 'torus':
       return generateTorusMesh(params.radius ?? 0.5, params.tube ?? 0.15);
+    case 'hole':
+      return generateHoleMesh(params.diameter ?? 5, params.depth ?? 10);
     default:
       return generateBoxMesh(1, 1, 1);
   }
