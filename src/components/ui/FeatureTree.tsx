@@ -9,9 +9,13 @@ export function FeatureTree() {
   const updateFeature = useCADStore((s) => s.updateFeature);
   const removeFeature = useCADStore((s) => s.removeFeature);
   const reorderFeature = useCADStore((s) => s.reorderFeature);
+  const duplicateFeature = useCADStore((s) => s.duplicateFeature);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number; y: number; featureId: string;
+  } | null>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
 
   const startEditing = useCallback((featureId: string, currentName: string) => {
@@ -37,6 +41,14 @@ export function FeatureTree() {
       editInputRef.current.select();
     }
   }, [editingId]);
+
+  // Close context menu on click outside
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handler = () => setContextMenu(null);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [contextMenu]);
 
   const handleDragStart = useCallback((e: React.DragEvent, featureId: string) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -65,6 +77,14 @@ export function FeatureTree() {
     setDragOverIndex(null);
   }, []);
 
+  const handleContextMenu = useCallback((e: React.MouseEvent, featureId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY, featureId });
+  }, []);
+
+  const contextFeature = contextMenu ? features.find((f) => f.id === contextMenu.featureId) : null;
+
   return (
     <div style={styles.panel}>
       <div style={styles.header}>
@@ -85,6 +105,7 @@ export function FeatureTree() {
               ...styles.item,
               ...(selectedIds.includes(feature.id) ? styles.selected : {}),
               ...(dragOverIndex === index ? styles.dragOver : {}),
+              ...(feature.suppressed ? styles.suppressedItem : {}),
             }}
             onClick={() => select([feature.id])}
             onDoubleClick={() => startEditing(feature.id, feature.name)}
@@ -93,14 +114,12 @@ export function FeatureTree() {
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, index)}
             onDragEnd={handleDragEnd}
+            onContextMenu={(e) => handleContextMenu(e, feature.id)}
           >
             <span style={styles.dragHandle} title="Drag to reorder">&#x2261;</span>
-            <span style={styles.index}>{index + 1}</span>
             <span style={styles.icon}>{getFeatureIcon(feature.type)}</span>
-            {isPatternType(feature.type) && (
-              <span style={styles.refBadge}>
-                {getFeatureRefLabel(feature, features)}
-              </span>
+            {getDepBadge(feature, features) && (
+              <span style={styles.depBadge}>{getDepBadge(feature, features)}</span>
             )}
             {editingId === feature.id ? (
               <input
@@ -116,10 +135,7 @@ export function FeatureTree() {
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <span style={{
-                ...styles.name,
-                ...(feature.suppressed ? styles.suppressedName : {}),
-              }}>{feature.name}</span>
+              <span style={styles.name}>{feature.name}</span>
             )}
             <button
               style={styles.toggleBtn}
@@ -144,6 +160,55 @@ export function FeatureTree() {
           </div>
         ))}
       </div>
+      {/* Context Menu */}
+      {contextMenu && contextFeature && (
+        <div
+          style={{
+            ...styles.contextMenu,
+            left: contextMenu.x,
+            top: contextMenu.y,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            style={styles.ctxItem}
+            onClick={() => {
+              startEditing(contextFeature.id, contextFeature.name);
+              setContextMenu(null);
+            }}
+          >
+            Rename
+          </button>
+          <button
+            style={styles.ctxItem}
+            onClick={() => {
+              duplicateFeature(contextFeature.id);
+              setContextMenu(null);
+            }}
+          >
+            Duplicate
+          </button>
+          <div style={styles.ctxSeparator} />
+          <button
+            style={styles.ctxItem}
+            onClick={() => {
+              updateFeature(contextFeature.id, { suppressed: !contextFeature.suppressed });
+              setContextMenu(null);
+            }}
+          >
+            {contextFeature.suppressed ? 'Unsuppress' : 'Suppress'}
+          </button>
+          <button
+            style={styles.ctxDangerItem}
+            onClick={() => {
+              removeFeature(contextFeature.id);
+              setContextMenu(null);
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -153,18 +218,48 @@ function getFeatureIcon(type: string): string {
   return def?.icon ?? '[+]';
 }
 
-function isPatternType(type: string): boolean {
-  return type === 'pattern_linear' || type === 'pattern_circular' || type === 'mirror';
-}
-
-function getFeatureRefLabel(
-  feature: { parameters: Record<string, unknown> },
+function getDepBadge(
+  feature: { type: string; parameters: Record<string, unknown> },
   allFeatures: { id: string; name: string }[],
 ): string {
-  const refId = feature.parameters.featureRef as string;
-  if (!refId) return '';
-  const ref = allFeatures.find((f) => f.id === refId);
-  return ref ? ref.name : '';
+  // Pattern features
+  if (feature.type === 'pattern_linear' || feature.type === 'pattern_circular' || feature.type === 'mirror') {
+    const refId = feature.parameters.featureRef as string;
+    if (!refId) return '';
+    const ref = allFeatures.find((f) => f.id === refId);
+    return ref ? ref.name : '';
+  }
+
+  // Boolean union/intersect
+  if (feature.type === 'boolean_union' || feature.type === 'boolean_intersect') {
+    const bodyRefs = (feature.parameters.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+    if (bodyRefs.length === 0) return '';
+    const names = bodyRefs.map((id) => {
+      const ref = allFeatures.find((f) => f.id === id);
+      return ref?.name ?? id;
+    });
+    return names.join(' + ');
+  }
+
+  // Boolean subtract
+  if (feature.type === 'boolean_subtract') {
+    const targetId = feature.parameters.targetRef as string;
+    const toolId = feature.parameters.toolRef as string;
+    const target = allFeatures.find((f) => f.id === targetId);
+    const tool = allFeatures.find((f) => f.id === toolId);
+    const tName = target?.name ?? targetId ?? '?';
+    const uName = tool?.name ?? toolId ?? '?';
+    return `${tName} - ${uName}`;
+  }
+
+  // Shell
+  if (feature.type === 'shell') {
+    const targetId = feature.parameters.targetRef as string;
+    const target = allFeatures.find((f) => f.id === targetId);
+    return target ? target.name : '';
+  }
+
+  return '';
 }
 
 const styles: Record<string, React.CSSProperties> = {
@@ -223,6 +318,9 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#334155',
     color: '#f1f5f9',
   },
+  suppressedItem: {
+    opacity: 0.45,
+  },
   dragOver: {
     borderTop: '2px solid #3b82f6',
   },
@@ -234,24 +332,18 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center',
     flexShrink: 0,
   },
-  index: {
-    width: 16,
-    textAlign: 'right',
-    color: '#64748b',
-    fontSize: 10,
-  },
   icon: {
     fontFamily: 'monospace',
     fontSize: 10,
     color: '#3b82f6',
   },
-  refBadge: {
+  depBadge: {
     fontSize: 9,
     color: '#f59e0b',
     background: 'rgba(245, 158, 11, 0.12)',
     padding: '0 4px',
     borderRadius: 3,
-    maxWidth: 60,
+    maxWidth: 80,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
@@ -262,10 +354,6 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-  },
-  suppressedName: {
-    fontStyle: 'italic',
-    opacity: 0.5,
   },
   renameInput: {
     flex: 1,
@@ -287,5 +375,44 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 9,
     color: '#ef4444',
     padding: '0 4px',
+  },
+  contextMenu: {
+    position: 'fixed',
+    zIndex: 9999,
+    background: '#1e293b',
+    border: '1px solid #475569',
+    borderRadius: 4,
+    padding: 4,
+    minWidth: 120,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+  },
+  ctxItem: {
+    display: 'block',
+    width: '100%',
+    padding: '6px 12px',
+    border: 'none',
+    borderRadius: 3,
+    background: 'transparent',
+    color: '#e2e8f0',
+    fontSize: 12,
+    textAlign: 'left',
+    cursor: 'pointer',
+  },
+  ctxDangerItem: {
+    display: 'block',
+    width: '100%',
+    padding: '6px 12px',
+    border: 'none',
+    borderRadius: 3,
+    background: 'transparent',
+    color: '#ef4444',
+    fontSize: 12,
+    textAlign: 'left',
+    cursor: 'pointer',
+  },
+  ctxSeparator: {
+    height: 1,
+    background: '#475569',
+    margin: '2px 0',
   },
 };
