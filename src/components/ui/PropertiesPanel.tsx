@@ -47,11 +47,21 @@ export function PropertiesPanel() {
     });
   };
 
-  const handleParamChange = (key: string, value: number) => {
+  const handleParamChange = (key: string, value: unknown) => {
     if (!selectedFeature) return;
     updateFeature(selectedFeature.id, {
       parameters: { ...selectedFeature.parameters, [key]: value },
     });
+  };
+
+  const handleNameChange = (name: string) => {
+    if (!selectedFeature) return;
+    updateFeature(selectedFeature.id, { name });
+  };
+
+  const handleSuppressedToggle = () => {
+    if (!selectedFeature) return;
+    updateFeature(selectedFeature.id, { suppressed: !selectedFeature.suppressed });
   };
 
   return (
@@ -75,22 +85,45 @@ export function PropertiesPanel() {
       </div>
       {selectedFeature && featureDef && (
         <div style={styles.section}>
-          <div style={styles.sectionTitle}>
-            Properties — {selectedFeature.name}
+          <div style={styles.sectionTitle}>Properties</div>
+
+          {/* Feature name */}
+          <div style={styles.nameRow}>
+            <input
+              type="text"
+              style={styles.nameInput}
+              value={selectedFeature.name}
+              onChange={(e) => handleNameChange(e.target.value)}
+            />
+            <button
+              style={{
+                ...styles.suppressBtn,
+                opacity: selectedFeature.suppressed ? 1 : 0.4,
+              }}
+              onClick={handleSuppressedToggle}
+              title={selectedFeature.suppressed ? 'Unsuppress feature' : 'Suppress feature'}
+            >
+              {selectedFeature.suppressed ? 'Off' : 'On'}
+            </button>
           </div>
+
           <div style={styles.typeLabel}>
             {featureDef.icon} {featureDef.label}
+            {selectedFeature.suppressed && (
+              <span style={styles.suppressedBadge}>suppressed</span>
+            )}
           </div>
-          {featureDef.parameters
-            .filter((p) => p.type === 'number')
-            .map((paramDef) => (
-              <ParameterInput
-                key={paramDef.name}
-                paramDef={paramDef}
-                value={(selectedFeature.parameters[paramDef.name] as number) ?? paramDef.default as number}
-                onChange={(v) => handleParamChange(paramDef.name, v)}
-              />
-            ))}
+
+          {/* All parameters */}
+          {featureDef.parameters.map((paramDef) => (
+            <ParameterInput
+              key={paramDef.name}
+              paramDef={paramDef}
+              value={selectedFeature.parameters[paramDef.name] ?? paramDef.default}
+              features={features}
+              onChange={(v) => handleParamChange(paramDef.name, v)}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -100,31 +133,103 @@ export function PropertiesPanel() {
 function ParameterInput({
   paramDef,
   value,
+  features,
   onChange,
 }: {
   paramDef: ParameterDef;
-  value: number;
-  onChange: (v: number) => void;
+  value: unknown;
+  features: { id: string; name: string; type: string }[];
+  onChange: (v: unknown) => void;
 }) {
-  return (
-    <div style={styles.paramRow}>
-      <label style={styles.paramLabel}>
-        {paramDef.label}
-        {paramDef.unit && (
-          <span style={styles.paramUnit}> {paramDef.unit}</span>
-        )}
-      </label>
-      <input
-        type="number"
-        style={styles.paramInput}
-        value={value}
-        min={paramDef.min}
-        max={paramDef.max}
-        step={paramDef.step ?? 0.1}
-        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-      />
-    </div>
-  );
+  switch (paramDef.type) {
+    case 'number':
+      return (
+        <div style={styles.paramRow}>
+          <label style={styles.paramLabel}>
+            {paramDef.label}
+            {paramDef.unit && (
+              <span style={styles.paramUnit}> {paramDef.unit}</span>
+            )}
+          </label>
+          <input
+            type="number"
+            style={styles.paramInput}
+            value={value as number}
+            min={paramDef.min}
+            max={paramDef.max}
+            step={paramDef.step ?? 0.1}
+            onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+          />
+        </div>
+      );
+
+    case 'string':
+      return (
+        <div style={styles.paramRow}>
+          <label style={styles.paramLabel}>{paramDef.label}</label>
+          <input
+            type="text"
+            style={styles.paramInput}
+            value={value as string}
+            onChange={(e) => onChange(e.target.value)}
+            title={paramDef.description}
+            placeholder={paramDef.description}
+          />
+        </div>
+      );
+
+    case 'boolean':
+      return (
+        <div style={styles.paramRow}>
+          <label style={styles.paramLabel}>{paramDef.label}</label>
+          <input
+            type="checkbox"
+            checked={value as boolean}
+            onChange={(e) => onChange(e.target.checked)}
+          />
+        </div>
+      );
+
+    case 'enum':
+      return (
+        <div style={styles.paramRow}>
+          <label style={styles.paramLabel}>{paramDef.label}</label>
+          <select
+            style={styles.paramSelect}
+            value={value as string}
+            onChange={(e) => onChange(e.target.value)}
+          >
+            {paramDef.enumValues?.map((v) => (
+              <option key={v} value={v}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+
+    case 'reference':
+      return (
+        <div style={styles.paramRow}>
+          <label style={styles.paramLabel}>{paramDef.label}</label>
+          <select
+            style={styles.paramSelect}
+            value={value as string}
+            onChange={(e) => onChange(e.target.value)}
+          >
+            <option value="">— none —</option>
+            {features.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+
+    default:
+      return null;
+  }
 }
 
 const styles: Record<string, React.CSSProperties> = {
@@ -159,6 +264,43 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
+  nameRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 6,
+  },
+  nameInput: {
+    flex: 1,
+    padding: '4px 6px',
+    fontSize: 12,
+    fontWeight: 600,
+    background: '#0f172a',
+    border: '1px solid #334155',
+    borderRadius: 3,
+    color: '#f1f5f9',
+    outline: 'none',
+  },
+  suppressBtn: {
+    padding: '2px 8px',
+    borderRadius: 3,
+    fontSize: 10,
+    fontWeight: 600,
+    color: '#f1f5f9',
+    background: '#334155',
+    border: '1px solid #475569',
+    cursor: 'pointer',
+  },
+  suppressedBadge: {
+    fontSize: 9,
+    color: '#fbbf24',
+    background: 'rgba(251, 191, 36, 0.15)',
+    padding: '0 4px',
+    borderRadius: 3,
+    marginLeft: 6,
+    textTransform: 'uppercase',
+    letterSpacing: '0.03em',
+  },
   typeLabel: {
     fontSize: 12,
     color: '#e2e8f0',
@@ -189,6 +331,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 11,
     color: '#94a3b8',
     width: 80,
+    flexShrink: 0,
   },
   paramUnit: {
     color: '#475569',
@@ -202,5 +345,18 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid #334155',
     borderRadius: 3,
     color: '#f1f5f9',
+    outline: 'none',
+    minWidth: 0,
+  },
+  paramSelect: {
+    flex: 1,
+    padding: '2px 4px',
+    fontSize: 11,
+    background: '#0f172a',
+    border: '1px solid #334155',
+    borderRadius: 3,
+    color: '#f1f5f9',
+    outline: 'none',
+    minWidth: 0,
   },
 };
