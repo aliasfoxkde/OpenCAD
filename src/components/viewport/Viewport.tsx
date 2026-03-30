@@ -1,12 +1,18 @@
+import { useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import { Scene } from './Scene';
 import { CameraController } from './CameraController';
 import { useViewStore } from '../../stores/view-store';
+import { useCADStore } from '../../stores/cad-store';
 
 export function Viewport() {
   const showGrid = useViewStore((s) => s.showGrid);
   const showShadows = useViewStore((s) => s.showShadows);
+
+  const handlePointerMissed = useCallback(() => {
+    useCADStore.getState().clearSelection();
+  }, []);
 
   return (
     <Canvas
@@ -14,6 +20,7 @@ export function Viewport() {
       shadows={showShadows}
       gl={{ antialias: true, alpha: false }}
       style={{ width: '100%', height: '100%' }}
+      onPointerMissed={handlePointerMissed}
       onCreated={({ gl }) => {
         gl.setClearColor('#0f172a');
       }}

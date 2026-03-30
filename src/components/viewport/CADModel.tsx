@@ -1,15 +1,17 @@
 import { useCADStore } from '../../stores/cad-store';
 import { useViewStore } from '../../stores/view-store';
-import { useMemo } from 'react';
+import { useMemo, useRef, useCallback } from 'react';
+import type { ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
+
+/** Distance threshold (pixels) to distinguish click from drag */
+const CLICK_THRESHOLD = 5;
 
 /** Renders all tessellated CAD geometry */
 export function CADModel() {
   const features = useCADStore((s) => s.features);
   const selectedIds = useCADStore((s) => s.selectedIds);
 
-  // For now, render placeholder primitives for each feature
-  // This will be replaced with actual tessellation from the CAD kernel
   return (
     <group>
       {features.map((feature) => (
@@ -34,8 +36,9 @@ interface FeatureMeshProps {
   suppressed: boolean;
 }
 
-function FeatureMesh({ type, params, selected, suppressed }: FeatureMeshProps) {
+function FeatureMesh({ featureId, type, params, selected, suppressed }: FeatureMeshProps) {
   const displayMode = useViewStore((s) => s.displayMode);
+  const pointerDownPos = useRef<{ x: number; y: number } | null>(null);
 
   if (suppressed) return null;
 
@@ -53,8 +56,45 @@ function FeatureMesh({ type, params, selected, suppressed }: FeatureMeshProps) {
   const isWireframe = displayMode === 'wireframe';
   const showEdges = displayMode === 'shaded_edges';
 
+  const handlePointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    pointerDownPos.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  const handlePointerUp = useCallback(
+    (e: ThreeEvent<PointerEvent>) => {
+      if (!pointerDownPos.current) return;
+      const dx = e.clientX - pointerDownPos.current.x;
+      const dy = e.clientY - pointerDownPos.current.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      pointerDownPos.current = null;
+      if (dist > CLICK_THRESHOLD) return;
+
+      const { select } = useCADStore.getState();
+      if (e.shiftKey) {
+        // Toggle selection with Shift
+        const current = useCADStore.getState().selectedIds;
+        if (current.includes(featureId)) {
+          select(current.filter((id) => id !== featureId));
+        } else {
+          select([...current, featureId]);
+        }
+      } else {
+        select([featureId]);
+      }
+    },
+    [featureId],
+  );
+
   return (
-    <mesh geometry={geometry} position={[posX, posY, posZ]} castShadow receiveShadow>
+    <mesh
+      geometry={geometry}
+      position={[posX, posY, posZ]}
+      castShadow
+      receiveShadow
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+    >
       <meshStandardMaterial
         color={selected ? '#3b82f6' : '#64748b'}
         transparent={selected}
