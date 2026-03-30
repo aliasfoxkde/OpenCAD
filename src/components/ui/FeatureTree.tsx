@@ -97,6 +97,11 @@ export function FeatureTree() {
             <span style={styles.dragHandle} title="Drag to reorder">&#x2261;</span>
             <span style={styles.index}>{index + 1}</span>
             <span style={styles.icon}>{getFeatureIcon(feature.type)}</span>
+            {isPatternType(feature.type) && (
+              <span style={styles.refBadge}>
+                {getFeatureRefLabel(feature, features)}
+              </span>
+            )}
             {editingId === feature.id ? (
               <input
                 ref={editInputRef}
@@ -111,7 +116,10 @@ export function FeatureTree() {
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <span style={styles.name}>{feature.name}</span>
+              <span style={{
+                ...styles.name,
+                ...(feature.suppressed ? styles.suppressedName : {}),
+              }}>{feature.name}</span>
             )}
             <button
               style={styles.toggleBtn}
@@ -143,6 +151,20 @@ export function FeatureTree() {
 function getFeatureIcon(type: string): string {
   const def = getFeatureDefinition(type);
   return def?.icon ?? '[+]';
+}
+
+function isPatternType(type: string): boolean {
+  return type === 'pattern_linear' || type === 'pattern_circular' || type === 'mirror';
+}
+
+function getFeatureRefLabel(
+  feature: { parameters: Record<string, unknown> },
+  allFeatures: { id: string; name: string }[],
+): string {
+  const refId = feature.parameters.featureRef as string;
+  if (!refId) return '';
+  const ref = allFeatures.find((f) => f.id === refId);
+  return ref ? ref.name : '';
 }
 
 const styles: Record<string, React.CSSProperties> = {
@@ -223,11 +245,27 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 10,
     color: '#3b82f6',
   },
+  refBadge: {
+    fontSize: 9,
+    color: '#f59e0b',
+    background: 'rgba(245, 158, 11, 0.12)',
+    padding: '0 4px',
+    borderRadius: 3,
+    maxWidth: 60,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
+  },
   name: {
     flex: 1,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+  },
+  suppressedName: {
+    fontStyle: 'italic',
+    opacity: 0.5,
   },
   renameInput: {
     flex: 1,
