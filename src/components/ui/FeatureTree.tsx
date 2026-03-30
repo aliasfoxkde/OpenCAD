@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useCADStore } from '../../stores/cad-store';
 import { useFeatureErrors } from '../../hooks/useFeatureErrors';
+import type { FeatureNode } from '../../types/cad';
 
 export function FeatureTree() {
   const features = useCADStore((s) => s.features);
@@ -10,24 +11,64 @@ export function FeatureTree() {
   const removeFeature = useCADStore((s) => s.removeFeature);
   const reorderFeature = useCADStore((s) => s.reorderFeature);
   const duplicateFeature = useCADStore((s) => s.duplicateFeature);
+  const moveFeatureToAssembly = useCADStore((s) => s.moveFeatureToAssembly);
   const featureErrors = useFeatureErrors(features);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [dragOverIsAssembly, setDragOverIsAssembly] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
     x: number; y: number; featureId: string;
   } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [lastClickedIndex, setLastClickedIndex] = useState<number | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const editInputRef = useRef<HTMLInputElement>(null);
 
-  const filteredFeatures = useMemo(() => {
-    if (!searchQuery.trim()) return features;
+  // Auto-expand all assemblies when features change
+  useEffect(() => {
+    const asmIds = new Set(features.filter((f) => f.type === 'assembly').map((f) => f.id));
+    setExpandedIds(asmIds);
+  }, [features]);
+
+  // For search: collect matching feature IDs + ancestor assembly IDs
+  const { visibleIds, autoExpandIds } = useMemo(() => {
+    if (!searchQuery.trim()) return { visibleIds: null, autoExpandIds: new Set<string>() };
     const q = searchQuery.toLowerCase().trim();
-    return features.filter((f) =>
-      f.name.toLowerCase().includes(q) || f.type.toLowerCase().includes(q),
-    );
+    const matchIds = new Set<string>();
+    const ancestorIds = new Set<string>();
+    for (const f of features) {
+      if (f.name.toLowerCase().includes(q) || f.type.toLowerCase().includes(q)) {
+        matchIds.add(f.id);
+        let pid = f.parentId;
+        while (pid) {
+          ancestorIds.add(pid);
+          const parent = features.find((p) => p.id === pid);
+          pid = parent?.parentId;
+        }
+      }
+    }
+    return { visibleIds: new Set([...matchIds, ...ancestorIds]), autoExpandIds: ancestorIds };
   }, [features, searchQuery]);
+
+  // Auto-expand assemblies when search matches their descendants
+  useEffect(() => {
+    if (autoExpandIds.size > 0) {
+      setExpandedIds((prev) => {
+        const next = new Set(prev);
+        for (const id of autoExpandIds) next.add(id);
+        return next;
+      });
+    }
+  }, [autoExpandIds]);
+
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
 
   const startEditing = useCallback((featureId: string, currentName: string) => {
     setEditingId(featureId);
@@ -66,51 +107,60 @@ export function FeatureTree() {
     e.dataTransfer.setData('text/plain', featureId);
   }, []);
 
-  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
+  const handleDragOver = useCallback((e: React.DragEvent, featureId: string) => {
     e.preventDefault();
+    const feature = features.find((f) => f.id === featureId);
     e.dataTransfer.dropEffect = 'move';
-    setDragOverIndex(index);
-  }, []);
+    setDragOverId(featureId);
+    setDragOverIsAssembly(feature?.type === 'assembly');
+  }, [features]);
 
   const handleDragLeave = useCallback(() => {
-    setDragOverIndex(null);
+    setDragOverId(null);
+    setDragOverIsAssembly(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent, targetIndex: number) => {
+  const handleDrop = useCallback((e: React.DragEvent, targetId: string) => {
     e.preventDefault();
-    setDragOverIndex(null);
+    e.stopPropagation();
+    setDragOverId(null);
+    setDragOverIsAssembly(false);
     const draggedId = e.dataTransfer.getData('text/plain');
-    if (!draggedId) return;
-    reorderFeature(draggedId, targetIndex);
-  }, [reorderFeature]);
+    if (!draggedId || draggedId === targetId) return;
+
+    const target = features.find((f) => f.id === targetId);
+    if (!target) return;
+
+    // Dropping onto an assembly → move feature into assembly
+    if (target.type === 'assembly') {
+      moveFeatureToAssembly(draggedId, targetId);
+      return;
+    }
+
+    // Dropping onto a non-assembly → reorder (keep same parentId as target)
+    const targetIndex = features.findIndex((f) => f.id === targetId);
+    if (targetIndex !== -1) {
+      reorderFeature(draggedId, targetIndex);
+    }
+  }, [features, moveFeatureToAssembly, reorderFeature]);
 
   const handleDragEnd = useCallback(() => {
-    setDragOverIndex(null);
+    setDragOverId(null);
+    setDragOverIsAssembly(false);
   }, []);
 
-  const handleFeatureClick = useCallback((featureId: string, index: number, e: React.MouseEvent) => {
+  const handleFeatureClick = useCallback((featureId: string, e: React.MouseEvent) => {
     if (e.ctrlKey || e.metaKey) {
-      // Toggle selection (multi-select)
       const isSelected = selectedIds.includes(featureId);
       if (isSelected) {
         select(selectedIds.filter((id) => id !== featureId));
       } else {
         select([...selectedIds, featureId]);
       }
-      setLastClickedIndex(index);
-    } else if (e.shiftKey && lastClickedIndex !== null) {
-      // Range select from last clicked to current
-      const start = Math.min(lastClickedIndex, index);
-      const end = Math.max(lastClickedIndex, index);
-      const rangeIds = filteredFeatures.slice(start, end + 1).map((f) => f.id);
-      select([...selectedIds.filter((id) => !rangeIds.includes(id)), ...rangeIds]);
-      setLastClickedIndex(index);
     } else {
-      // Normal click — single select
       select([featureId]);
-      setLastClickedIndex(index);
     }
-  }, [selectedIds, select, lastClickedIndex, filteredFeatures]);
+  }, [selectedIds, select]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent, featureId: string) => {
     e.preventDefault();
@@ -120,12 +170,14 @@ export function FeatureTree() {
 
   const contextFeature = contextMenu ? features.find((f) => f.id === contextMenu.featureId) : null;
 
+  const visibleFeatureCount = visibleIds ? visibleIds.size : features.length;
+
   return (
     <div style={styles.panel}>
       <div style={styles.header}>
         <span style={styles.title}>Feature Tree</span>
         <div style={styles.headerRight}>
-          <span style={styles.count}>{filteredFeatures.length}</span>
+          <span style={styles.count}>{visibleFeatureCount}</span>
           {selectedIds.length > 1 && (
             <span style={styles.selectedCount}>{selectedIds.length} selected</span>
           )}
@@ -140,91 +192,41 @@ export function FeatureTree() {
         />
       </div>
       <div style={styles.list}>
-        {filteredFeatures.length === 0 && (
+        {features.length === 0 && (
           <div style={styles.empty}>
-            {features.length === 0
-              ? 'No features yet. Use the toolbar to create shapes.'
-              : `No features match "${searchQuery}"`}
+            No features yet. Use the toolbar to create shapes.
           </div>
         )}
-        {filteredFeatures.map((feature, index) => (
-          <div
-            key={feature.id}
-            draggable
-            style={{
-              ...styles.item,
-              ...(selectedIds.includes(feature.id) ? styles.selected : {}),
-              ...(dragOverIndex === index ? styles.dragOver : {}),
-              ...(feature.suppressed ? styles.suppressedItem : {}),
-            }}
-            onClick={(e) => handleFeatureClick(feature.id, index, e)}
-            onDoubleClick={() => startEditing(feature.id, feature.name)}
-            onDragStart={(e) => handleDragStart(e, feature.id)}
-            onDragOver={(e) => handleDragOver(e, index)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, index)}
-            onDragEnd={handleDragEnd}
-            onContextMenu={(e) => handleContextMenu(e, feature.id)}
-          >
-            <span style={styles.dragHandle} title="Drag to reorder">&#x2261;</span>
-            <span
-              style={{
-                ...styles.icon,
-                ...(featureErrors.has(feature.id) ? { color: '#ef4444' } : {}),
-              }}
-              title={featureErrors.get(feature.id) ?? undefined}
-            >
-              {featureErrors.has(feature.id) ? '\u26A0' : '\u2713'}
-            </span>
-            {getDepBadge(feature, features) && (
-              <span style={styles.depBadge}>{getDepBadge(feature, features)}</span>
-            )}
-            {editingId === feature.id ? (
-              <input
-                ref={editInputRef}
-                style={styles.renameInput}
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                onBlur={commitRename}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitRename();
-                  if (e.key === 'Escape') cancelRename();
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            ) : (
-              <span
-                style={{
-                  ...styles.name,
-                  ...(featureErrors.has(feature.id) ? { color: '#fca5a5' } : {}),
-                }}
-                title={featureErrors.get(feature.id) ?? undefined}
-              >
-                {feature.name}
-              </span>
-            )}
-            <button
-              style={styles.toggleBtn}
-              onClick={(e) => {
-                e.stopPropagation();
-                updateFeature(feature.id, { suppressed: !feature.suppressed });
-              }}
-              title={feature.suppressed ? 'Unsuppress' : 'Suppress'}
-            >
-              {feature.suppressed ? 'off' : 'on'}
-            </button>
-            <button
-              style={styles.deleteBtn}
-              onClick={(e) => {
-                e.stopPropagation();
-                removeFeature(feature.id);
-              }}
-              title="Delete feature"
-            >
-              x
-            </button>
+        {visibleIds && visibleFeatureCount === 0 && (
+          <div style={styles.empty}>
+            No features match &quot;{searchQuery}&quot;
           </div>
-        ))}
+        )}
+        {renderTreeItems(features, null, 0, {
+          visibleIds,
+          expandedIds,
+          toggleExpand,
+          selectedIds,
+          editingId,
+          editName,
+          dragOverId,
+          dragOverIsAssembly,
+          featureErrors,
+          onFeatureClick: handleFeatureClick,
+          onDoubleClick: startEditing,
+          onDragStart: handleDragStart,
+          onDragOver: handleDragOver,
+          onDragLeave: handleDragLeave,
+          onDrop: handleDrop,
+          onDragEnd: handleDragEnd,
+          onContextMenu: handleContextMenu,
+          onToggleSuppress: (id) => updateFeature(id, { suppressed: !features.find((f) => f.id === id)!.suppressed }),
+          onDelete: removeFeature,
+          setEditName,
+          commitRename,
+          cancelRename,
+          editInputRef,
+        })}
       </div>
       {/* Context Menu */}
       {contextMenu && contextFeature && (
@@ -264,6 +266,18 @@ export function FeatureTree() {
           >
             {contextFeature.suppressed ? 'Unsuppress' : 'Suppress'}
           </button>
+          {contextFeature.parentId && (
+            <button
+              style={styles.ctxItem}
+              onClick={() => {
+                moveFeatureToAssembly(contextFeature.id, null);
+                setContextMenu(null);
+              }}
+            >
+              Move to Root
+            </button>
+          )}
+          <div style={styles.ctxSeparator} />
           <button
             style={styles.ctxDangerItem}
             onClick={() => {
@@ -279,10 +293,173 @@ export function FeatureTree() {
   );
 }
 
+interface TreeRenderContext {
+  visibleIds: Set<string> | null;
+  expandedIds: Set<string>;
+  toggleExpand: (id: string) => void;
+  selectedIds: string[];
+  editingId: string | null;
+  editName: string;
+  dragOverId: string | null;
+  dragOverIsAssembly: boolean;
+  featureErrors: Map<string, string>;
+  onFeatureClick: (featureId: string, e: React.MouseEvent) => void;
+  onDoubleClick: (featureId: string, name: string) => void;
+  onDragStart: (e: React.DragEvent, featureId: string) => void;
+  onDragOver: (e: React.DragEvent, featureId: string) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent, targetId: string) => void;
+  onDragEnd: () => void;
+  onContextMenu: (e: React.MouseEvent, featureId: string) => void;
+  onToggleSuppress: (id: string) => void;
+  onDelete: (id: string) => void;
+  setEditName: (name: string) => void;
+  commitRename: () => void;
+  cancelRename: () => void;
+  editInputRef: React.RefObject<HTMLInputElement | null>;
+}
+
+function renderTreeItems(
+  features: FeatureNode[],
+  parentId: string | null,
+  depth: number,
+  ctx: TreeRenderContext,
+): React.ReactNode {
+  const children = parentId
+    ? features.filter((f) => f.parentId === parentId)
+    : features.filter((f) => !f.parentId);
+
+  return children.map((feature) => {
+    if (ctx.visibleIds && !ctx.visibleIds.has(feature.id)) return null;
+
+    const isAssembly = feature.type === 'assembly';
+    const isExpanded = ctx.expandedIds.has(feature.id);
+    const indent = depth * 16;
+
+    return (
+      <div key={feature.id}>
+        <div
+          draggable
+          style={{
+            ...styles.item,
+            ...(ctx.selectedIds.includes(feature.id) ? styles.selected : {}),
+            ...(ctx.dragOverId === feature.id
+              ? ctx.dragOverIsAssembly
+                ? styles.dragOverAssembly
+                : styles.dragOver
+              : {}),
+            ...(feature.suppressed ? styles.suppressedItem : {}),
+            paddingLeft: 8 + indent,
+          }}
+          onClick={(e) => {
+            if (isAssembly) {
+              // Clicking an assembly toggles expand, but still selects
+              ctx.onFeatureClick(feature.id, e);
+              ctx.toggleExpand(feature.id);
+            } else {
+              ctx.onFeatureClick(feature.id, e);
+            }
+          }}
+          onDoubleClick={() => ctx.onDoubleClick(feature.id, feature.name)}
+          onDragStart={(e) => ctx.onDragStart(e, feature.id)}
+          onDragOver={(e) => ctx.onDragOver(e, feature.id)}
+          onDragLeave={ctx.onDragLeave}
+          onDrop={(e) => ctx.onDrop(e, feature.id)}
+          onDragEnd={ctx.onDragEnd}
+          onContextMenu={(e) => ctx.onContextMenu(e, feature.id)}
+        >
+          <span style={styles.dragHandle} title="Drag to reorder or drop on assembly">&#x2261;</span>
+          {isAssembly ? (
+            <span
+              style={styles.expandToggle}
+              onClick={(e) => {
+                e.stopPropagation();
+                ctx.toggleExpand(feature.id);
+              }}
+            >
+              {isExpanded ? '\u25BC' : '\u25B6'}
+            </span>
+          ) : (
+            <span style={{ width: 14, flexShrink: 0 }} />
+          )}
+          <span
+            style={{
+              ...styles.icon,
+              ...(ctx.featureErrors.has(feature.id) ? { color: '#ef4444' } : {}),
+            }}
+            title={ctx.featureErrors.get(feature.id) ?? undefined}
+          >
+            {ctx.featureErrors.has(feature.id) ? '\u26A0' : '\u2713'}
+          </span>
+          {getDepBadge(feature, features) && (
+            <span style={styles.depBadge}>{getDepBadge(feature, features)}</span>
+          )}
+          {ctx.editingId === feature.id ? (
+            <input
+              ref={ctx.editInputRef}
+              style={styles.renameInput}
+              value={ctx.editName}
+              onChange={(e) => ctx.setEditName(e.target.value)}
+              onBlur={ctx.commitRename}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') ctx.commitRename();
+                if (e.key === 'Escape') ctx.cancelRename();
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <span
+              style={{
+                ...styles.name,
+                ...(ctx.featureErrors.has(feature.id) ? { color: '#fca5a5' } : {}),
+                ...(isAssembly ? { fontWeight: 600 } : {}),
+              }}
+              title={ctx.featureErrors.get(feature.id) ?? undefined}
+            >
+              {feature.name}
+            </span>
+          )}
+          <button
+            style={styles.toggleBtn}
+            onClick={(e) => {
+              e.stopPropagation();
+              ctx.onToggleSuppress(feature.id);
+            }}
+            title={feature.suppressed ? 'Unsuppress' : 'Suppress'}
+          >
+            {feature.suppressed ? 'off' : 'on'}
+          </button>
+          <button
+            style={styles.deleteBtn}
+            onClick={(e) => {
+              e.stopPropagation();
+              ctx.onDelete(feature.id);
+            }}
+            title="Delete feature"
+          >
+            x
+          </button>
+        </div>
+        {isAssembly && isExpanded && renderTreeItems(features, feature.id, depth + 1, ctx)}
+      </div>
+    );
+  });
+}
+
 function getDepBadge(
-  feature: { type: string; parameters: Record<string, unknown> },
-  allFeatures: { id: string; name: string }[],
+  feature: { id: string; type: string; parameters: Record<string, unknown> },
+  allFeatures: { id: string; name: string; parentId?: string; type?: string }[],
 ): string {
+  // Assembly — show child count
+  if (feature.type === 'assembly') {
+    const count = allFeatures.filter((f) => f.parentId === feature.id && f.type !== 'assembly').length;
+    const asmCount = allFeatures.filter((f) => f.parentId === feature.id && f.type === 'assembly').length;
+    const parts: string[] = [];
+    if (count > 0) parts.push(`${count} feature${count !== 1 ? 's' : ''}`);
+    if (asmCount > 0) parts.push(`${asmCount} asm`);
+    return parts.length > 0 ? parts.join(', ') : 'empty';
+  }
+
   // Pattern features
   if (feature.type === 'pattern_linear' || feature.type === 'pattern_circular' || feature.type === 'mirror') {
     const refId = feature.parameters.featureRef as string;
@@ -412,11 +589,24 @@ const styles: Record<string, React.CSSProperties> = {
   dragOver: {
     borderTop: '2px solid #3b82f6',
   },
+  dragOverAssembly: {
+    outline: '2px dashed #3b82f6',
+    outlineOffset: -2,
+    borderRadius: 4,
+  },
   dragHandle: {
     fontSize: 12,
     color: '#475569',
     cursor: 'grab',
     width: 10,
+    textAlign: 'center',
+    flexShrink: 0,
+  },
+  expandToggle: {
+    fontSize: 8,
+    color: '#94a3b8',
+    cursor: 'pointer',
+    width: 14,
     textAlign: 'center',
     flexShrink: 0,
   },

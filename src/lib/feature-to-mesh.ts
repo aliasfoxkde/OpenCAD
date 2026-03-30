@@ -6,6 +6,7 @@
  */
 
 import type { MeshData, FeatureNode } from '../types/cad';
+import { hasSuppressedAncestor, hasAssemblyTransform, getEffectiveTransform } from './assembly-tree';
 import {
   generateBoxMesh,
   generateCylinderMesh,
@@ -379,7 +380,22 @@ export function featuresToMeshes(features: FeatureNode[]): MeshData[] {
   const consumedIds = getConsumedFeatureIds(features);
 
   return features
-    .filter((f) => !f.suppressed && !consumedIds.has(f.id))
-    .map((f) => featureToMesh(f, features))
+    .filter((f) => {
+      if (f.type === 'assembly') return false; // assemblies have no mesh
+      if (f.suppressed) return false;
+      if (hasSuppressedAncestor(features, f.id)) return false;
+      if (consumedIds.has(f.id)) return false;
+      return true;
+    })
+    .map((f) => {
+      const mesh = featureToMesh(f, features);
+      if (!mesh) return null;
+      // Apply assembly transform if feature has assembly ancestors with transforms
+      if (hasAssemblyTransform(features, f.id)) {
+        const transform = getEffectiveTransform(features, f.id);
+        return transformMesh(mesh, transform);
+      }
+      return mesh;
+    })
     .filter((m): m is MeshData => m !== null);
 }

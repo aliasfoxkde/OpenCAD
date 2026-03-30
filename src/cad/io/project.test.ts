@@ -139,3 +139,59 @@ describe('deserializeProject', () => {
     expect(project.modified).toBeLessThanOrEqual(after);
   });
 });
+
+describe('assembly hierarchy save/load', () => {
+  it('round-trips features with parentId', () => {
+    const features: FeatureNode[] = [
+      makeFeature('asm1', 'Main Assembly', {
+        type: 'assembly',
+        parameters: { positionX: 5, rotationZ: 90 },
+      }),
+      makeFeature('box1', 'Box', {
+        parentId: 'asm1',
+        parameters: { width: 2, height: 2, depth: 2 },
+      }),
+      makeFeature('asm2', 'Sub Assembly', {
+        type: 'assembly',
+        parentId: 'asm1',
+        parameters: { positionX: 3 },
+      }),
+      makeFeature('box2', 'Inner Box', {
+        parentId: 'asm2',
+        parameters: { width: 1, height: 1, depth: 1 },
+      }),
+    ];
+
+    const json = serializeProject({ name: 'Assembly Test', units: 'mm', features, sketches: [] });
+    const project = deserializeProject(json);
+
+    expect(project.features).toHaveLength(4);
+    expect(project.features[0]!.type).toBe('assembly');
+    expect(project.features[0]!.parentId).toBeUndefined();
+    expect(project.features[1]!.parentId).toBe('asm1');
+    expect(project.features[2]!.parentId).toBe('asm1');
+    expect(project.features[2]!.type).toBe('assembly');
+    expect(project.features[3]!.parentId).toBe('asm2');
+    expect(project.features[3]!.parameters.width).toBe(1);
+  });
+
+  it('loads v1 projects (no parentId) with features at root', () => {
+    // Simulate a v1 project file that has no parentId field
+    const v1Json = JSON.stringify({
+      version: 1,
+      name: 'Legacy Project',
+      units: 'mm',
+      features: [
+        { id: 'a', type: 'extrude', name: 'Box', parameters: { width: 1 }, dependencies: [], children: [], suppressed: false },
+        { id: 'b', type: 'sphere', name: 'Ball', parameters: { radius: 2 }, dependencies: [], children: [], suppressed: false },
+      ],
+      sketches: [],
+    });
+
+    const project = deserializeProject(v1Json);
+    expect(project.features).toHaveLength(2);
+    // No parentId → root level
+    expect(project.features[0]!.parentId).toBeUndefined();
+    expect(project.features[1]!.parentId).toBeUndefined();
+  });
+});

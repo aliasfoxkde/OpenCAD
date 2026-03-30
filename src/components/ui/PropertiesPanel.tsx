@@ -8,6 +8,7 @@ import type { Unit } from '../../types/store';
 import { UNIT_CONVERSION } from '../../types/store';
 import { useMemo } from 'react';
 import { computeFeatureProperties, formatPropertyValue } from '../../lib/mass-properties';
+import { getChildCount } from '../../lib/assembly-tree';
 
 /** Map primitive ToolType to feature-registry type */
 const primitiveTypeMap: Record<string, FeatureType> = {
@@ -180,6 +181,11 @@ export function PropertiesPanel() {
               <span style={styles.suppressedBadge}>suppressed</span>
             )}
           </div>
+          {selectedFeature.type === 'assembly' && (
+            <div style={styles.assemblyInfo}>
+              Contains {getChildCount(features, selectedFeature.id)} feature{getChildCount(features, selectedFeature.id) !== 1 ? 's' : ''}
+            </div>
+          )}
 
           {/* All parameters */}
           {featureDef.parameters.map((paramDef) => (
@@ -465,6 +471,14 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#e2e8f0',
     marginBottom: 8,
     fontWeight: 500,
+  },
+  assemblyInfo: {
+    fontSize: 10,
+    color: '#94a3b8',
+    background: '#334155',
+    padding: '3px 8px',
+    borderRadius: 3,
+    marginBottom: 8,
   },
   primitiveGrid: {
     display: 'grid',

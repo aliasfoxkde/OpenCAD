@@ -6,6 +6,8 @@ import type { ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { booleanTwo } from '../../cad/kernel/csg-boolean';
 import { getConsumedFeatureIds } from '../../lib/feature-to-mesh';
+import { DEG2RAD } from '../../lib/assembly-tree';
+import type { FeatureNode } from '../../types/cad';
 
 /** Selected mesh emissive color for glow effect */
 const SELECTED_EMISSIVE = '#3b82f6';
@@ -48,71 +50,96 @@ function useSelectionGlow(
 /** Distance threshold (pixels) to distinguish click from drag */
 const CLICK_THRESHOLD = 5;
 
-/** Renders all tessellated CAD geometry */
+/** Renders all tessellated CAD geometry using hierarchical assembly groups */
 export function CADModel() {
   const features = useCADStore((s) => s.features);
   const selectedIds = useCADStore((s) => s.selectedIds);
 
-  // Separate simple features from pattern/mirror/boolean/shell features
-  // Exclude primitives consumed by composite features (avoids z-fighting)
-  const { simpleFeatures, patternFeatures, booleanFeatures, shellFeatures } = useMemo(() => {
-    const simple: typeof features = [];
-    const patterns: typeof features = [];
-    const booleans: typeof features = [];
-    const shells: typeof features = [];
-    const consumedIds = getConsumedFeatureIds(features);
-    for (const f of features) {
-      if (f.type === 'pattern_linear' || f.type === 'pattern_circular' || f.type === 'mirror') {
-        patterns.push(f);
-      } else if (f.type === 'boolean_union' || f.type === 'boolean_subtract' || f.type === 'boolean_intersect') {
-        booleans.push(f);
-      } else if (f.type === 'shell') {
-        shells.push(f);
-      } else if (!consumedIds.has(f.id)) {
-        simple.push(f);
-      }
-    }
-    return { simpleFeatures: simple, patternFeatures: patterns, booleanFeatures: booleans, shellFeatures: shells };
-  }, [features]);
+  const consumedIds = useMemo(() => getConsumedFeatureIds(features), [features]);
 
   return (
     <group>
-      {simpleFeatures.map((feature) => (
-        <FeatureMesh
-          key={feature.id}
-          featureId={feature.id}
-          type={feature.type}
-          params={feature.parameters}
-          selected={selectedIds.includes(feature.id)}
-          suppressed={feature.suppressed}
-        />
-      ))}
-      {patternFeatures.map((feature) => (
-        <PatternMeshes
-          key={feature.id}
-          feature={feature}
-          allFeatures={features}
-          selected={selectedIds.includes(feature.id)}
-        />
-      ))}
-      {booleanFeatures.map((feature) => (
-        <BooleanMesh
-          key={feature.id}
-          feature={feature}
-          allFeatures={features}
-          selected={selectedIds.includes(feature.id)}
-        />
-      ))}
-      {shellFeatures.map((feature) => (
-        <ShellMesh
-          key={feature.id}
-          feature={feature}
-          allFeatures={features}
-          selected={selectedIds.includes(feature.id)}
-        />
-      ))}
+      {renderFeatureTree(features, null, selectedIds, consumedIds)}
     </group>
   );
+}
+
+/** Recursively render features grouped by assembly hierarchy */
+function renderFeatureTree(
+  features: FeatureNode[],
+  parentId: string | null,
+  selectedIds: string[],
+  consumedIds: Set<string>,
+) {
+  const children = parentId
+    ? features.filter((f) => f.parentId === parentId)
+    : features.filter((f) => !f.parentId);
+
+  return children.map((f) => {
+    if (f.suppressed) return null;
+
+    if (f.type === 'assembly') {
+      const px = (f.parameters.positionX as number) ?? 0;
+      const py = (f.parameters.positionY as number) ?? 0;
+      const pz = (f.parameters.positionZ as number) ?? 0;
+      const rx = ((f.parameters.rotationX as number) ?? 0) * DEG2RAD;
+      const ry = ((f.parameters.rotationY as number) ?? 0) * DEG2RAD;
+      const rz = ((f.parameters.rotationZ as number) ?? 0) * DEG2RAD;
+
+      return (
+        <group key={f.id} position={[px, py, pz]} rotation={[rx, ry, rz]}>
+          {renderFeatureTree(features, f.id, selectedIds, consumedIds)}
+        </group>
+      );
+    }
+
+    // Skip features consumed by composite features
+    if (consumedIds.has(f.id)) return null;
+
+    if (f.type === 'pattern_linear' || f.type === 'pattern_circular' || f.type === 'mirror') {
+      return (
+        <PatternMeshes
+          key={f.id}
+          feature={f}
+          allFeatures={features}
+          selected={selectedIds.includes(f.id)}
+        />
+      );
+    }
+
+    if (f.type === 'boolean_union' || f.type === 'boolean_subtract' || f.type === 'boolean_intersect') {
+      return (
+        <BooleanMesh
+          key={f.id}
+          feature={f}
+          allFeatures={features}
+          selected={selectedIds.includes(f.id)}
+        />
+      );
+    }
+
+    if (f.type === 'shell') {
+      return (
+        <ShellMesh
+          key={f.id}
+          feature={f}
+          allFeatures={features}
+          selected={selectedIds.includes(f.id)}
+        />
+      );
+    }
+
+    return (
+      <FeatureMesh
+        key={f.id}
+        featureId={f.id}
+        type={f.type}
+        params={f.parameters}
+        selected={selectedIds.includes(f.id)}
+        suppressed={f.suppressed}
+      />
+    );
+  });
 }
 
 interface FeatureMeshProps {

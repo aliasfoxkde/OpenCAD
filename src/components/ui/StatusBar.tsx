@@ -29,6 +29,7 @@ function formatToolName(tool: string): string {
     measure: 'Measure',
     section: 'Section',
     sketch: 'Sketch',
+    assembly: 'Assembly',
   };
   return map[tool] ?? tool;
 }

@@ -45,6 +45,8 @@ const toolGroups: ToolbarItem[] = [
   { kind: 'separator', label: 'Inspect' },
   { kind: 'tool', id: 'measure', label: 'Measure', shortcut: 'M', tooltip: 'Measure distance (M)' },
   { kind: 'tool', id: 'section', label: 'Section', shortcut: '', tooltip: 'Section cut plane' },
+  { kind: 'separator', label: 'Assembly' },
+  { kind: 'tool', id: 'assembly', label: 'Assembly', shortcut: '', tooltip: 'Create assembly group' },
   { kind: 'separator', label: 'Edge' },
   { kind: 'tool', id: 'fillet', label: 'Fillet', shortcut: '', tooltip: 'Fillet — round edges (coming soon)' },
   { kind: 'tool', id: 'chamfer', label: 'Chamfer', shortcut: '', tooltip: 'Chamfer — bevel edges (coming soon)' },
@@ -65,6 +67,17 @@ export function Toolbar() {
 
     if (toolId === 'section') {
       useViewStore.getState().toggleSectionPlane();
+      return;
+    }
+
+    if (toolId === 'assembly') {
+      const defaults = getDefaultParameters('assembly');
+      const id = nanoid();
+      addFeatureAndSelect({
+        id, type: 'assembly' as FeatureType, name: `Assembly ${features.length + 1}`,
+        parameters: defaults, dependencies: [], children: [], suppressed: false,
+      });
+      setActiveTool('select');
       return;
     }
 

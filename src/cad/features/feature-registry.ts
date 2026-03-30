@@ -22,7 +22,7 @@ export interface FeatureDefinition {
   type: string;
   label: string;
   icon: string;
-  category: 'primitives' | 'features' | 'edges' | 'patterns' | 'boolean' | 'sketch';
+  category: 'primitives' | 'features' | 'edges' | 'patterns' | 'boolean' | 'sketch' | 'assembly';
   parameters: ParameterDef[];
   requiresSketch?: boolean;
   requiresBody?: boolean;
@@ -358,5 +358,23 @@ registerFeature({
     { name: 'originX', label: 'Origin X', type: 'number', default: 0, step: 0.1, unit: 'mm' },
     { name: 'originY', label: 'Origin Y', type: 'number', default: 0, step: 0.1, unit: 'mm' },
     { name: 'originZ', label: 'Origin Z', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+  ],
+});
+
+// --- Assembly ---
+
+registerFeature({
+  type: 'assembly',
+  label: 'Assembly',
+  icon: '\u{1F4C1}',
+  category: 'assembly',
+  description: 'Group features into a sub-assembly with its own position and rotation',
+  parameters: [
+    { name: 'positionX', label: 'Position X', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'positionY', label: 'Position Y', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'positionZ', label: 'Position Z', type: 'number', default: 0, step: 0.1, unit: 'mm' },
+    { name: 'rotationX', label: 'Rotation X', type: 'number', default: 0, min: -360, max: 360, step: 1, unit: '\u00B0' },
+    { name: 'rotationY', label: 'Rotation Y', type: 'number', default: 0, min: -360, max: 360, step: 1, unit: '\u00B0' },
+    { name: 'rotationZ', label: 'Rotation Z', type: 'number', default: 0, min: -360, max: 360, step: 1, unit: '\u00B0' },
   ],
 });

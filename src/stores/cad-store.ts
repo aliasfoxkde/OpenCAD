@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { CADStoreState, CADStoreActions } from '../types/store';
 import { pushState, undo, redo, canUndo, canRedo } from '../lib/undo-history';
+import { getDescendants } from '../lib/assembly-tree';
 
 export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
   documentId: null,
@@ -31,9 +32,12 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
   removeFeature: (id) =>
     set((state) => {
       pushState(state.features, state.selectedIds);
+      // Also remove all descendants of the feature (if it's an assembly)
+      const descendantIds = new Set(getDescendants(state.features, id).map((f) => f.id));
+      descendantIds.add(id);
       return {
-        features: state.features.filter((f) => f.id !== id),
-        selectedIds: state.selectedIds.filter((sid) => sid !== id),
+        features: state.features.filter((f) => !descendantIds.has(f.id)),
+        selectedIds: state.selectedIds.filter((sid) => !descendantIds.has(sid)),
         dirty: true,
       };
     }),
@@ -55,12 +59,23 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
       const clone = structuredClone(source);
       clone.id = crypto.randomUUID();
       clone.name = `${source.name} (copy)`;
+      // Clone keeps same parentId (stays in same assembly level)
       if (typeof clone.parameters.originX === 'number') {
         clone.parameters.originX = (clone.parameters.originX as number) + 1;
       }
       return {
         features: [...state.features, clone],
         selectedIds: [clone.id],
+        dirty: true,
+      };
+    }),
+  moveFeatureToAssembly: (featureId, parentId) =>
+    set((state) => {
+      pushState(state.features, state.selectedIds);
+      return {
+        features: state.features.map((f) =>
+          f.id === featureId ? { ...f, parentId: parentId ?? undefined } : f,
+        ),
         dirty: true,
       };
     }),

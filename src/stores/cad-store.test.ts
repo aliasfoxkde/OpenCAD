@@ -299,4 +299,128 @@ describe('CADStore', () => {
 
     expect(useCADStore.getState().features).toHaveLength(1);
   });
+
+  describe('assembly hierarchy', () => {
+    it('should move feature to assembly', () => {
+      const asm: FeatureNode = {
+        id: 'asm-1', type: 'assembly', name: 'Assembly',
+        parameters: { positionX: 5 },
+        dependencies: [], children: [], suppressed: false,
+      };
+      const box: FeatureNode = {
+        id: 'box-1', type: 'extrude', name: 'Box',
+        parameters: { width: 2 }, dependencies: [], children: [], suppressed: false,
+      };
+
+      useCADStore.getState().addFeature(asm);
+      useCADStore.getState().addFeature(box);
+      expect(useCADStore.getState().features.find((f) => f.id === 'box-1')!.parentId).toBeUndefined();
+
+      useCADStore.getState().moveFeatureToAssembly('box-1', 'asm-1');
+      expect(useCADStore.getState().features.find((f) => f.id === 'box-1')!.parentId).toBe('asm-1');
+    });
+
+    it('should move feature to root (null parentId)', () => {
+      const asm: FeatureNode = {
+        id: 'asm-2', type: 'assembly', name: 'Assembly',
+        parameters: {}, dependencies: [], children: [], suppressed: false,
+      };
+      const box: FeatureNode = {
+        id: 'box-2', type: 'extrude', name: 'Box',
+        parameters: {}, dependencies: [], children: [], suppressed: false,
+      };
+
+      useCADStore.getState().addFeature(asm);
+      useCADStore.getState().addFeature(box);
+      useCADStore.getState().moveFeatureToAssembly('box-2', 'asm-2');
+
+      useCADStore.getState().moveFeatureToAssembly('box-2', null);
+      expect(useCADStore.getState().features.find((f) => f.id === 'box-2')!.parentId).toBeUndefined();
+    });
+
+    it('should undo move to assembly', () => {
+      const asm: FeatureNode = {
+        id: 'asm-3', type: 'assembly', name: 'Assembly',
+        parameters: {}, dependencies: [], children: [], suppressed: false,
+      };
+      const box: FeatureNode = {
+        id: 'box-3', type: 'extrude', name: 'Box',
+        parameters: {}, dependencies: [], children: [], suppressed: false,
+      };
+
+      useCADStore.getState().addFeature(asm);
+      useCADStore.getState().addFeature(box);
+      useCADStore.getState().moveFeatureToAssembly('box-3', 'asm-3');
+      expect(useCADStore.getState().features.find((f) => f.id === 'box-3')!.parentId).toBe('asm-3');
+
+      useCADStore.getState().undo();
+      expect(useCADStore.getState().features.find((f) => f.id === 'box-3')!.parentId).toBeUndefined();
+    });
+
+    it('should remove assembly and all descendants', () => {
+      const asm: FeatureNode = {
+        id: 'asm-4', type: 'assembly', name: 'Assembly',
+        parameters: {}, dependencies: [], children: [], suppressed: false,
+      };
+      const box: FeatureNode = {
+        id: 'box-4a', type: 'extrude', name: 'Box A',
+        parameters: {}, dependencies: [], children: [], suppressed: false, parentId: 'asm-4',
+      };
+      const box2: FeatureNode = {
+        id: 'box-4b', type: 'extrude', name: 'Box B',
+        parameters: {}, dependencies: [], children: [], suppressed: false, parentId: 'asm-4',
+      };
+
+      useCADStore.getState().addFeature(asm);
+      useCADStore.getState().addFeature(box);
+      useCADStore.getState().addFeature(box2);
+      expect(useCADStore.getState().features).toHaveLength(3);
+
+      useCADStore.getState().removeFeature('asm-4');
+      expect(useCADStore.getState().features).toHaveLength(0);
+    });
+
+    it('should duplicate feature inside assembly (same parentId)', () => {
+      const asm: FeatureNode = {
+        id: 'asm-5', type: 'assembly', name: 'Assembly',
+        parameters: {}, dependencies: [], children: [], suppressed: false,
+      };
+      const box: FeatureNode = {
+        id: 'box-5', type: 'extrude', name: 'Box',
+        parameters: { width: 2 }, dependencies: [], children: [], suppressed: false, parentId: 'asm-5',
+      };
+
+      useCADStore.getState().addFeature(asm);
+      useCADStore.getState().addFeature(box);
+      useCADStore.getState().duplicateFeature('box-5');
+
+      const state = useCADStore.getState();
+      expect(state.features).toHaveLength(3); // asm + box + clone
+      const clone = state.features.find((f) => f.name.includes('(copy)'));
+      expect(clone).toBeDefined();
+      expect(clone!.parentId).toBe('asm-5');
+    });
+
+    it('should undo removal of assembly with descendants', () => {
+      const asm: FeatureNode = {
+        id: 'asm-6', type: 'assembly', name: 'Assembly',
+        parameters: {}, dependencies: [], children: [], suppressed: false,
+      };
+      const box: FeatureNode = {
+        id: 'box-6', type: 'extrude', name: 'Box',
+        parameters: {}, dependencies: [], children: [], suppressed: false, parentId: 'asm-6',
+      };
+
+      useCADStore.getState().addFeature(asm);
+      useCADStore.getState().addFeature(box);
+      useCADStore.getState().removeFeature('asm-6');
+      expect(useCADStore.getState().features).toHaveLength(0);
+
+      useCADStore.getState().undo();
+      const state = useCADStore.getState();
+      expect(state.features).toHaveLength(2);
+      expect(state.features.find((f) => f.id === 'asm-6')).toBeDefined();
+      expect(state.features.find((f) => f.id === 'box-6')!.parentId).toBe('asm-6');
+    });
+  });
 });

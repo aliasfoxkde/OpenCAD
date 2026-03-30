@@ -27,14 +27,20 @@ export function TransformGizmo() {
       ? features.find((f) => f.id === selectedIds[0])
       : null;
 
+  // Assembly features use positionX/Y/Z, other features use originX/Y/Z
+  const isAssembly = selectedFeature?.type === 'assembly';
+  const posKeyX = isAssembly ? 'positionX' : 'originX';
+  const posKeyY = isAssembly ? 'positionY' : 'originY';
+  const posKeyZ = isAssembly ? 'positionZ' : 'originZ';
+
   const posX = selectedFeature
-    ? ((selectedFeature.parameters.originX as number) ?? 0)
+    ? ((selectedFeature.parameters[posKeyX] as number) ?? 0)
     : 0;
   const posY = selectedFeature
-    ? ((selectedFeature.parameters.originY as number) ?? 0)
+    ? ((selectedFeature.parameters[posKeyY] as number) ?? 0)
     : 0;
   const posZ = selectedFeature
-    ? ((selectedFeature.parameters.originZ as number) ?? 0)
+    ? ((selectedFeature.parameters[posKeyZ] as number) ?? 0)
     : 0;
 
   const isGizmoVisible = !!selectedFeature && activeTool === 'select';
@@ -58,12 +64,12 @@ export function TransformGizmo() {
     updateFeature(selectedFeature.id, {
       parameters: {
         ...selectedFeature.parameters,
-        originX: snapValue(pos.x),
-        originY: snapValue(pos.y),
-        originZ: snapValue(pos.z),
+        [posKeyX]: snapValue(pos.x),
+        [posKeyY]: snapValue(pos.y),
+        [posKeyZ]: snapValue(pos.z),
       },
     });
-  }, [selectedFeature, updateFeature, snapValue]);
+  }, [selectedFeature, updateFeature, snapValue, posKeyX, posKeyY, posKeyZ]);
 
   if (!isGizmoVisible) return null;
 

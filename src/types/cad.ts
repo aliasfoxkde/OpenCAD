@@ -24,7 +24,8 @@ export type FeatureType =
   | 'hole'
   | 'thread'
   | 'rib'
-  | 'draft';
+  | 'draft'
+  | 'assembly';
 
 /** A single node in the feature tree */
 export interface FeatureNode {
@@ -36,6 +37,7 @@ export interface FeatureNode {
   children: string[];
   suppressed: boolean;
   sketchRef?: string;
+  parentId?: string;
   error?: string;
 }
 
@@ -130,7 +132,8 @@ export type ToolType =
   | 'mirror'
   | 'boolean_union'
   | 'boolean_subtract'
-  | 'boolean_intersect';
+  | 'boolean_intersect'
+  | 'assembly';
 
 /** Display mode for the viewport */
 export type DisplayMode = 'wireframe' | 'shaded' | 'shaded_edges';

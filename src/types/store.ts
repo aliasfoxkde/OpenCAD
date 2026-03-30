@@ -36,6 +36,7 @@ export interface CADStoreActions {
   reorderFeature: (id: string, newIndex: number) => void;
   loadFeatures: (features: FeatureNode[]) => void;
   duplicateFeature: (id: string) => void;
+  moveFeatureToAssembly: (featureId: string, parentId: string | null) => void;
   undo: () => void;
   redo: () => void;
   setUnits: (units: Unit) => void;

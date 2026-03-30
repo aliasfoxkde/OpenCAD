@@ -563,4 +563,181 @@ describe('feature-to-mesh', () => {
       expect(mesh!.featureId).toBe('s1');
     });
   });
+
+  describe('assembly transforms', () => {
+    it('should skip assembly features (no mesh)', () => {
+      const features = [
+        makeFeature({
+          id: 'asm1',
+          type: 'assembly',
+          name: 'Assembly',
+          parameters: { positionX: 5 },
+        }),
+        makeFeature({ id: 'box1', parentId: 'asm1' }),
+      ];
+      const meshes = featuresToMeshes(features);
+      // Assembly has no mesh; box1 should be included with transformed vertices
+      expect(meshes.length).toBeGreaterThanOrEqual(1);
+      expect(meshes.every((m) => m.featureId !== 'asm1')).toBe(true);
+    });
+
+    it('should transform vertices for feature inside assembly with position', () => {
+      const features = [
+        makeFeature({
+          id: 'asm1',
+          type: 'assembly',
+          name: 'Assembly',
+          parameters: { positionX: 10, positionY: 0, positionZ: 0 },
+        }),
+        makeFeature({ id: 'box1', parentId: 'asm1', parameters: { width: 2, height: 2, depth: 2 } }),
+      ];
+      const meshes = featuresToMeshes(features);
+      expect(meshes).toHaveLength(1);
+      expect(meshes[0]!.featureId).toBe('box1');
+
+      // Get the untransformed mesh for comparison
+      const untransformed = featureToMesh(
+        makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }),
+      );
+      expect(untransformed).not.toBeNull();
+
+      // All x vertices should be shifted by 10
+      const v = meshes[0]!.vertices;
+      const uv = untransformed!.vertices;
+      expect(v.length).toBe(uv.length);
+      for (let i = 0; i < v.length; i += 3) {
+        expect(v[i]!).toBeCloseTo(uv[i]! + 10);
+        expect(v[i + 1]!).toBeCloseTo(uv[i + 1]!);
+        expect(v[i + 2]!).toBeCloseTo(uv[i + 2]!);
+      }
+    });
+
+    it('should transform vertices for feature inside assembly with rotation', () => {
+      const features = [
+        makeFeature({
+          id: 'asm1',
+          type: 'assembly',
+          name: 'Assembly',
+          parameters: { rotationZ: 180, positionX: 0, positionY: 0, positionZ: 0 },
+        }),
+        makeFeature({ id: 'box1', parentId: 'asm1', parameters: { width: 2, height: 2, depth: 2, originX: 3 } }),
+      ];
+      const meshes = featuresToMeshes(features);
+      expect(meshes).toHaveLength(1);
+
+      // 180 degree rotation around Z should negate X and Y
+      const v = meshes[0]!.vertices;
+      const untransformed = featureToMesh(
+        makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2, originX: 3 } }),
+      )!;
+      const uv = untransformed.vertices;
+
+      for (let i = 0; i < v.length; i += 3) {
+        expect(v[i]!).toBeCloseTo(-uv[i]!, 2);
+        expect(v[i + 1]!).toBeCloseTo(-uv[i + 1]!, 2);
+        expect(v[i + 2]!).toBeCloseTo(uv[i + 2]!, 2);
+      }
+    });
+
+    it('should compound transforms for nested assemblies', () => {
+      const features = [
+        makeFeature({
+          id: 'asm1',
+          type: 'assembly',
+          name: 'Outer Assembly',
+          parameters: { positionX: 5 },
+        }),
+        makeFeature({
+          id: 'asm2',
+          type: 'assembly',
+          name: 'Inner Assembly',
+          parentId: 'asm1',
+          parameters: { positionX: 3 },
+        }),
+        makeFeature({ id: 'box1', parentId: 'asm2', parameters: { width: 2, height: 2, depth: 2 } }),
+      ];
+      const meshes = featuresToMeshes(features);
+      expect(meshes).toHaveLength(1);
+      expect(meshes[0]!.featureId).toBe('box1');
+
+      // Total translation should be 5 + 3 = 8
+      const v = meshes[0]!.vertices;
+      const untransformed = featureToMesh(
+        makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }),
+      )!;
+      const uv = untransformed.vertices;
+
+      for (let i = 0; i < v.length; i += 3) {
+        expect(v[i]!).toBeCloseTo(uv[i]! + 8);
+        expect(v[i + 1]!).toBeCloseTo(uv[i + 1]!);
+        expect(v[i + 2]!).toBeCloseTo(uv[i + 2]!);
+      }
+    });
+
+    it('should not transform features without assembly parent', () => {
+      const features = [
+        makeFeature({
+          id: 'asm1',
+          type: 'assembly',
+          name: 'Assembly',
+          parameters: { positionX: 10 },
+        }),
+        makeFeature({ id: 'box1', parentId: 'asm1' }),
+        makeFeature({ id: 'box2', parameters: { width: 2, height: 2, depth: 2, originX: 3 } }),
+      ];
+      const meshes = featuresToMeshes(features);
+      expect(meshes).toHaveLength(2);
+
+      // box2 has no parent, should be untransformed
+      const box2Mesh = meshes.find((m) => m.featureId === 'box2')!;
+      const untransformed = featureToMesh(
+        makeFeature({ id: 'box2', parameters: { width: 2, height: 2, depth: 2, originX: 3 } }),
+      )!;
+      const v = box2Mesh.vertices;
+      const uv = untransformed.vertices;
+      for (let i = 0; i < v.length; i++) {
+        expect(v[i]!).toBeCloseTo(uv[i]!);
+      }
+    });
+
+    it('should suppress all descendants when assembly is suppressed', () => {
+      const features = [
+        makeFeature({
+          id: 'asm1',
+          type: 'assembly',
+          name: 'Assembly',
+          parameters: { positionX: 5 },
+          suppressed: true,
+        }),
+        makeFeature({ id: 'box1', parentId: 'asm1' }),
+        makeFeature({ id: 'box2', parentId: 'asm1' }),
+      ];
+      const meshes = featuresToMeshes(features);
+      // Suppressed assembly means no child meshes
+      expect(meshes).toHaveLength(0);
+    });
+
+    it('should not affect features when assembly has identity transform', () => {
+      const features = [
+        makeFeature({
+          id: 'asm1',
+          type: 'assembly',
+          name: 'Assembly',
+          parameters: { positionX: 0, positionY: 0, positionZ: 0, rotationX: 0, rotationY: 0, rotationZ: 0 },
+        }),
+        makeFeature({ id: 'box1', parentId: 'asm1', parameters: { width: 2, height: 2, depth: 2 } }),
+      ];
+      const meshes = featuresToMeshes(features);
+      expect(meshes).toHaveLength(1);
+
+      const untransformed = featureToMesh(
+        makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }),
+      )!;
+      const v = meshes[0]!.vertices;
+      const uv = untransformed.vertices;
+      for (let i = 0; i < v.length; i++) {
+        expect(v[i]!).toBeCloseTo(uv[i]!);
+      }
+    });
+  });
 });
