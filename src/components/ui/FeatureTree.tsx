@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useCADStore } from '../../stores/cad-store';
-import { getFeatureDefinition } from '../../cad/features/feature-registry';
+import { useFeatureErrors } from '../../hooks/useFeatureErrors';
 
 export function FeatureTree() {
   const features = useCADStore((s) => s.features);
@@ -10,6 +10,7 @@ export function FeatureTree() {
   const removeFeature = useCADStore((s) => s.removeFeature);
   const reorderFeature = useCADStore((s) => s.reorderFeature);
   const duplicateFeature = useCADStore((s) => s.duplicateFeature);
+  const featureErrors = useFeatureErrors(features);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -166,7 +167,15 @@ export function FeatureTree() {
             onContextMenu={(e) => handleContextMenu(e, feature.id)}
           >
             <span style={styles.dragHandle} title="Drag to reorder">&#x2261;</span>
-            <span style={styles.icon}>{getFeatureIcon(feature.type)}</span>
+            <span
+              style={{
+                ...styles.icon,
+                ...(featureErrors.has(feature.id) ? { color: '#ef4444' } : {}),
+              }}
+              title={featureErrors.get(feature.id) ?? undefined}
+            >
+              {featureErrors.has(feature.id) ? '\u26A0' : '\u2713'}
+            </span>
             {getDepBadge(feature, features) && (
               <span style={styles.depBadge}>{getDepBadge(feature, features)}</span>
             )}
@@ -184,7 +193,15 @@ export function FeatureTree() {
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <span style={styles.name}>{feature.name}</span>
+              <span
+                style={{
+                  ...styles.name,
+                  ...(featureErrors.has(feature.id) ? { color: '#fca5a5' } : {}),
+                }}
+                title={featureErrors.get(feature.id) ?? undefined}
+              >
+                {feature.name}
+              </span>
             )}
             <button
               style={styles.toggleBtn}
@@ -260,11 +277,6 @@ export function FeatureTree() {
       )}
     </div>
   );
-}
-
-function getFeatureIcon(type: string): string {
-  const def = getFeatureDefinition(type);
-  return def?.icon ?? '[+]';
 }
 
 function getDepBadge(
