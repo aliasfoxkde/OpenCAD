@@ -24,6 +24,7 @@ export interface StoredDocument {
   created: number;
   modified: number;
   autoSave: boolean;
+  thumbnail?: string;
 }
 
 export interface DocumentMeta {
@@ -32,6 +33,7 @@ export interface DocumentMeta {
   created: number;
   modified: number;
   featureCount: number;
+  thumbnail?: string;
 }
 
 export interface SnapshotEntry {
@@ -99,6 +101,7 @@ export async function listDocuments(): Promise<DocumentMeta[]> {
       created: doc.created,
       modified: doc.modified,
       featureCount: doc.features.length,
+      thumbnail: doc.thumbnail,
     }))
     .sort((a, b) => b.modified - a.modified);
 }

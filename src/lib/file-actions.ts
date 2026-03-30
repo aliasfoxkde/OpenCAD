@@ -54,6 +54,7 @@ export async function handleSaveDocument(): Promise<boolean> {
     created: Date.now(),
     modified: Date.now(),
     autoSave: false,
+    thumbnail: captureThumbnail() ?? undefined,
   });
   if (result.success) {
     useToast().addToast(`Saved ${state.documentName}`, 'success');
@@ -94,6 +95,25 @@ export function handleExport(format: 'stl' | 'obj' | 'glb' | 'ocad'): void {
   } catch (err) {
     console.error('Export failed:', err);
     useToast().addToast(`Export to ${format.toUpperCase()} failed`, 'error');
+  }
+}
+
+/** Capture a small thumbnail (160x90 PNG) from the R3F canvas */
+export function captureThumbnail(): string | null {
+  const canvas = document.querySelector('canvas');
+  if (!canvas) return null;
+  try {
+    const w = 160;
+    const h = 90;
+    const offscreen = document.createElement('canvas');
+    offscreen.width = w;
+    offscreen.height = h;
+    const ctx = offscreen.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(canvas, 0, 0, w, h);
+    return offscreen.toDataURL('image/jpeg', 0.6);
+  } catch {
+    return null;
   }
 }
 

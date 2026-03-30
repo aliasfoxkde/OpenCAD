@@ -13,6 +13,24 @@ interface DocumentDashboardProps {
   onOpen?: () => void;
 }
 
+function ThumbnailPlaceholder() {
+  return (
+    <svg
+      width="100%"
+      height="100%"
+      viewBox="0 0 160 90"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect width="160" height="90" fill="#1e293b" />
+      <rect x="30" y="20" width="40" height="50" rx="2" fill="#334155" />
+      <rect x="60" y="30" width="40" height="40" rx="2" fill="#475569" />
+      <rect x="80" y="10" width="50" height="60" rx="2" fill="#334155" />
+      <circle cx="90" cy="75" r="8" stroke="#475569" strokeWidth="1.5" fill="none" />
+    </svg>
+  );
+}
+
 export function DocumentDashboard({ onOpen }: DocumentDashboardProps) {
   const [docs, setDocs] = useState<DocumentMeta[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,30 +138,44 @@ export function DocumentDashboard({ onOpen }: DocumentDashboardProps) {
       ) : docs.length === 0 ? (
         <div style={styles.empty}>No documents yet. Create one to get started.</div>
       ) : (
-        <div style={styles.list}>
+        <div style={styles.grid}>
           {docs.map((doc) => (
-            <div key={doc.id} style={styles.docItem}>
-              <div style={styles.docInfo} onClick={() => handleOpen(doc.id)}>
-                <div style={styles.docName}>{doc.name}</div>
-                <div style={styles.docMeta}>
-                  {doc.featureCount} feature{doc.featureCount !== 1 ? 's' : ''} &middot; {formatDate(doc.modified)}
-                </div>
+            <div key={doc.id} style={styles.card}>
+              <div style={styles.thumbnail} onClick={() => handleOpen(doc.id)}>
+                {doc.thumbnail ? (
+                  <img src={doc.thumbnail} alt={doc.name} style={styles.thumbImg} />
+                ) : (
+                  <ThumbnailPlaceholder />
+                )}
               </div>
-              {confirmDeleteId === doc.id ? (
-                <div style={styles.confirmRow}>
-                  <span style={styles.confirmText}>Delete?</span>
-                  <button style={styles.confirmYes} onClick={() => handleDelete(doc.id)}>
-                    Yes
-                  </button>
-                  <button style={styles.confirmNo} onClick={() => setConfirmDeleteId(null)}>
-                    No
-                  </button>
+              <div style={styles.cardBody}>
+                <div style={styles.docInfo} onClick={() => handleOpen(doc.id)}>
+                  <div style={styles.docName}>{doc.name}</div>
+                  <div style={styles.docMeta}>
+                    {doc.featureCount} feature{doc.featureCount !== 1 ? 's' : ''} &middot;{' '}
+                    {formatDate(doc.modified)}
+                  </div>
                 </div>
-              ) : (
-                <button style={styles.deleteBtn} onClick={() => setConfirmDeleteId(doc.id)} title="Delete document">
-                  &times;
-                </button>
-              )}
+                {confirmDeleteId === doc.id ? (
+                  <div style={styles.confirmRow}>
+                    <span style={styles.confirmText}>Delete?</span>
+                    <button style={styles.confirmYes} onClick={() => handleDelete(doc.id)}>
+                      Yes
+                    </button>
+                    <button style={styles.confirmNo} onClick={() => setConfirmDeleteId(null)}>
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    style={styles.deleteBtn}
+                    onClick={() => setConfirmDeleteId(doc.id)}
+                    title="Delete document"
+                  >
+                    &times;
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -240,32 +272,59 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '40px 20px',
     fontSize: 14,
   },
-  list: {
-    maxWidth: 600,
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+    gap: 16,
+    maxWidth: 960,
     margin: '0 auto',
     width: '100%',
-    padding: '0 20px',
+    padding: '0 20px 40px',
   },
-  docItem: {
+  card: {
+    background: '#1e293b',
+    borderRadius: 8,
+    overflow: 'hidden',
+    border: '1px solid #334155',
+    transition: 'border-color 0.15s',
+  },
+  thumbnail: {
+    width: '100%',
+    aspectRatio: '16 / 9',
+    background: '#0f172a',
+    cursor: 'pointer',
+    overflow: 'hidden',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  thumbImg: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    display: 'block',
+  },
+  cardBody: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '12px 16px',
-    background: '#1e293b',
-    borderRadius: 6,
-    marginBottom: 8,
+    padding: '10px 12px',
   },
   docInfo: {
     flex: 1,
     cursor: 'pointer',
+    minWidth: 0,
   },
   docName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 600,
     color: '#f1f5f9',
+    whiteSpace: 'nowrap' as const,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
   docMeta: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#64748b',
     marginTop: 2,
   },
@@ -277,11 +336,13 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     padding: '4px 8px',
     borderRadius: 4,
+    flexShrink: 0,
   },
   confirmRow: {
     display: 'flex',
     alignItems: 'center',
     gap: 6,
+    flexShrink: 0,
   },
   confirmText: {
     fontSize: 12,
