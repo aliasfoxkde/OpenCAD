@@ -64,7 +64,7 @@ describe('file-actions', () => {
       const { createDocument } = await import('@/api/document-api');
       vi.mocked(createDocument).mockResolvedValue({
         success: true,
-        data: { id: 'new-doc', name: 'Untitled', features: [] },
+        data: { id: 'new-doc', name: 'Untitled', features: [], units: 'mm', created: 0, modified: 0, autoSave: false },
       });
 
       await handleNewDocument();
@@ -78,7 +78,7 @@ describe('file-actions', () => {
       const { createDocument } = await import('@/api/document-api');
       vi.mocked(createDocument).mockResolvedValue({
         success: true,
-        data: { id: 'new-doc', name: 'Untitled', features: [] },
+        data: { id: 'new-doc', name: 'Untitled', features: [], units: 'mm', created: 0, modified: 0, autoSave: false },
       });
 
       await handleNewDocument();
@@ -113,7 +113,7 @@ describe('file-actions', () => {
       vi.mocked(confirm).mockResolvedValue(true);
       vi.mocked(createDocument).mockResolvedValue({
         success: true,
-        data: { id: 'new-doc', name: 'Untitled', features: [] },
+        data: { id: 'new-doc', name: 'Untitled', features: [], units: 'mm', created: 0, modified: 0, autoSave: false },
       });
       useCADStore.setState({ dirty: true });
 
@@ -157,7 +157,7 @@ describe('file-actions', () => {
       const { createDocument } = await import('@/api/document-api');
       vi.mocked(createDocument).mockResolvedValue({
         success: true,
-        data: { id: 'new-doc', name: 'Untitled', features: [] },
+        data: { id: 'new-doc', name: 'Untitled', features: [], units: 'mm', created: 0, modified: 0, autoSave: false },
       });
       useCADStore.setState({ documentId: null });
 
@@ -193,7 +193,7 @@ describe('file-actions', () => {
     it('should export to STL format when features produce meshes', async () => {
       const { featuresToMeshes } = await import('@/lib/feature-to-mesh');
       const { exportToFormat, downloadExport } = await import('@/api/export-api');
-      vi.mocked(featuresToMeshes).mockReturnValue([{ vertices: new Float32Array([0, 0, 0]), indices: new Uint32Array([0]) }]);
+      vi.mocked(featuresToMeshes).mockReturnValue([{ vertices: new Float32Array([0, 0, 0]), normals: new Float32Array([0, 0, 0]), indices: new Uint32Array([0]), featureId: 'f1' }]);
 
       handleExport('stl');
 
@@ -213,7 +213,7 @@ describe('file-actions', () => {
 
     it('should show success toast for mesh export', async () => {
       const { featuresToMeshes } = await import('@/lib/feature-to-mesh');
-      vi.mocked(featuresToMeshes).mockReturnValue([{ vertices: new Float32Array([0, 0, 0]), indices: new Uint32Array([0]) }]);
+      vi.mocked(featuresToMeshes).mockReturnValue([{ vertices: new Float32Array([0, 0, 0]), normals: new Float32Array([0, 0, 0]), indices: new Uint32Array([0]), featureId: 'f1' }]);
 
       handleExport('obj');
 
@@ -223,7 +223,7 @@ describe('file-actions', () => {
     it('should show error toast for failed mesh export', async () => {
       const { exportToFormat } = await import('@/api/export-api');
       const { featuresToMeshes } = await import('@/lib/feature-to-mesh');
-      vi.mocked(featuresToMeshes).mockReturnValue([{ vertices: new Float32Array([0, 0, 0]), indices: new Uint32Array([0]) }]);
+      vi.mocked(featuresToMeshes).mockReturnValue([{ vertices: new Float32Array([0, 0, 0]), normals: new Float32Array([0, 0, 0]), indices: new Uint32Array([0]), featureId: 'f1' }]);
       vi.mocked(exportToFormat).mockImplementation(() => { throw new Error('fail'); });
 
       handleExport('stl');
