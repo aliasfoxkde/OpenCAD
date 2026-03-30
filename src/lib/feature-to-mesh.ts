@@ -354,8 +354,32 @@ export function featureToMesh(feature: FeatureNode, allFeatures?: FeatureNode[])
 
 /** Convert all (non-suppressed) features to MeshData array */
 export function featuresToMeshes(features: FeatureNode[]): MeshData[] {
+  // Collect IDs of features that are consumed by composite features
+  // (boolean, shell, pattern) so we don't export their geometry twice.
+  // Only non-suppressed composites consume their references.
+  const consumedIds = new Set<string>();
+  for (const f of features) {
+    if (f.suppressed) continue;
+    if (
+      f.type.startsWith('boolean_') ||
+      f.type === 'shell' ||
+      f.type.startsWith('pattern_') ||
+      f.type === 'mirror'
+    ) {
+      for (const depId of f.dependencies) {
+        consumedIds.add(depId);
+      }
+      // Also consume features referenced in bodyRefs/targetRef/featureRef
+      const bodyRefs = (f.parameters.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+      for (const refId of bodyRefs) consumedIds.add(refId);
+      if (f.parameters.targetRef) consumedIds.add(f.parameters.targetRef as string);
+      if (f.parameters.toolRef) consumedIds.add(f.parameters.toolRef as string);
+      if (f.parameters.featureRef) consumedIds.add(f.parameters.featureRef as string);
+    }
+  }
+
   return features
-    .filter((f) => !f.suppressed)
+    .filter((f) => !f.suppressed && !consumedIds.has(f.id))
     .map((f) => featureToMesh(f, features))
     .filter((m): m is MeshData => m !== null);
 }

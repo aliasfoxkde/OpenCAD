@@ -66,6 +66,82 @@ describe('feature-to-mesh', () => {
     expect(featuresToMeshes([])).toEqual([]);
   });
 
+  describe('export deduplication', () => {
+    it('should exclude primitives consumed by boolean_union', () => {
+      const features = [
+        makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2, originX: -0.5 } }),
+        makeFeature({ id: 'box2', parameters: { width: 2, height: 2, depth: 2, originX: 0.5 } }),
+        makeFeature({ id: 'u1', type: 'boolean_union', parameters: { bodyRefs: 'box1,box2' }, dependencies: ['box1', 'box2'] }),
+      ];
+      const meshes = featuresToMeshes(features);
+      // Only the union result should be in the export, not the individual boxes
+      expect(meshes).toHaveLength(1);
+      expect(meshes[0]!.featureId).toBe('u1');
+    });
+
+    it('should exclude primitives consumed by boolean_subtract', () => {
+      const features = [
+        makeFeature({ id: 'target', parameters: { width: 4, height: 4, depth: 4 } }),
+        makeFeature({ id: 'tool', parameters: { width: 2, height: 2, depth: 2, originX: 1 } }),
+        makeFeature({ id: 's1', type: 'boolean_subtract', parameters: { targetRef: 'target', toolRef: 'tool' }, dependencies: ['target', 'tool'] }),
+      ];
+      const meshes = featuresToMeshes(features);
+      expect(meshes).toHaveLength(1);
+      expect(meshes[0]!.featureId).toBe('s1');
+    });
+
+    it('should exclude primitives consumed by shell', () => {
+      const features = [
+        makeFeature({ id: 'box1', parameters: { width: 4, height: 4, depth: 4 } }),
+        makeFeature({ id: 'sh1', type: 'shell', parameters: { targetRef: 'box1', thickness: 0.5 }, dependencies: ['box1'] }),
+      ];
+      const meshes = featuresToMeshes(features);
+      expect(meshes).toHaveLength(1);
+      expect(meshes[0]!.featureId).toBe('sh1');
+    });
+
+    it('should exclude primitives consumed by pattern_linear', () => {
+      const features = [
+        makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }),
+        makeFeature({ id: 'p1', type: 'pattern_linear', parameters: { featureRef: 'box1', direction: 'x', count: 3, spacing: 3 }, dependencies: ['box1'] }),
+      ];
+      const meshes = featuresToMeshes(features);
+      expect(meshes).toHaveLength(1);
+      expect(meshes[0]!.featureId).toBe('p1');
+    });
+
+    it('should exclude primitives consumed by mirror', () => {
+      const features = [
+        makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }),
+        makeFeature({ id: 'm1', type: 'mirror', parameters: { featureRef: 'box1', plane: 'yz' }, dependencies: ['box1'] }),
+      ];
+      const meshes = featuresToMeshes(features);
+      expect(meshes).toHaveLength(1);
+      expect(meshes[0]!.featureId).toBe('m1');
+    });
+
+    it('should keep standalone primitives not consumed by composite features', () => {
+      const features = [
+        makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }),
+        makeFeature({ id: 'box2', parameters: { width: 3, height: 3, depth: 3, originX: 5 } }),
+      ];
+      const meshes = featuresToMeshes(features);
+      expect(meshes).toHaveLength(2);
+      expect(meshes.map((m) => m.featureId)).toEqual(['box1', 'box2']);
+    });
+
+    it('should not exclude primitives consumed by suppressed composites', () => {
+      const features = [
+        makeFeature({ id: 'box1', parameters: { width: 2, height: 2, depth: 2 } }),
+        makeFeature({ id: 'u1', type: 'boolean_union', parameters: { bodyRefs: 'box1' }, dependencies: ['box1'], suppressed: true }),
+      ];
+      const meshes = featuresToMeshes(features);
+      // The union is suppressed, so box1 should still be exported standalone
+      expect(meshes).toHaveLength(1);
+      expect(meshes[0]!.featureId).toBe('box1');
+    });
+  });
+
   describe('pattern_linear', () => {
     it('should return null when no allFeatures provided', () => {
       const mesh = featureToMesh(makeFeature({
