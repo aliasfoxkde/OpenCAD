@@ -236,6 +236,38 @@ describe('CADStore', () => {
     expect(useCADStore.getState().features[0]!.parameters.width).toBe(1);
   });
 
+  it('should restore selection on undo of feature removal', () => {
+    const feature: FeatureNode = {
+      id: 'test-undo-sel', type: 'extrude', name: 'Box',
+      parameters: {}, dependencies: [], children: [], suppressed: false,
+    };
+
+    useCADStore.getState().addFeatureAndSelect(feature);
+    expect(useCADStore.getState().selectedIds).toEqual(['test-undo-sel']);
+
+    useCADStore.getState().removeFeature('test-undo-sel');
+    expect(useCADStore.getState().selectedIds).toEqual([]);
+
+    // Undo should restore the feature and re-select it
+    useCADStore.getState().undo();
+    expect(useCADStore.getState().features).toHaveLength(1);
+    expect(useCADStore.getState().selectedIds).toEqual(['test-undo-sel']);
+  });
+
+  it('should restore selection on undo of addFeatureAndSelect', () => {
+    const feature: FeatureNode = {
+      id: 'test-undo-add-sel', type: 'extrude', name: 'Box',
+      parameters: {}, dependencies: [], children: [], suppressed: false,
+    };
+
+    useCADStore.getState().addFeatureAndSelect(feature);
+    expect(useCADStore.getState().selectedIds).toEqual(['test-undo-add-sel']);
+
+    useCADStore.getState().undo();
+    expect(useCADStore.getState().features).toHaveLength(0);
+    expect(useCADStore.getState().selectedIds).toEqual([]); // feature no longer exists
+  });
+
   it('should duplicate a feature', () => {
     const feature: FeatureNode = {
       id: 'test-dup', type: 'extrude', name: 'Box',

@@ -31,16 +31,16 @@ describe('undo-history', () => {
   });
 
   it('should push state and allow undo', () => {
-    const current: FeatureNode[] = []; // state before mutation
+    const current: FeatureNode[] = [];
     const afterMutation = [makeFeature('a')];
 
-    pushState(current); // save pre-mutation state
+    pushState(current);
 
     expect(canUndo()).toBe(true);
     expect(canRedo()).toBe(false);
 
     const prev = undo(afterMutation);
-    expect(prev).toEqual(current); // returns the saved pre-mutation state
+    expect(prev?.features).toEqual(current);
     expect(canUndo()).toBe(false);
   });
 
@@ -48,14 +48,14 @@ describe('undo-history', () => {
     const before: FeatureNode[] = [];
     const after = [makeFeature('a')];
 
-    pushState(before); // save pre-mutation state
+    pushState(before);
 
     const undone = undo(after);
-    expect(undone).toEqual(before);
+    expect(undone?.features).toEqual(before);
     expect(canRedo()).toBe(true);
 
-    const next = redo(undone!);
-    expect(next).toEqual(after);
+    const next = redo(undone!.features, undone!.selectedIds);
+    expect(next?.features).toEqual(after);
     expect(canRedo()).toBe(false);
   });
 
@@ -78,32 +78,28 @@ describe('undo-history', () => {
       pushState([makeFeature(`f${i}`)]);
     }
     expect(canUndo()).toBe(true);
-    // Only 50 entries should be kept — undo all to check
     const allUndone: FeatureNode[][] = [];
     let current: FeatureNode[] = [];
     while (canUndo()) {
-      const result = undo(current);
+      const result = undo(current, []);
       if (result) {
-        allUndone.push(result);
-        current = result;
+        allUndone.push(result.features);
+        current = result.features;
       }
     }
     expect(allUndone).toHaveLength(50);
-    // First popped (index 0) is the most recent entry
     expect(allUndone[0]![0]!.id).toBe('f54');
-    // Last popped (index 49) is the oldest surviving entry
-    expect(allUndone[49]![0]!.id).toBe('f5'); // f0-f4 evicted
+    expect(allUndone[49]![0]!.id).toBe('f5');
   });
 
   it('should deep clone features (isolation)', () => {
     const features = [makeFeature('a')];
     pushState(features);
 
-    // Mutate original — should not affect history
     features[0]!.name = 'mutated';
 
-    const prev = undo(features) as FeatureNode[];
-    expect(prev![0]!.name).toBe('Feature a');
+    const prev = undo(features, [])!;
+    expect(prev.features[0]!.name).toBe('Feature a');
   });
 
   it('should return null when undoing with empty past', () => {
@@ -132,20 +128,48 @@ describe('undo-history', () => {
     pushState(f1);
     pushState(f2);
 
-    // Undo back to f1
-    const r1 = undo(f3);
-    expect(r1).toEqual(f2);
+    const r1 = undo(f3, []);
+    expect(r1?.features).toEqual(f2);
 
-    const r2 = undo(r1!);
-    expect(r2).toEqual(f1);
+    const r2 = undo(r1!.features, r1!.selectedIds);
+    expect(r2?.features).toEqual(f1);
 
-    // Redo forward
-    const r3 = redo(r2!);
-    expect(r3).toEqual(f2);
+    const r3 = redo(r2!.features, r2!.selectedIds);
+    expect(r3?.features).toEqual(f2);
 
-    const r4 = redo(r3!);
-    expect(r4).toEqual(f3);
+    const r4 = redo(r3!.features, r3!.selectedIds);
+    expect(r4?.features).toEqual(f3);
 
     expect(canRedo()).toBe(false);
+  });
+
+  describe('selection tracking', () => {
+    it('should save selectedIds in history entry', () => {
+      pushState([makeFeature('a')], ['a']);
+      const result = undo([makeFeature('a'), makeFeature('b')]);
+      expect(result?.selectedIds).toEqual(['a']);
+    });
+
+    it('should save current selectedIds on undo', () => {
+      pushState([makeFeature('a')]);
+      const result = undo([makeFeature('b')], ['b']);
+      expect(canRedo()).toBe(true);
+      const redone = redo(result!.features, result!.selectedIds);
+      expect(redone?.selectedIds).toEqual(['b']);
+    });
+
+    it('should handle empty selectedIds', () => {
+      pushState([makeFeature('a')]);
+      const result = undo([makeFeature('a')]);
+      expect(result?.selectedIds).toEqual([]);
+    });
+
+    it('should isolate selectedIds arrays (no aliasing)', () => {
+      const sel = ['a', 'b'];
+      pushState([makeFeature('a')], sel);
+      sel.push('c'); // mutate original
+      const result = undo([makeFeature('a')]);
+      expect(result?.selectedIds).toEqual(['a', 'b']); // not ['a', 'b', 'c']
+    });
   });
 });

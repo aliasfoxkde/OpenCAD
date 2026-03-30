@@ -2,12 +2,17 @@ import type { FeatureNode } from '../types/cad';
 
 const MAX_HISTORY = 50;
 
-let past: FeatureNode[][] = [];
-let future: FeatureNode[][] = [];
+interface HistoryEntry {
+  features: FeatureNode[];
+  selectedIds: string[];
+}
 
-/** Snapshot current features before a mutation */
-export function pushState(features: FeatureNode[]): void {
-  past.push(structuredClone(features));
+let past: HistoryEntry[] = [];
+let future: HistoryEntry[] = [];
+
+/** Snapshot current features + selection before a mutation */
+export function pushState(features: FeatureNode[], selectedIds: string[] = []): void {
+  past.push({ features: structuredClone(features), selectedIds: [...selectedIds] });
   if (past.length > MAX_HISTORY) {
     past.shift();
   }
@@ -15,16 +20,16 @@ export function pushState(features: FeatureNode[]): void {
 }
 
 /** Undo: pop from past, push current to future, return previous state */
-export function undo(currentFeatures: FeatureNode[]): FeatureNode[] | null {
+export function undo(currentFeatures: FeatureNode[], currentSelectedIds: string[] = []): HistoryEntry | null {
   if (past.length === 0) return null;
-  future.push(structuredClone(currentFeatures));
+  future.push({ features: structuredClone(currentFeatures), selectedIds: [...currentSelectedIds] });
   return past.pop()!;
 }
 
 /** Redo: pop from future, push current to past, return next state */
-export function redo(currentFeatures: FeatureNode[]): FeatureNode[] | null {
+export function redo(currentFeatures: FeatureNode[], currentSelectedIds: string[] = []): HistoryEntry | null {
   if (future.length === 0) return null;
-  past.push(structuredClone(currentFeatures));
+  past.push({ features: structuredClone(currentFeatures), selectedIds: [...currentSelectedIds] });
   return future.pop()!;
 }
 

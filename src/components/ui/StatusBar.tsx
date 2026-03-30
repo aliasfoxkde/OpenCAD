@@ -1,6 +1,33 @@
 import { useCADStore, useCanUndoRedo } from '../../stores/cad-store';
 import { useViewStore } from '../../stores/view-store';
 import { useUIStore } from '../../stores/ui-store';
+import { getFeatureDefinition } from '../../cad/features';
+
+/** Pretty-print active tool name */
+function formatToolName(tool: string): string {
+  const map: Record<string, string> = {
+    select: 'Select',
+    box: 'Box',
+    cylinder: 'Cylinder',
+    sphere: 'Sphere',
+    cone: 'Cone',
+    torus: 'Torus',
+    hole: 'Hole',
+    boolean_union: 'Union',
+    boolean_subtract: 'Subtract',
+    boolean_intersect: 'Intersect',
+    fillet: 'Fillet',
+    chamfer: 'Chamfer',
+    pattern_linear: 'Linear Pattern',
+    pattern_circular: 'Circular Pattern',
+    mirror: 'Mirror',
+    shell: 'Shell',
+    measure: 'Measure',
+    section: 'Section',
+    sketch: 'Sketch',
+  };
+  return map[tool] ?? tool;
+}
 
 /** Build selection info string from store state */
 export function buildSelectionInfo(
@@ -10,9 +37,12 @@ export function buildSelectionInfo(
   if (selectedIds.length === 0) return 'none';
   if (selectedIds.length === 1) {
     const feature = features.find((f) => f.id === selectedIds[0]);
-    return feature ? `${feature.name} (${feature.type})` : selectedIds[0]!;
+    if (!feature) return selectedIds[0]!;
+    const def = getFeatureDefinition(feature.type);
+    const icon = def?.icon ?? '';
+    return `${icon} ${feature.name}`;
   }
-  return `${selectedIds.length} features`;
+  return `${selectedIds.length} selected`;
 }
 
 export function StatusBar() {
@@ -22,6 +52,8 @@ export function StatusBar() {
   const dirty = useCADStore((s) => s.dirty);
   const { canUndo, canRedo } = useCanUndoRedo();
   const cameraPreset = useViewStore((s) => s.cameraPreset);
+  const displayMode = useViewStore((s) => s.displayMode);
+  const showGrid = useViewStore((s) => s.showGrid);
   const leftPanelOpen = useUIStore((s) => s.leftPanelOpen);
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel);
@@ -42,19 +74,27 @@ export function StatusBar() {
         onClick={toggleRightPanel}
       />
       <span style={styles.separator}>|</span>
-      <span style={styles.item}>Tool: {activeTool}</span>
-      {dirty && <span style={styles.dirtyIndicator}>Modified</span>}
+      <span style={styles.toolLabel}>{formatToolName(activeTool)}</span>
+      {dirty && <span style={styles.dirtyDot}>*</span>}
       <span style={styles.separator}>|</span>
-      <span style={styles.item}>Features: {features.length}</span>
-      <span style={styles.separator}>|</span>
-      <span style={styles.item}>Selected: {selectionInfo}</span>
+      <span style={styles.item}>{features.length} feature{features.length !== 1 ? 's' : ''}</span>
+      {selectedIds.length > 0 && (
+        <>
+          <span style={styles.separator}>|</span>
+          <span style={styles.selectionItem}>{selectionInfo}</span>
+        </>
+      )}
       <span style={{ flex: 1 }} />
-      {canUndo && <span style={styles.indicator}>Undo</span>}
-      {canRedo && <span style={styles.indicator}>Redo</span>}
-      {cameraPreset && <span style={styles.indicator}>Camera: {cameraPreset}</span>}
+      <span style={styles.item}>
+        {displayMode === 'wireframe' ? 'Wire' : displayMode === 'shaded' ? 'Shaded' : 'Shaded+Edges'}
+      </span>
+      {!showGrid && <span style={styles.dimItem}>Grid off</span>}
+      {canUndo && <span style={styles.dimItem}>Ctrl+Z</span>}
+      {canRedo && <span style={styles.dimItem}>Ctrl+Shift+Z</span>}
+      {cameraPreset && <span style={styles.indicator}>{cameraPreset}</span>}
       <span style={styles.item}>mm</span>
       <span style={styles.separator}>|</span>
-      <span style={styles.item}>OpenCAD v0.1.0</span>
+      <span style={styles.version}>OpenCAD v0.1.0</span>
     </div>
   );
 }
@@ -94,7 +134,12 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#64748b',
   },
   item: {
-    color: '#94a3b8',
+    color: '#64748b',
+  },
+  dimItem: {
+    color: '#475569',
+    fontSize: 10,
+    marginRight: 8,
   },
   separator: {
     color: '#334155',
@@ -105,10 +150,24 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 10,
     marginRight: 8,
   },
-  dirtyIndicator: {
+  dirtyDot: {
     color: '#f59e0b',
+    fontSize: 14,
+    marginLeft: 2,
+    lineHeight: 1,
+  },
+  toolLabel: {
+    color: '#e2e8f0',
+    fontWeight: 600,
+    fontSize: 11,
+  },
+  selectionItem: {
+    color: '#22d3ee',
+    fontSize: 11,
+  },
+  version: {
+    color: '#475569',
     fontSize: 10,
-    marginLeft: 4,
   },
   panelBtn: {
     background: 'transparent',

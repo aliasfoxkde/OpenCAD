@@ -15,12 +15,12 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
   setDocument: (id, name) => set({ documentId: id, documentName: name }),
   addFeature: (feature) =>
     set((state) => {
-      pushState(state.features);
+      pushState(state.features, state.selectedIds);
       return { features: [...state.features, feature], dirty: true };
     }),
   addFeatureAndSelect: (feature) =>
     set((state) => {
-      pushState(state.features);
+      pushState(state.features, state.selectedIds);
       return {
         features: [...state.features, feature],
         selectedIds: [feature.id],
@@ -29,7 +29,7 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
     }),
   removeFeature: (id) =>
     set((state) => {
-      pushState(state.features);
+      pushState(state.features, state.selectedIds);
       return {
         features: state.features.filter((f) => f.id !== id),
         selectedIds: state.selectedIds.filter((sid) => sid !== id),
@@ -38,7 +38,7 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
     }),
   updateFeature: (id, updates) =>
     set((state) => {
-      pushState(state.features);
+      pushState(state.features, state.selectedIds);
       return {
         features: state.features.map((f) =>
           f.id === id ? { ...f, ...updates } : f,
@@ -50,7 +50,7 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
     set((state) => {
       const source = state.features.find((f) => f.id === id);
       if (!source) return state;
-      pushState(state.features);
+      pushState(state.features, state.selectedIds);
       const clone = structuredClone(source);
       clone.id = crypto.randomUUID();
       clone.name = `${source.name} (copy)`;
@@ -73,26 +73,33 @@ export const useCADStore = create<CADStoreState & CADStoreActions>((set) => ({
       const features = [...state.features];
       const oldIndex = features.findIndex((f) => f.id === id);
       if (oldIndex === -1) return state;
-      pushState(state.features);
+      pushState(state.features, state.selectedIds);
       const removed = features.splice(oldIndex, 1);
       features.splice(newIndex, 0, removed[0]!);
       return { features, dirty: true };
     }),
   loadFeatures: (features) => {
-    pushState(useCADStore.getState().features);
+    pushState(useCADStore.getState().features, useCADStore.getState().selectedIds);
     set({ features, selectedIds: [], selectionTarget: null, dirty: false });
   },
   undo: () =>
     set((state) => {
-      const prev = undo(state.features);
+      const prev = undo(state.features, state.selectedIds);
       if (!prev) return state;
-      return { features: prev, selectedIds: [], dirty: true };
+      // Only restore selection for IDs that still exist in the restored features
+      const validIds = prev.selectedIds.filter((id) =>
+        prev.features.some((f) => f.id === id),
+      );
+      return { features: prev.features, selectedIds: validIds, dirty: true };
     }),
   redo: () =>
     set((state) => {
-      const next = redo(state.features);
+      const next = redo(state.features, state.selectedIds);
       if (!next) return state;
-      return { features: next, selectedIds: [], dirty: true };
+      const validIds = next.selectedIds.filter((id) =>
+        next.features.some((f) => f.id === id),
+      );
+      return { features: next.features, selectedIds: validIds, dirty: true };
     }),
 }));
 
