@@ -11,6 +11,7 @@ const primitiveTypeMap: Record<string, FeatureType> = {
   sphere: 'sphere',
   cone: 'cone',
   torus: 'torus',
+  hole: 'hole',
 };
 
 /** Primitives for the Create section */
@@ -20,6 +21,7 @@ const primitives = [
   { type: 'sphere', label: 'Sphere' },
   { type: 'cone', label: 'Cone' },
   { type: 'torus', label: 'Torus' },
+  { type: 'hole', label: 'Hole' },
 ];
 
 export function PropertiesPanel() {
@@ -124,6 +126,11 @@ export function PropertiesPanel() {
               onChange={(v) => handleParamChange(paramDef.name, v)}
             />
           ))}
+        </div>
+      )}
+      {!selectedFeature && (
+        <div style={styles.emptyState}>
+          <span style={styles.emptyText}>Select a feature to edit its properties</span>
         </div>
       )}
     </div>
@@ -358,5 +365,14 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#f1f5f9',
     outline: 'none',
     minWidth: 0,
+  },
+  emptyState: {
+    padding: '16px 12px',
+    textAlign: 'center' as const,
+  },
+  emptyText: {
+    fontSize: 11,
+    color: '#475569',
+    fontStyle: 'italic' as const,
   },
 };
