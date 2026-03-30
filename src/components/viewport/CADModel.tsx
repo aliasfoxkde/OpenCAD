@@ -14,11 +14,29 @@ export function CADModel() {
   const selectedIds = useCADStore((s) => s.selectedIds);
 
   // Separate simple features from pattern/mirror/boolean/shell features
+  // Exclude primitives consumed by composite features (avoids z-fighting)
   const { simpleFeatures, patternFeatures, booleanFeatures, shellFeatures } = useMemo(() => {
     const simple: typeof features = [];
     const patterns: typeof features = [];
     const booleans: typeof features = [];
     const shells: typeof features = [];
+    const consumedIds = new Set<string>();
+    for (const f of features) {
+      if (f.suppressed) continue;
+      if (
+        f.type.startsWith('boolean_') ||
+        f.type === 'shell' ||
+        f.type.startsWith('pattern_') ||
+        f.type === 'mirror'
+      ) {
+        for (const depId of f.dependencies) consumedIds.add(depId);
+        const bodyRefs = (f.parameters.bodyRefs as string)?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+        for (const refId of bodyRefs) consumedIds.add(refId);
+        if (f.parameters.targetRef) consumedIds.add(f.parameters.targetRef as string);
+        if (f.parameters.toolRef) consumedIds.add(f.parameters.toolRef as string);
+        if (f.parameters.featureRef) consumedIds.add(f.parameters.featureRef as string);
+      }
+    }
     for (const f of features) {
       if (f.type === 'pattern_linear' || f.type === 'pattern_circular' || f.type === 'mirror') {
         patterns.push(f);
@@ -26,7 +44,7 @@ export function CADModel() {
         booleans.push(f);
       } else if (f.type === 'shell') {
         shells.push(f);
-      } else {
+      } else if (!consumedIds.has(f.id)) {
         simple.push(f);
       }
     }
