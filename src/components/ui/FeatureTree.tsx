@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useCADStore } from '../../stores/cad-store';
 import { getFeatureDefinition } from '../../cad/features/feature-registry';
 
@@ -16,7 +16,17 @@ export function FeatureTree() {
   const [contextMenu, setContextMenu] = useState<{
     x: number; y: number; featureId: string;
   } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [lastClickedIndex, setLastClickedIndex] = useState<number | null>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredFeatures = useMemo(() => {
+    if (!searchQuery.trim()) return features;
+    const q = searchQuery.toLowerCase().trim();
+    return features.filter((f) =>
+      f.name.toLowerCase().includes(q) || f.type.toLowerCase().includes(q),
+    );
+  }, [features, searchQuery]);
 
   const startEditing = useCallback((featureId: string, currentName: string) => {
     setEditingId(featureId);
@@ -77,6 +87,30 @@ export function FeatureTree() {
     setDragOverIndex(null);
   }, []);
 
+  const handleFeatureClick = useCallback((featureId: string, index: number, e: React.MouseEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      // Toggle selection (multi-select)
+      const isSelected = selectedIds.includes(featureId);
+      if (isSelected) {
+        select(selectedIds.filter((id) => id !== featureId));
+      } else {
+        select([...selectedIds, featureId]);
+      }
+      setLastClickedIndex(index);
+    } else if (e.shiftKey && lastClickedIndex !== null) {
+      // Range select from last clicked to current
+      const start = Math.min(lastClickedIndex, index);
+      const end = Math.max(lastClickedIndex, index);
+      const rangeIds = filteredFeatures.slice(start, end + 1).map((f) => f.id);
+      select([...selectedIds.filter((id) => !rangeIds.includes(id)), ...rangeIds]);
+      setLastClickedIndex(index);
+    } else {
+      // Normal click — single select
+      select([featureId]);
+      setLastClickedIndex(index);
+    }
+  }, [selectedIds, select, lastClickedIndex, filteredFeatures]);
+
   const handleContextMenu = useCallback((e: React.MouseEvent, featureId: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -89,15 +123,30 @@ export function FeatureTree() {
     <div style={styles.panel}>
       <div style={styles.header}>
         <span style={styles.title}>Feature Tree</span>
-        <span style={styles.count}>{features.length}</span>
+        <div style={styles.headerRight}>
+          <span style={styles.count}>{filteredFeatures.length}</span>
+          {selectedIds.length > 1 && (
+            <span style={styles.selectedCount}>{selectedIds.length} selected</span>
+          )}
+        </div>
+      </div>
+      <div style={styles.searchWrap}>
+        <input
+          style={styles.searchInput}
+          placeholder="Search features..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
       </div>
       <div style={styles.list}>
-        {features.length === 0 && (
+        {filteredFeatures.length === 0 && (
           <div style={styles.empty}>
-            No features yet. Use the toolbar to create shapes.
+            {features.length === 0
+              ? 'No features yet. Use the toolbar to create shapes.'
+              : `No features match "${searchQuery}"`}
           </div>
         )}
-        {features.map((feature, index) => (
+        {filteredFeatures.map((feature, index) => (
           <div
             key={feature.id}
             draggable
@@ -107,7 +156,7 @@ export function FeatureTree() {
               ...(dragOverIndex === index ? styles.dragOver : {}),
               ...(feature.suppressed ? styles.suppressedItem : {}),
             }}
-            onClick={() => select([feature.id])}
+            onClick={(e) => handleFeatureClick(feature.id, index, e)}
             onDoubleClick={() => startEditing(feature.id, feature.name)}
             onDragStart={(e) => handleDragStart(e, feature.id)}
             onDragOver={(e) => handleDragOver(e, index)}
@@ -291,6 +340,33 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#334155',
     padding: '1px 6px',
     borderRadius: 10,
+  },
+  headerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+  },
+  selectedCount: {
+    fontSize: 10,
+    color: '#3b82f6',
+    background: 'rgba(59, 130, 246, 0.12)',
+    padding: '1px 6px',
+    borderRadius: 10,
+  },
+  searchWrap: {
+    padding: '0 4px',
+    borderBottom: '1px solid #334155',
+  },
+  searchInput: {
+    width: '100%',
+    background: '#0f172a',
+    border: '1px solid #334155',
+    borderRadius: 4,
+    padding: '5px 8px',
+    fontSize: 12,
+    color: '#e2e8f0',
+    outline: 'none',
+    boxSizing: 'border-box',
   },
   list: {
     flex: 1,
