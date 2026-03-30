@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid, GizmoHelper, GizmoViewport } from '@react-three/drei';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { Scene } from './Scene';
 import { CameraController } from './CameraController';
 import { SectionPlane } from './SectionPlane';
@@ -36,6 +37,14 @@ export function Viewport() {
       <MeasureLine />
       <TransformGizmo />
       <DimensionAnnotations />
+      <EffectComposer>
+        <Bloom
+          intensity={0.3}
+          luminanceThreshold={0.6}
+          luminanceSmoothing={0.3}
+          mipmapBlur
+        />
+      </EffectComposer>
       <OrbitControls makeDefault />
       {showGrid && (
         <Grid

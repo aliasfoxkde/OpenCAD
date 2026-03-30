@@ -1,10 +1,49 @@
 import { useCADStore } from '../../stores/cad-store';
 import { useViewStore } from '../../stores/view-store';
-import { useMemo, useRef, useCallback } from 'react';
+import { useMemo, useRef, useCallback, useEffect } from 'react';
+import { useFrame } from '@react-three/fiber';
 import type { ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { booleanTwo } from '../../cad/kernel/csg-boolean';
 import { getConsumedFeatureIds } from '../../lib/feature-to-mesh';
+
+/** Selected mesh emissive color for glow effect */
+const SELECTED_EMISSIVE = '#3b82f6';
+const SELECTED_EMISSIVE_INTENSITY = 0.15;
+const NON_SELECTED_EMISSIVE_INTENSITY = 0;
+
+/**
+ * Hook that smoothly lerps emissive intensity on the material
+ * when selection state changes.
+ */
+function useSelectionGlow(
+  meshRef: React.RefObject<THREE.Mesh | null>,
+  selected: boolean,
+) {
+  const targetIntensity = selected ? SELECTED_EMISSIVE_INTENSITY : NON_SELECTED_EMISSIVE_INTENSITY;
+  const currentIntensity = useRef(selected ? SELECTED_EMISSIVE_INTENSITY : NON_SELECTED_EMISSIVE_INTENSITY);
+
+  useFrame(() => {
+    if (!meshRef.current) return;
+    const material = meshRef.current.material;
+    if (Array.isArray(material)) return;
+    if (!(material instanceof THREE.MeshStandardMaterial)) return;
+
+    // Lerp toward target
+    currentIntensity.current += (targetIntensity - currentIntensity.current) * 0.1;
+    material.emissiveIntensity = currentIntensity.current;
+    if (currentIntensity.current > 0.001) {
+      material.emissive.set(SELECTED_EMISSIVE);
+    } else {
+      material.emissive.set('#000000');
+    }
+  });
+
+  // Snap immediately on mount
+  useEffect(() => {
+    currentIntensity.current = targetIntensity;
+  }, [targetIntensity]);
+}
 
 /** Distance threshold (pixels) to distinguish click from drag */
 const CLICK_THRESHOLD = 5;
@@ -87,6 +126,8 @@ interface FeatureMeshProps {
 function FeatureMesh({ featureId, type, params, selected, suppressed }: FeatureMeshProps) {
   const displayMode = useViewStore((s) => s.displayMode);
   const pointerDownPos = useRef<{ x: number; y: number } | null>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
+  useSelectionGlow(meshRef, selected);
 
   if (suppressed) return null;
 
@@ -136,6 +177,7 @@ function FeatureMesh({ featureId, type, params, selected, suppressed }: FeatureM
 
   return (
     <mesh
+      ref={meshRef}
       geometry={geometry}
       position={[posX, posY, posZ]}
       castShadow
@@ -146,6 +188,8 @@ function FeatureMesh({ featureId, type, params, selected, suppressed }: FeatureM
     >
       <meshStandardMaterial
         color={selected ? '#3b82f6' : '#64748b'}
+        emissive={selected ? SELECTED_EMISSIVE : '#000000'}
+        emissiveIntensity={selected ? SELECTED_EMISSIVE_INTENSITY : 0}
         transparent={selected}
         opacity={selected ? 0.85 : 1}
         wireframe={isWireframe}
@@ -316,6 +360,8 @@ function PatternInstance({
   showEdges: boolean;
 }) {
   const pointerDownPos = useRef<{ x: number; y: number } | null>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
+  useSelectionGlow(meshRef, selected);
 
   const handlePointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
@@ -348,6 +394,7 @@ function PatternInstance({
 
   return (
     <mesh
+      ref={meshRef}
       geometry={geometry}
       position={refPos}
       matrixAutoUpdate={false}
@@ -360,6 +407,8 @@ function PatternInstance({
     >
       <meshStandardMaterial
         color={selected ? '#3b82f6' : '#64748b'}
+        emissive={selected ? SELECTED_EMISSIVE : '#000000'}
+        emissiveIntensity={selected ? SELECTED_EMISSIVE_INTENSITY : 0}
         transparent={selected}
         opacity={selected ? 0.85 : 1}
         wireframe={isWireframe}
@@ -390,6 +439,8 @@ function ShellMesh({ feature, allFeatures, selected }: ShellMeshProps) {
 
   const paramsKey = JSON.stringify(feature.parameters);
   const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
+  const meshRef = useRef<THREE.Mesh>(null);
+  useSelectionGlow(meshRef, selected);
 
   const geometry = useMemo(() => {
     const targetRef = feature.parameters.targetRef as string;
@@ -471,6 +522,7 @@ function ShellMesh({ feature, allFeatures, selected }: ShellMeshProps) {
 
   return (
     <mesh
+      ref={meshRef}
       geometry={geometry}
       castShadow
       receiveShadow
@@ -480,6 +532,8 @@ function ShellMesh({ feature, allFeatures, selected }: ShellMeshProps) {
     >
       <meshStandardMaterial
         color={selected ? '#3b82f6' : '#64748b'}
+        emissive={selected ? SELECTED_EMISSIVE : '#000000'}
+        emissiveIntensity={selected ? SELECTED_EMISSIVE_INTENSITY : 0}
         transparent={selected}
         opacity={selected ? 0.85 : 1}
         wireframe={isWireframe}
@@ -510,6 +564,8 @@ function BooleanMesh({ feature, allFeatures, selected }: BooleanMeshProps) {
 
   const paramsKey = JSON.stringify(feature.parameters);
   const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
+  const meshRef = useRef<THREE.Mesh>(null);
+  useSelectionGlow(meshRef, selected);
 
   const geometry = useMemo(() => {
     if (feature.type === 'boolean_union') {
@@ -633,6 +689,7 @@ function BooleanMesh({ feature, allFeatures, selected }: BooleanMeshProps) {
 
   return (
     <mesh
+      ref={meshRef}
       geometry={geometry}
       castShadow
       receiveShadow
@@ -642,6 +699,8 @@ function BooleanMesh({ feature, allFeatures, selected }: BooleanMeshProps) {
     >
       <meshStandardMaterial
         color={selected ? '#3b82f6' : '#64748b'}
+        emissive={selected ? SELECTED_EMISSIVE : '#000000'}
+        emissiveIntensity={selected ? SELECTED_EMISSIVE_INTENSITY : 0}
         transparent={selected}
         opacity={selected ? 0.85 : 1}
         wireframe={isWireframe}
