@@ -9,10 +9,20 @@ import { exportToFormat, downloadExport, serializeToOCAD, deserializeFromOCAD } 
 import { useCADStore } from '@/stores/cad-store';
 import { featuresToMeshes } from '@/lib/feature-to-mesh';
 import { useToast } from '@/components/ui/Toast';
+import { confirm } from '@/components/ui/ConfirmDialog';
 import { nanoid } from 'nanoid';
 
 /** Create a new document and switch to it */
 export async function handleNewDocument(): Promise<void> {
+  if (useCADStore.getState().dirty) {
+    const ok = await confirm({
+      title: 'Unsaved changes',
+      message: 'You have unsaved changes. Create a new document anyway?',
+      confirmLabel: 'Discard',
+      destructive: true,
+    });
+    if (!ok) return;
+  }
   const result = await createDocument({ name: 'Untitled' });
   if (result.success && result.data) {
     useCADStore.getState().loadFeatures(result.data.features);
@@ -25,6 +35,15 @@ export async function handleNewDocument(): Promise<void> {
 
 /** Open a file picker for .ocad files */
 export async function handleOpenDocument(): Promise<void> {
+  if (useCADStore.getState().dirty) {
+    const ok = await confirm({
+      title: 'Unsaved changes',
+      message: 'You have unsaved changes. Open another document anyway?',
+      confirmLabel: 'Discard',
+      destructive: true,
+    });
+    if (!ok) return;
+  }
   const { openFile } = await import('@/cad/io/project');
   try {
     const { data, name } = await openFile('.ocad,.json');
@@ -57,6 +76,7 @@ export async function handleSaveDocument(): Promise<boolean> {
     thumbnail: captureThumbnail() ?? undefined,
   });
   if (result.success) {
+    useCADStore.setState({ dirty: false });
     useToast().addToast(`Saved ${state.documentName}`, 'success');
   } else {
     useToast().addToast('Failed to save document', 'error');
