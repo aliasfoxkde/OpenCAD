@@ -170,6 +170,7 @@ export function AppLayout() {
       toggleGrid: () => useViewStore.getState().toggleGrid(),
       toggleWireframe: () => useViewStore.getState().toggleWireframe(),
       fitView: () => useViewStore.getState().requestFitView(),
+      zoomToSelection: () => useViewStore.getState().requestZoomToSelection(),
       zoomIn: () => zoomCamera('in'),
       zoomOut: () => zoomCamera('out'),
       save: () => { handleSaveDocument(); },

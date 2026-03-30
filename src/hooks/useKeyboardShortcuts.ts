@@ -154,6 +154,7 @@ export interface CommandActions {
   toggleGrid?: () => void;
   toggleWireframe?: () => void;
   fitView?: () => void;
+  zoomToSelection?: () => void;
   zoomIn?: () => void;
   zoomOut?: () => void;
   newDocument?: () => void;
@@ -191,6 +192,7 @@ export function registerStandardCommands(actions: CommandActions): void {
     ['view.toggle_grid', 'Toggle Grid', 'view', 'G', actions.toggleGrid],
     ['view.toggle_wireframe', 'Toggle Wireframe', 'view', 'W', actions.toggleWireframe],
     ['view.fit', 'Fit View', 'view', 'F', actions.fitView],
+    ['view.zoom_selection', 'Zoom to Selection', 'view', 'Shift+F', actions.zoomToSelection],
     ['view.zoom_in', 'Zoom In', 'view', 'Ctrl+=', actions.zoomIn],
     ['view.zoom_out', 'Zoom Out', 'view', 'Ctrl+-', actions.zoomOut],
     ['tools.command_palette', 'Command Palette', 'tools', 'Ctrl+K', actions.toggleCommandPalette],
