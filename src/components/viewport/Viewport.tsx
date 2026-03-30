@@ -6,6 +6,7 @@ import { CameraController } from './CameraController';
 import { SectionPlane } from './SectionPlane';
 import { MeasureHelper, MeasureLine } from './MeasureHelper';
 import { TransformGizmo } from './TransformGizmo';
+import { DimensionAnnotations } from './DimensionAnnotation';
 import { useViewStore } from '../../stores/view-store';
 import { useCADStore } from '../../stores/cad-store';
 
@@ -34,6 +35,7 @@ export function Viewport() {
       <MeasureHelper />
       <MeasureLine />
       <TransformGizmo />
+      <DimensionAnnotations />
       <OrbitControls makeDefault />
       {showGrid && (
         <Grid

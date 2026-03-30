@@ -1,4 +1,5 @@
 import type { FeatureNode, ToolType, DisplayMode, ViewportLayout, SelectionTarget } from './cad';
+import type { DimensionAnnotation } from '../lib/annotations';
 
 export interface CADStoreState {
   documentId: string | null;
@@ -49,6 +50,7 @@ export interface ViewStoreState {
   measurePoints: Array<[number, number, number]>;
   snapToGrid: boolean;
   gridSnapSize: number;
+  annotations: DimensionAnnotation[];
 }
 
 export interface ViewStoreActions {
@@ -70,6 +72,9 @@ export interface ViewStoreActions {
   clearMeasurePoints: () => void;
   toggleSnap: () => void;
   setGridSnapSize: (size: number) => void;
+  addAnnotation: (annotation: DimensionAnnotation) => void;
+  removeAnnotation: (id: string) => void;
+  clearAnnotations: () => void;
 }
 
 export interface UIStoreState {

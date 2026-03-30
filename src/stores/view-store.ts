@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { ViewStoreState, ViewStoreActions } from '../types/store';
+import type { DimensionAnnotation } from '../lib/annotations';
 
 export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => ({
   displayMode: 'shaded_edges',
@@ -22,6 +23,7 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
   measurePoints: [],
   snapToGrid: false,
   gridSnapSize: 0.5,
+  annotations: [],
 
   setDisplayMode: (mode) => set({ displayMode: mode }),
   setViewportLayout: (layout) => set({ viewportLayout: layout }),
@@ -49,4 +51,11 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
   clearMeasurePoints: () => set({ measurePoints: [] }),
   toggleSnap: () => set((s) => ({ snapToGrid: !s.snapToGrid })),
   setGridSnapSize: (size) => set({ gridSnapSize: size }),
+  addAnnotation: (annotation: DimensionAnnotation) => set((s) => ({
+    annotations: [...s.annotations, annotation],
+  })),
+  removeAnnotation: (id: string) => set((s) => ({
+    annotations: s.annotations.filter((a) => a.id !== id),
+  })),
+  clearAnnotations: () => set({ annotations: [] }),
 }));

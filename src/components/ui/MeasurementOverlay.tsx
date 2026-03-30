@@ -6,6 +6,7 @@
 import { useMemo } from 'react';
 import { useCADStore } from '../../stores/cad-store';
 import { useViewStore } from '../../stores/view-store';
+import { createDistanceAnnotation } from '../../lib/annotations';
 
 export function MeasurementOverlay() {
   const activeTool = useCADStore((s) => s.activeTool);
@@ -13,6 +14,7 @@ export function MeasurementOverlay() {
   const selectedIds = useCADStore((s) => s.selectedIds);
   const measurePoints = useViewStore((s) => s.measurePoints);
   const clearMeasurePoints = useViewStore((s) => s.clearMeasurePoints);
+  const addAnnotation = useViewStore((s) => s.addAnnotation);
 
   if (activeTool !== 'measure') return null;
 
@@ -34,7 +36,20 @@ export function MeasurementOverlay() {
       <div style={styles.headerRow}>
         <div style={styles.header}>Measurements</div>
         {hasPointMeasure && (
-          <button style={styles.clearBtn} onClick={clearMeasurePoints}>Clear</button>
+          <>
+            <button
+              style={styles.pinBtn}
+              onClick={() => {
+                const a = measurePoints[0]!;
+                const b = measurePoints[1]!;
+                addAnnotation(createDistanceAnnotation(a, b));
+              }}
+              title="Pin this measurement as a persistent annotation"
+            >
+              Pin
+            </button>
+            <button style={styles.clearBtn} onClick={clearMeasurePoints}>Clear</button>
+          </>
         )}
       </div>
       {hasPointMeasure && (
@@ -254,6 +269,16 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 3,
     padding: '1px 6px',
     cursor: 'pointer',
+  },
+  pinBtn: {
+    fontSize: 9,
+    color: '#22d3ee',
+    background: 'transparent',
+    border: '1px solid #22d3ee40',
+    borderRadius: 3,
+    padding: '1px 6px',
+    cursor: 'pointer',
+    marginRight: 4,
   },
   hint: {
     fontSize: 11,
