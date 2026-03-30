@@ -13,6 +13,12 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
   zoomToSelectionRequested: 0,
   leftPanelWidth: 220,
   rightPanelWidth: 260,
+  sectionPlane: {
+    enabled: false,
+    position: [0, 0, 0] as [number, number, number],
+    normal: 'y',
+    offset: 0,
+  },
 
   setDisplayMode: (mode) => set({ displayMode: mode }),
   setViewportLayout: (layout) => set({ viewportLayout: layout }),
@@ -25,4 +31,13 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
   requestZoomToSelection: () => set((s) => ({ zoomToSelectionRequested: s.zoomToSelectionRequested + 1 })),
   setLeftPanelWidth: (width) => set({ leftPanelWidth: width }),
   setRightPanelWidth: (width) => set({ rightPanelWidth: width }),
+  toggleSectionPlane: () => set((s) => ({
+    sectionPlane: { ...s.sectionPlane, enabled: !s.sectionPlane.enabled },
+  })),
+  setSectionPlaneNormal: (normal) => set((s) => ({
+    sectionPlane: { ...s.sectionPlane, normal },
+  })),
+  setSectionPlaneOffset: (offset) => set((s) => ({
+    sectionPlane: { ...s.sectionPlane, offset },
+  })),
 }));

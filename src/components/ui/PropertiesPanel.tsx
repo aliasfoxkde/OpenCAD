@@ -1,4 +1,5 @@
 import { useCADStore } from '../../stores/cad-store';
+import { useViewStore } from '../../stores/view-store';
 import { getDefaultParameters, getFeatureDefinition } from '../../cad/features';
 import { nanoid } from 'nanoid';
 import type { ParameterDef } from '../../cad/features';
@@ -29,6 +30,10 @@ export function PropertiesPanel() {
   const features = useCADStore((s) => s.features);
   const updateFeature = useCADStore((s) => s.updateFeature);
   const addFeatureAndSelect = useCADStore((s) => s.addFeatureAndSelect);
+  const sectionPlane = useViewStore((s) => s.sectionPlane);
+  const toggleSectionPlane = useViewStore((s) => s.toggleSectionPlane);
+  const setSectionPlaneNormal = useViewStore((s) => s.setSectionPlaneNormal);
+  const setSectionPlaneOffset = useViewStore((s) => s.setSectionPlaneOffset);
 
   const selectedFeature = features.find((f) => selectedIds.includes(f.id));
   const featureDef = selectedFeature ? getFeatureDefinition(selectedFeature.type) : undefined;
@@ -84,6 +89,54 @@ export function PropertiesPanel() {
             </button>
           ))}
         </div>
+      </div>
+      {/* Section Plane controls */}
+      <div style={styles.section}>
+        <div style={styles.sectionTitle}>Section Plane</div>
+        <div style={styles.paramRow}>
+          <label style={styles.paramLabel}>Enabled</label>
+          <button
+            style={{
+              ...styles.suppressBtn,
+              background: sectionPlane.enabled ? '#22d3ee' : '#334155',
+              color: sectionPlane.enabled ? '#0f172a' : '#f1f5f9',
+            }}
+            onClick={toggleSectionPlane}
+          >
+            {sectionPlane.enabled ? 'On' : 'Off'}
+          </button>
+        </div>
+        {sectionPlane.enabled && (
+          <>
+            <div style={styles.paramRow}>
+              <label style={styles.paramLabel}>Normal</label>
+              <select
+                style={styles.paramSelect}
+                value={sectionPlane.normal}
+                onChange={(e) => setSectionPlaneNormal(e.target.value as 'x' | 'y' | 'z')}
+              >
+                <option value="x">X</option>
+                <option value="y">Y</option>
+                <option value="z">Z</option>
+              </select>
+            </div>
+            <div style={styles.paramRow}>
+              <label style={styles.paramLabel}>Offset</label>
+              <input
+                type="range"
+                style={{ ...styles.paramInput, padding: 0, cursor: 'pointer' }}
+                value={sectionPlane.offset}
+                min={-20}
+                max={20}
+                step={0.1}
+                onChange={(e) => setSectionPlaneOffset(parseFloat(e.target.value))}
+              />
+              <span style={{ fontSize: 10, color: '#94a3b8', width: 36, textAlign: 'right' }}>
+                {sectionPlane.offset.toFixed(1)}
+              </span>
+            </div>
+          </>
+        )}
       </div>
       {selectedFeature && featureDef && (
         <div style={styles.section}>

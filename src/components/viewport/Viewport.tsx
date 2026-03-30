@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import { Scene } from './Scene';
 import { CameraController } from './CameraController';
+import { SectionPlane } from './SectionPlane';
 import { useViewStore } from '../../stores/view-store';
 import { useCADStore } from '../../stores/cad-store';
 
@@ -27,6 +28,7 @@ export function Viewport() {
     >
       <CameraController />
       <Scene />
+      <SectionPlane />
       <OrbitControls makeDefault />
       {showGrid && (
         <Grid

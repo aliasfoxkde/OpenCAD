@@ -40,6 +40,12 @@ export interface ViewStoreState {
   zoomToSelectionRequested: number;
   leftPanelWidth: number;
   rightPanelWidth: number;
+  sectionPlane: {
+    enabled: boolean;
+    position: [number, number, number];
+    normal: 'x' | 'y' | 'z';
+    offset: number;
+  };
 }
 
 export interface ViewStoreActions {
@@ -54,6 +60,9 @@ export interface ViewStoreActions {
   requestZoomToSelection: () => void;
   setLeftPanelWidth: (width: number) => void;
   setRightPanelWidth: (width: number) => void;
+  toggleSectionPlane: () => void;
+  setSectionPlaneNormal: (normal: 'x' | 'y' | 'z') => void;
+  setSectionPlaneOffset: (offset: number) => void;
 }
 
 export interface UIStoreState {

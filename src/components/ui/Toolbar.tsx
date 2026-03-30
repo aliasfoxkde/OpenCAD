@@ -1,4 +1,5 @@
 import { useCADStore } from '../../stores/cad-store';
+import { useViewStore } from '../../stores/view-store';
 import { getDefaultParameters } from '../../cad/features';
 import { nanoid } from 'nanoid';
 import { DisplayModeToggle } from './DisplayModeToggle';
@@ -46,9 +47,14 @@ export function Toolbar() {
   const features = useCADStore((s) => s.features);
 
   const handleToolClick = (toolId: ToolType) => {
-    const comingSoon = ['fillet', 'chamfer', 'section'] as ToolType[];
+    const comingSoon = ['fillet', 'chamfer'] as ToolType[];
     if (comingSoon.includes(toolId)) {
       useToast().addToast(`${toolId.charAt(0).toUpperCase() + toolId.slice(1)} tool coming soon`, 'warning');
+      return;
+    }
+
+    if (toolId === 'section') {
+      useViewStore.getState().toggleSectionPlane();
       return;
     }
 
