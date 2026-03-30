@@ -3,12 +3,13 @@
  * and share/join/leave actions for real-time multi-user editing.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useCollabStore } from '../../stores/collab-store';
 import { useCADStore } from '../../stores/cad-store';
 import { getCollaborationSync, generateRoomId } from '../../cad/collab/webrtc-sync';
 import { startCollabSync, stopCollabSync } from '../../cad/collab/crdt-cad-bridge';
 import { addFeature as addCRDTFeature, closeCRDTDocument } from '../../cad/collab/crdt-store';
+import { useToast } from './Toast';
 
 export function CollabPanel() {
   const connectionState = useCollabStore((s) => s.connectionState);
@@ -24,8 +25,10 @@ export function CollabPanel() {
   const [joinId, setJoinId] = useState('');
   const [showJoin, setShowJoin] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { addToast } = useToast();
 
   const sync = getCollaborationSync();
+  const prevPeerCount = useRef(0);
 
   // Sync collaboration state changes to the store
   useEffect(() => {
@@ -42,10 +45,22 @@ export function CollabPanel() {
             lastSeen: Date.now(),
           })),
         );
+        // Notify when a new peer joins
+        if (state.peers.length > prevPeerCount.current) {
+          const joined = state.peers.slice(prevPeerCount.current);
+          for (const p of joined) {
+            addToast(`${p.displayName} joined`, 'info');
+          }
+        }
+        // Notify when a peer leaves
+        if (state.peers.length < prevPeerCount.current) {
+          addToast('A peer disconnected', 'warning');
+        }
+        prevPeerCount.current = state.peers.length;
       }
     });
     return unsub;
-  }, [setConnectionState]);
+  }, [setConnectionState, addToast]);
 
   const handleShare = useCallback(async () => {
     try {

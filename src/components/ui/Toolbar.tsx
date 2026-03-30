@@ -2,6 +2,7 @@ import { useCADStore } from '../../stores/cad-store';
 import { getDefaultParameters } from '../../cad/features';
 import { nanoid } from 'nanoid';
 import { DisplayModeToggle } from './DisplayModeToggle';
+import { useToast } from './Toast';
 import type { ToolType, FeatureType } from '../../types/cad';
 
 /** Map primitive ToolType to feature-registry type */
@@ -36,6 +37,12 @@ export function Toolbar() {
   const features = useCADStore((s) => s.features);
 
   const handleToolClick = (toolId: ToolType) => {
+    const comingSoon = ['fillet', 'chamfer', 'section'] as ToolType[];
+    if (comingSoon.includes(toolId)) {
+      useToast().addToast(`${toolId.charAt(0).toUpperCase() + toolId.slice(1)} tool coming soon`, 'warning');
+      return;
+    }
+
     if (primitiveTools.includes(toolId)) {
       const featureType = primitiveTypeMap[toolId];
       if (!featureType) return;
