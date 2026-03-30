@@ -133,11 +133,7 @@ describe('Toast', () => {
     expect(screen.getByText('Remove')).toBeDefined();
 
     act(() => {
-      // Remove the "Remove" toast — we know its ID format is toast_N
-      const removeEl = screen.getByText('Remove').closest('[style]')!;
-      const id = removeEl.getAttribute('data-toastid') ?? '';
-      // Since we can't easily get the ID from the DOM, test via clearAll approach
-      // Instead, test the removeToast directly by finding it
+      // Test removeToast with a non-existent ID — should not affect existing toasts
       getToast().removeToast('toast_999');
     });
     // The "Remove" toast should still exist since we removed a non-existent ID
