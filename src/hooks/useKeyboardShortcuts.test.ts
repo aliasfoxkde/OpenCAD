@@ -288,5 +288,31 @@ describe('Keyboard Shortcuts', () => {
       handleKeyEvent(event);
       expect(paletteOpened).toBe(true);
     });
+
+    it('should register zoom-to-selection with Shift+F', () => {
+      let zoomed = false;
+      registerStandardCommands({ zoomToSelection: () => { zoomed = true; } });
+
+      const event = createKeyEvent('f', { shiftKey: true });
+      handleKeyEvent(event);
+      expect(zoomed).toBe(true);
+    });
+
+    it('should register all camera view shortcuts', () => {
+      const triggered: string[] = [];
+      registerStandardCommands({
+        cameraFront: () => triggered.push('front'),
+        cameraTop: () => triggered.push('top'),
+        cameraRight: () => triggered.push('right'),
+        cameraIso: () => triggered.push('iso'),
+      });
+
+      handleKeyEvent(createKeyEvent('1'));
+      handleKeyEvent(createKeyEvent('2'));
+      handleKeyEvent(createKeyEvent('3'));
+      handleKeyEvent(createKeyEvent('0'));
+
+      expect(triggered).toEqual(['front', 'top', 'right', 'iso']);
+    });
   });
 });
