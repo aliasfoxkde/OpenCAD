@@ -7,10 +7,10 @@
 import { useViewStore } from '../../stores/view-store';
 import type { DisplayMode } from '../../types/cad';
 
-const DISPLAY_MODES: { mode: DisplayMode; label: string; icon: string }[] = [
-  { mode: 'wireframe', label: 'Wireframe', icon: '\u25A1' },
-  { mode: 'shaded', label: 'Shaded', icon: '\u25A0' },
-  { mode: 'shaded_edges', label: 'Shaded+Edges', icon: '\u25A2' },
+const DISPLAY_MODES: { mode: DisplayMode; label: string; icon: string; shortcut: string }[] = [
+  { mode: 'shaded_edges', label: 'Shaded+Edges', icon: '\u25A2', shortcut: '7' },
+  { mode: 'shaded', label: 'Shaded', icon: '\u25A0', shortcut: '8' },
+  { mode: 'wireframe', label: 'Wireframe', icon: '\u25A1', shortcut: '9' },
 ];
 
 export function DisplayModeToggle() {
@@ -26,7 +26,7 @@ export function DisplayModeToggle() {
   return (
     <div style={styles.container}>
       <div style={styles.row}>
-        {DISPLAY_MODES.map(({ mode, label, icon }) => (
+        {DISPLAY_MODES.map(({ mode, label, icon, shortcut }) => (
           <button
             key={mode}
             style={{
@@ -34,7 +34,7 @@ export function DisplayModeToggle() {
               ...(displayMode === mode ? styles.modeBtnActive : {}),
             }}
             onClick={() => setDisplayMode(mode)}
-            title={label}
+            title={`${label} (${shortcut})`}
           >
             <span style={styles.modeIcon}>{icon}</span>
             <span style={styles.modeLabel}>{label}</span>

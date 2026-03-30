@@ -54,6 +54,8 @@ export function StatusBar() {
   const cameraPreset = useViewStore((s) => s.cameraPreset);
   const displayMode = useViewStore((s) => s.displayMode);
   const showGrid = useViewStore((s) => s.showGrid);
+  const snapToGrid = useViewStore((s) => s.snapToGrid);
+  const gridSnapSize = useViewStore((s) => s.gridSnapSize);
   const leftPanelOpen = useUIStore((s) => s.leftPanelOpen);
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel);
@@ -89,6 +91,7 @@ export function StatusBar() {
         {displayMode === 'wireframe' ? 'Wire' : displayMode === 'shaded' ? 'Shaded' : 'Shaded+Edges'}
       </span>
       {!showGrid && <span style={styles.dimItem}>Grid off</span>}
+      {snapToGrid && <span style={styles.snapIndicator}>Snap: {gridSnapSize}mm</span>}
       {canUndo && <span style={styles.dimItem}>Ctrl+Z</span>}
       {canRedo && <span style={styles.dimItem}>Ctrl+Shift+Z</span>}
       {cameraPreset && <span style={styles.indicator}>{cameraPreset}</span>}
@@ -147,6 +150,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
   indicator: {
     color: '#3b82f6',
+    fontSize: 10,
+    marginRight: 8,
+  },
+  snapIndicator: {
+    color: '#22d3ee',
     fontSize: 10,
     marginRight: 8,
   },

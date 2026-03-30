@@ -339,6 +339,9 @@ export function AppLayout() {
       toggleCommandPalette,
       toggleGrid: () => useViewStore.getState().toggleGrid(),
       toggleWireframe: () => useViewStore.getState().toggleWireframe(),
+      setDisplayModeShadedEdges: () => useViewStore.getState().setDisplayMode('shaded_edges'),
+      setDisplayModeShaded: () => useViewStore.getState().setDisplayMode('shaded'),
+      setDisplayModeWireframe: () => useViewStore.getState().setDisplayMode('wireframe'),
       fitView: () => useViewStore.getState().requestFitView(),
       zoomToSelection: () => useViewStore.getState().requestZoomToSelection(),
       zoomIn: () => zoomCamera('in'),
@@ -395,6 +398,7 @@ export function AppLayout() {
       cameraRight: () => handleSetCamera('right'),
       cameraLeft: () => handleSetCamera('left'),
       cameraIso: () => handleSetCamera('iso'),
+      toggleSnap: () => useViewStore.getState().toggleSnap(),
     });
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -738,6 +742,7 @@ function MenuBar({
         { type: 'item', label: 'Shaded + Edges', action: () => useViewStore.getState().setDisplayMode('shaded_edges') },
         { type: 'separator' },
         { type: 'item', label: 'Toggle Grid', shortcut: 'G', action: () => useViewStore.getState().toggleGrid() },
+        { type: 'item', label: 'Toggle Snap', shortcut: 'Shift+G', action: () => useViewStore.getState().toggleSnap() },
         { type: 'item', label: 'Toggle Wireframe', shortcut: 'W', action: () => useViewStore.getState().toggleWireframe() },
         { type: 'item', label: 'Toggle Shadows', action: () => useViewStore.getState().toggleShadows() },
         { type: 'item', label: 'Fit View', shortcut: 'F', action: () => useViewStore.getState().requestFitView() },

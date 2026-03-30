@@ -153,6 +153,9 @@ export interface CommandActions {
   escape?: () => void;
   toggleGrid?: () => void;
   toggleWireframe?: () => void;
+  setDisplayModeShadedEdges?: () => void;
+  setDisplayModeShaded?: () => void;
+  setDisplayModeWireframe?: () => void;
   fitView?: () => void;
   zoomToSelection?: () => void;
   zoomIn?: () => void;
@@ -173,6 +176,7 @@ export interface CommandActions {
   cameraRight?: () => void;
   cameraLeft?: () => void;
   cameraIso?: () => void;
+  toggleSnap?: () => void;
 }
 
 /** Register all standard CAD commands */
@@ -191,6 +195,9 @@ export function registerStandardCommands(actions: CommandActions): void {
     ['edit.duplicate', 'Duplicate', 'edit', 'Ctrl+D', actions.duplicate],
     ['view.toggle_grid', 'Toggle Grid', 'view', 'G', actions.toggleGrid],
     ['view.toggle_wireframe', 'Toggle Wireframe', 'view', 'W', actions.toggleWireframe],
+    ['view.shaded_edges', 'Shaded + Edges', 'view', '7', actions.setDisplayModeShadedEdges],
+    ['view.shaded', 'Shaded', 'view', '8', actions.setDisplayModeShaded],
+    ['view.wireframe_mode', 'Wireframe', 'view', '9', actions.setDisplayModeWireframe],
     ['view.fit', 'Fit View', 'view', 'F', actions.fitView],
     ['view.zoom_selection', 'Zoom to Selection', 'view', 'Shift+F', actions.zoomToSelection],
     ['view.zoom_in', 'Zoom In', 'view', 'Ctrl+=', actions.zoomIn],
@@ -205,6 +212,7 @@ export function registerStandardCommands(actions: CommandActions): void {
     ['view.camera_right', 'Right View', 'view', '3', actions.cameraRight],
     ['view.camera_left', 'Left View', 'view', '6', actions.cameraLeft],
     ['view.camera_iso', 'Isometric View', 'view', '0', actions.cameraIso],
+    ['view.toggle_snap', 'Toggle Snap', 'view', 'Shift+G', actions.toggleSnap],
     ['general.escape', 'Cancel / Escape', 'help', 'Escape', actions.escape],
   ];
 

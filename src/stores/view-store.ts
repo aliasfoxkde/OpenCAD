@@ -20,6 +20,8 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
     offset: 0,
   },
   measurePoints: [],
+  snapToGrid: false,
+  gridSnapSize: 0.5,
 
   setDisplayMode: (mode) => set({ displayMode: mode }),
   setViewportLayout: (layout) => set({ viewportLayout: layout }),
@@ -45,4 +47,6 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
     measurePoints: [...s.measurePoints.slice(-1), point],
   })),
   clearMeasurePoints: () => set({ measurePoints: [] }),
+  toggleSnap: () => set((s) => ({ snapToGrid: !s.snapToGrid })),
+  setGridSnapSize: (size) => set({ gridSnapSize: size }),
 }));

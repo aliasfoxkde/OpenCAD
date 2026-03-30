@@ -2,17 +2,21 @@ import { useRef, useEffect, useCallback } from 'react';
 import { TransformControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCADStore } from '../../stores/cad-store';
+import { useViewStore } from '../../stores/view-store';
 
 /**
  * 3D Transform Gizmo — attaches to the selected feature's position
  * and allows drag-to-reposition via originX/Y/Z parameters.
  * Only visible when a single feature is selected and tool is 'select'.
+ * Snaps to grid when snap mode is enabled.
  */
 export function TransformGizmo() {
   const features = useCADStore((s) => s.features);
   const selectedIds = useCADStore((s) => s.selectedIds);
   const activeTool = useCADStore((s) => s.activeTool);
   const updateFeature = useCADStore((s) => s.updateFeature);
+  const snapToGrid = useViewStore((s) => s.snapToGrid);
+  const gridSnapSize = useViewStore((s) => s.gridSnapSize);
 
   const meshRef = useRef<THREE.Mesh>(null);
   const controlsRef = useRef<any>(null);
@@ -42,6 +46,11 @@ export function TransformGizmo() {
     }
   }, [posX, posY, posZ, isGizmoVisible]);
 
+  const snapValue = useCallback((v: number): number => {
+    if (!snapToGrid) return v;
+    return Math.round(v / gridSnapSize) * gridSnapSize;
+  }, [snapToGrid, gridSnapSize]);
+
   const handleObjectChange = useCallback(() => {
     if (!meshRef.current || !selectedFeature || !dragging.current) return;
 
@@ -49,12 +58,12 @@ export function TransformGizmo() {
     updateFeature(selectedFeature.id, {
       parameters: {
         ...selectedFeature.parameters,
-        originX: Math.round(pos.x * 1000) / 1000,
-        originY: Math.round(pos.y * 1000) / 1000,
-        originZ: Math.round(pos.z * 1000) / 1000,
+        originX: snapValue(pos.x),
+        originY: snapValue(pos.y),
+        originZ: snapValue(pos.z),
       },
     });
-  }, [selectedFeature, updateFeature]);
+  }, [selectedFeature, updateFeature, snapValue]);
 
   if (!isGizmoVisible) return null;
 

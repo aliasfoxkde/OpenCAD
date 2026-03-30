@@ -47,6 +47,8 @@ export interface ViewStoreState {
     offset: number;
   };
   measurePoints: Array<[number, number, number]>;
+  snapToGrid: boolean;
+  gridSnapSize: number;
 }
 
 export interface ViewStoreActions {
@@ -66,6 +68,8 @@ export interface ViewStoreActions {
   setSectionPlaneOffset: (offset: number) => void;
   addMeasurePoint: (point: [number, number, number]) => void;
   clearMeasurePoints: () => void;
+  toggleSnap: () => void;
+  setGridSnapSize: (size: number) => void;
 }
 
 export interface UIStoreState {
