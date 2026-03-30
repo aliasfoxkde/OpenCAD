@@ -20,25 +20,34 @@ const primitiveTypeMap: Partial<Record<ToolType, FeatureType>> = {
 /** Primitives that create features immediately */
 const primitiveTools: ToolType[] = ['box', 'cylinder', 'sphere', 'cone', 'torus', 'hole'];
 
-const tools: { id: ToolType; label: string; shortcut: string }[] = [
-  { id: 'select', label: 'Select', shortcut: 'V' },
-  { id: 'box', label: 'Box', shortcut: 'B' },
-  { id: 'cylinder', label: 'Cylinder', shortcut: 'C' },
-  { id: 'sphere', label: 'Sphere', shortcut: 'S' },
-  { id: 'cone', label: 'Cone', shortcut: '' },
-  { id: 'torus', label: 'Torus', shortcut: '' },
-  { id: 'hole', label: 'Hole', shortcut: 'H' },
-  { id: 'boolean_union', label: 'Union', shortcut: '' },
-  { id: 'boolean_subtract', label: 'Subtract', shortcut: '' },
-  { id: 'boolean_intersect', label: 'Intersect', shortcut: '' },
-  { id: 'fillet', label: 'Fillet', shortcut: '' },
-  { id: 'chamfer', label: 'Chamfer', shortcut: '' },
-  { id: 'pattern_linear', label: 'Lin Pattern', shortcut: '' },
-  { id: 'pattern_circular', label: 'Circ Pattern', shortcut: '' },
-  { id: 'mirror', label: 'Mirror', shortcut: '' },
-  { id: 'shell', label: 'Shell', shortcut: '' },
-  { id: 'measure', label: 'Measure', shortcut: 'M' },
-  { id: 'section', label: 'Section', shortcut: '' },
+type ToolItem = { kind: 'tool'; id: ToolType; label: string; shortcut: string; tooltip: string };
+type SeparatorItem = { kind: 'separator'; label: string };
+type ToolbarItem = ToolItem | SeparatorItem;
+
+const toolGroups: ToolbarItem[] = [
+  { kind: 'tool', id: 'select', label: 'Select', shortcut: 'V', tooltip: 'Select & move objects (V)' },
+  { kind: 'separator', label: 'Create' },
+  { kind: 'tool', id: 'box', label: 'Box', shortcut: 'B', tooltip: 'Create a box (B)' },
+  { kind: 'tool', id: 'cylinder', label: 'Cylinder', shortcut: 'C', tooltip: 'Create a cylinder (C)' },
+  { kind: 'tool', id: 'sphere', label: 'Sphere', shortcut: 'S', tooltip: 'Create a sphere (S)' },
+  { kind: 'tool', id: 'cone', label: 'Cone', shortcut: '', tooltip: 'Create a cone' },
+  { kind: 'tool', id: 'torus', label: 'Torus', shortcut: '', tooltip: 'Create a torus' },
+  { kind: 'tool', id: 'hole', label: 'Hole', shortcut: 'H', tooltip: 'Create a hole (H)' },
+  { kind: 'separator', label: 'Boolean' },
+  { kind: 'tool', id: 'boolean_union', label: 'Union', shortcut: '', tooltip: 'Union — merge bodies' },
+  { kind: 'tool', id: 'boolean_subtract', label: 'Subtract', shortcut: '', tooltip: 'Subtract — cut from body' },
+  { kind: 'tool', id: 'boolean_intersect', label: 'Intersect', shortcut: '', tooltip: 'Intersect — keep overlap' },
+  { kind: 'separator', label: 'Modify' },
+  { kind: 'tool', id: 'shell', label: 'Shell', shortcut: '', tooltip: 'Shell — hollow out a body' },
+  { kind: 'tool', id: 'pattern_linear', label: 'Lin Pattern', shortcut: '', tooltip: 'Linear pattern — repeat along axis' },
+  { kind: 'tool', id: 'pattern_circular', label: 'Circ Pattern', shortcut: '', tooltip: 'Circular pattern — repeat around axis' },
+  { kind: 'tool', id: 'mirror', label: 'Mirror', shortcut: '', tooltip: 'Mirror — reflect across plane' },
+  { kind: 'separator', label: 'Inspect' },
+  { kind: 'tool', id: 'measure', label: 'Measure', shortcut: 'M', tooltip: 'Measure distance (M)' },
+  { kind: 'tool', id: 'section', label: 'Section', shortcut: '', tooltip: 'Section cut plane' },
+  { kind: 'separator', label: 'Edge' },
+  { kind: 'tool', id: 'fillet', label: 'Fillet', shortcut: '', tooltip: 'Fillet — round edges (coming soon)' },
+  { kind: 'tool', id: 'chamfer', label: 'Chamfer', shortcut: '', tooltip: 'Chamfer — bevel edges (coming soon)' },
 ];
 
 export function Toolbar() {
@@ -159,21 +168,31 @@ export function Toolbar() {
 
   return (
     <div style={styles.toolbar}>
-      <div style={styles.group}>
-        {tools.map((tool) => (
+      {toolGroups.map((item, i) => {
+        if (item.kind === 'separator') {
+          return (
+            <div key={`sep-${i}`} style={styles.groupDivider}>
+              <div style={styles.groupDividerLine} />
+              <span style={styles.groupDividerLabel}>{item.label}</span>
+              <div style={styles.groupDividerLine} />
+            </div>
+          );
+        }
+        return (
           <button
-            key={tool.id}
+            key={item.id}
             style={{
               ...styles.button,
-              ...(activeTool === tool.id ? styles.active : {}),
+              ...(activeTool === item.id ? styles.active : {}),
             }}
-            onClick={() => handleToolClick(tool.id)}
-            title={tool.shortcut ? `${tool.label} (${tool.shortcut})` : tool.label}
+            onClick={() => handleToolClick(item.id)}
+            title={item.tooltip}
           >
-            {tool.label}
+            {item.label}
+            {item.shortcut && <span style={styles.shortcutHint}>{item.shortcut}</span>}
           </button>
-        ))}
-      </div>
+        );
+      })}
       <div style={styles.divider} />
       <DisplayModeToggle />
     </div>
@@ -215,5 +234,29 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#3b82f6',
     color: '#ffffff',
     border: '1px solid #2563eb',
+  },
+  shortcutHint: {
+    fontSize: 9,
+    color: '#475569',
+    marginLeft: 3,
+  },
+  groupDivider: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+    margin: '0 4px',
+    height: 24,
+  },
+  groupDividerLine: {
+    width: 1,
+    height: 16,
+    background: '#475569',
+  },
+  groupDividerLabel: {
+    fontSize: 8,
+    color: '#475569',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    whiteSpace: 'nowrap',
   },
 };

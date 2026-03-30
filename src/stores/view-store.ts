@@ -19,6 +19,7 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
     normal: 'y',
     offset: 0,
   },
+  measurePoints: [],
 
   setDisplayMode: (mode) => set({ displayMode: mode }),
   setViewportLayout: (layout) => set({ viewportLayout: layout }),
@@ -40,4 +41,8 @@ export const useViewStore = create<ViewStoreState & ViewStoreActions>((set) => (
   setSectionPlaneOffset: (offset) => set((s) => ({
     sectionPlane: { ...s.sectionPlane, offset },
   })),
+  addMeasurePoint: (point) => set((s) => ({
+    measurePoints: [...s.measurePoints.slice(-1), point],
+  })),
+  clearMeasurePoints: () => set({ measurePoints: [] }),
 }));

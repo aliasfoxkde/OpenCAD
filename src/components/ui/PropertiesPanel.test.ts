@@ -270,4 +270,86 @@ describe('PropertiesPanel — Store interactions', () => {
       }
     });
   });
+
+  describe('reference parameter — validation states', () => {
+    it('should resolve a valid reference feature', () => {
+      const target = makeFeature({ id: 'target-1', name: 'Target Body' });
+      const shell = makeFeature({
+        id: 'shell-1',
+        type: 'shell',
+        parameters: { targetRef: 'target-1', thickness: 1, removeFaces: '' },
+      });
+      useCADStore.setState({ features: [target, shell], selectedIds: [shell.id] });
+
+      const features = useCADStore.getState().features;
+      const refId = shell.parameters.targetRef as string;
+      const refFeature = features.find((f) => f.id === refId);
+
+      expect(refFeature).toBeDefined();
+      expect(refFeature!.name).toBe('Target Body');
+      expect(refFeature!.suppressed).toBe(false);
+    });
+
+    it('should detect missing reference', () => {
+      const shell = makeFeature({
+        id: 'shell-1',
+        type: 'shell',
+        parameters: { targetRef: 'nonexistent', thickness: 1, removeFaces: '' },
+      });
+      useCADStore.setState({ features: [shell], selectedIds: [shell.id] });
+
+      const features = useCADStore.getState().features;
+      const refId = shell.parameters.targetRef as string;
+      const refFeature = features.find((f) => f.id === refId);
+
+      expect(refFeature).toBeUndefined();
+    });
+
+    it('should detect suppressed reference', () => {
+      const target = makeFeature({ id: 'target-1', name: 'Target Body', suppressed: true });
+      const shell = makeFeature({
+        id: 'shell-1',
+        type: 'shell',
+        parameters: { targetRef: 'target-1', thickness: 1, removeFaces: '' },
+      });
+      useCADStore.setState({ features: [target, shell], selectedIds: [shell.id] });
+
+      const features = useCADStore.getState().features;
+      const refId = shell.parameters.targetRef as string;
+      const refFeature = features.find((f) => f.id === refId);
+
+      expect(refFeature).toBeDefined();
+      expect(refFeature!.suppressed).toBe(true);
+    });
+
+    it('should allow selecting referenced feature via store', () => {
+      const target = makeFeature({ id: 'target-1', name: 'Target Body' });
+      useCADStore.setState({ features: [target], selectedIds: [] });
+
+      useCADStore.getState().select(['target-1']);
+
+      expect(useCADStore.getState().selectedIds).toEqual(['target-1']);
+    });
+
+    it('should resolve boolean_subtract target and tool references', () => {
+      const bodyA = makeFeature({ id: 'a', name: 'Body A' });
+      const bodyB = makeFeature({ id: 'b', name: 'Body B' });
+      const sub = makeFeature({
+        id: 'sub-1',
+        type: 'boolean_subtract',
+        parameters: { targetRef: 'a', toolRef: 'b' },
+        dependencies: ['a', 'b'],
+      });
+      useCADStore.setState({ features: [bodyA, bodyB, sub], selectedIds: [sub.id] });
+
+      const features = useCADStore.getState().features;
+      const targetRef = sub.parameters.targetRef as string;
+      const toolRef = sub.parameters.toolRef as string;
+      const target = features.find((f) => f.id === targetRef);
+      const tool = features.find((f) => f.id === toolRef);
+
+      expect(target?.name).toBe('Body A');
+      expect(tool?.name).toBe('Body B');
+    });
+  });
 });

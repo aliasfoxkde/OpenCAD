@@ -53,4 +53,39 @@ describe('ViewStore', () => {
     useViewStore.getState().requestZoomToSelection();
     expect(useViewStore.getState().zoomToSelectionRequested).toBe(2);
   });
+
+  describe('measure points', () => {
+    beforeEach(() => {
+      useViewStore.setState({ measurePoints: [] });
+    });
+
+    it('should add a measure point', () => {
+      useViewStore.getState().addMeasurePoint([1, 2, 3]);
+      expect(useViewStore.getState().measurePoints).toEqual([[1, 2, 3]]);
+    });
+
+    it('should keep only the last point when adding a second', () => {
+      useViewStore.getState().addMeasurePoint([1, 2, 3]);
+      useViewStore.getState().addMeasurePoint([4, 5, 6]);
+      expect(useViewStore.getState().measurePoints).toEqual([[1, 2, 3], [4, 5, 6]]);
+    });
+
+    it('should slide window: keep last point when adding third', () => {
+      useViewStore.getState().addMeasurePoint([1, 2, 3]);
+      useViewStore.getState().addMeasurePoint([4, 5, 6]);
+      useViewStore.getState().addMeasurePoint([7, 8, 9]);
+      expect(useViewStore.getState().measurePoints).toEqual([[4, 5, 6], [7, 8, 9]]);
+    });
+
+    it('should clear all measure points', () => {
+      useViewStore.getState().addMeasurePoint([1, 2, 3]);
+      useViewStore.getState().addMeasurePoint([4, 5, 6]);
+      useViewStore.getState().clearMeasurePoints();
+      expect(useViewStore.getState().measurePoints).toEqual([]);
+    });
+
+    it('should start with empty measure points', () => {
+      expect(useViewStore.getState().measurePoints).toEqual([]);
+    });
+  });
 });

@@ -198,7 +198,7 @@ function ParameterInput({
 }: {
   paramDef: ParameterDef;
   value: unknown;
-  features: { id: string; name: string; type: string }[];
+  features: { id: string; name: string; type: string; suppressed: boolean }[];
   onChange: (v: unknown) => void;
 }) {
   switch (paramDef.type) {
@@ -268,24 +268,57 @@ function ParameterInput({
         </div>
       );
 
-    case 'reference':
+    case 'reference': {
+      const refId = value as string;
+      const refFeature = refId ? features.find((f) => f.id === refId) : null;
+      const refDef = refFeature ? getFeatureDefinition(refFeature.type) : null;
+      const isValid = refId && refFeature && !refFeature.suppressed;
+
       return (
-        <div style={styles.paramRow}>
+        <div style={{ ...styles.paramRow, flexDirection: 'column', alignItems: 'stretch' }}>
           <label style={styles.paramLabel}>{paramDef.label}</label>
-          <select
-            style={styles.paramSelect}
-            value={value as string}
-            onChange={(e) => onChange(e.target.value)}
-          >
-            <option value="">— none —</option>
-            {features.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.name}
-              </option>
-            ))}
-          </select>
+          <div style={styles.refRow}>
+            <select
+              style={{
+                ...styles.paramSelect,
+                borderColor: refId && !isValid ? '#ef4444' : '#334155',
+              }}
+              value={refId}
+              onChange={(e) => onChange(e.target.value)}
+            >
+              <option value="">— none —</option>
+              {features.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </select>
+            {refFeature && (
+              <button
+                style={styles.refSelectBtn}
+                onClick={() => useCADStore.getState().select([refId])}
+                title="Select this feature"
+              >
+                &#x2192;
+              </button>
+            )}
+          </div>
+          {refFeature && refDef && (
+            <div style={styles.refInfo}>
+              <span style={styles.refType}>{refDef.icon} {refDef.label}</span>
+              {refFeature.suppressed && (
+                <span style={styles.refWarning}>suppressed</span>
+              )}
+            </div>
+          )}
+          {refId && !refFeature && (
+            <div style={styles.refInfo}>
+              <span style={styles.refWarning}>missing reference</span>
+            </div>
+          )}
         </div>
       );
+    }
 
     default:
       return null;
@@ -418,6 +451,39 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#f1f5f9',
     outline: 'none',
     minWidth: 0,
+  },
+  refRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+  },
+  refSelectBtn: {
+    padding: '2px 6px',
+    borderRadius: 3,
+    fontSize: 12,
+    color: '#3b82f6',
+    background: 'transparent',
+    border: '1px solid #334155',
+    cursor: 'pointer',
+    flexShrink: 0,
+    lineHeight: 1,
+  },
+  refInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+  },
+  refType: {
+    fontSize: 10,
+    color: '#64748b',
+  },
+  refWarning: {
+    fontSize: 9,
+    color: '#ef4444',
+    background: 'rgba(239, 68, 68, 0.12)',
+    padding: '0 4px',
+    borderRadius: 3,
   },
   emptyState: {
     padding: '16px 12px',

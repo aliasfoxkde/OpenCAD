@@ -4,6 +4,7 @@ import { OrbitControls, Grid, GizmoHelper, GizmoViewport } from '@react-three/dr
 import { Scene } from './Scene';
 import { CameraController } from './CameraController';
 import { SectionPlane } from './SectionPlane';
+import { MeasureHelper, MeasureLine } from './MeasureHelper';
 import { useViewStore } from '../../stores/view-store';
 import { useCADStore } from '../../stores/cad-store';
 
@@ -29,6 +30,8 @@ export function Viewport() {
       <CameraController />
       <Scene />
       <SectionPlane />
+      <MeasureHelper />
+      <MeasureLine />
       <OrbitControls makeDefault />
       {showGrid && (
         <Grid

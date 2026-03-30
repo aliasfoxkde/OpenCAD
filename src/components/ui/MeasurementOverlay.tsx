@@ -5,25 +5,108 @@
 
 import { useMemo } from 'react';
 import { useCADStore } from '../../stores/cad-store';
+import { useViewStore } from '../../stores/view-store';
 
 export function MeasurementOverlay() {
   const activeTool = useCADStore((s) => s.activeTool);
   const features = useCADStore((s) => s.features);
   const selectedIds = useCADStore((s) => s.selectedIds);
+  const measurePoints = useViewStore((s) => s.measurePoints);
+  const clearMeasurePoints = useViewStore((s) => s.clearMeasurePoints);
 
-  if (activeTool !== 'measure' || selectedIds.length === 0) return null;
+  if (activeTool !== 'measure') return null;
 
+  const hasPointMeasure = measurePoints.length >= 2;
   const selectedFeatures = features.filter((f) => selectedIds.includes(f.id));
+  const hasFeatureMeasure = selectedFeatures.length > 0;
+
+  if (!hasPointMeasure && !hasFeatureMeasure) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>Measurements</div>
+        <div style={styles.hint}>Click on geometry to pick points</div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
-      <div style={styles.header}>Measurements</div>
+      <div style={styles.headerRow}>
+        <div style={styles.header}>Measurements</div>
+        {hasPointMeasure && (
+          <button style={styles.clearBtn} onClick={clearMeasurePoints}>Clear</button>
+        )}
+      </div>
+      {hasPointMeasure && (
+        <PointToDistance points={measurePoints} />
+      )}
       {selectedFeatures.length > 1 && (
         <InterFeatureDistances features={selectedFeatures} />
       )}
       {selectedFeatures.map((feature) => (
         <FeatureMeasurement key={feature.id} feature={feature} />
       ))}
+    </div>
+  );
+}
+
+function PointToDistance({ points }: { points: Array<[number, number, number]> }) {
+  if (points.length < 2) {
+    const a = points[0]!;
+    return (
+      <div style={styles.item}>
+        <div style={styles.featureName}>Point 1</div>
+        <div style={styles.measurements}>
+          <div style={styles.measurement}>
+            <span style={styles.measureLabel}>X:</span>
+            <span style={styles.measureValue}>{a[0].toFixed(2)}</span>
+          </div>
+          <div style={styles.measurement}>
+            <span style={styles.measureLabel}>Y:</span>
+            <span style={styles.measureValue}>{a[1].toFixed(2)}</span>
+          </div>
+          <div style={styles.measurement}>
+            <span style={styles.measureLabel}>Z:</span>
+            <span style={styles.measureValue}>{a[2].toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const a = points[0]!;
+  const b = points[1]!;
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const dz = b[2] - a[2];
+  const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  const dxy = Math.sqrt(dx * dx + dy * dy);
+
+  return (
+    <div style={styles.item}>
+      <div style={styles.featureName}>Point-to-Point</div>
+      <div style={styles.measurements}>
+        <div style={{ ...styles.measurement, ...styles.primaryMeasurement }}>
+          <span style={styles.measureLabel}>Distance:</span>
+          <span style={styles.measureValue}>{dist.toFixed(2)} mm</span>
+        </div>
+        <div style={styles.measurement}>
+          <span style={styles.measureLabel}>dX:</span>
+          <span style={styles.measureValue}>{dx.toFixed(2)}</span>
+        </div>
+        <div style={styles.measurement}>
+          <span style={styles.measureLabel}>dY:</span>
+          <span style={styles.measureValue}>{dy.toFixed(2)}</span>
+        </div>
+        <div style={styles.measurement}>
+          <span style={styles.measureLabel}>dZ:</span>
+          <span style={styles.measureValue}>{dz.toFixed(2)}</span>
+        </div>
+        <div style={styles.measurement}>
+          <span style={styles.measureLabel}>dXY:</span>
+          <span style={styles.measureValue}>{dxy.toFixed(2)}</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -157,6 +240,29 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 6,
     paddingBottom: 4,
     borderBottom: '1px solid #334155',
+  },
+  headerRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  clearBtn: {
+    fontSize: 9,
+    color: '#94a3b8',
+    background: 'transparent',
+    border: '1px solid #475569',
+    borderRadius: 3,
+    padding: '1px 6px',
+    cursor: 'pointer',
+  },
+  hint: {
+    fontSize: 11,
+    color: '#64748b',
+    fontStyle: 'italic',
+  },
+  primaryMeasurement: {
+    paddingTop: 2,
+    borderTop: '1px solid #334155',
   },
   item: {
     marginBottom: 8,

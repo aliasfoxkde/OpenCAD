@@ -46,6 +46,7 @@ export interface ViewStoreState {
     normal: 'x' | 'y' | 'z';
     offset: number;
   };
+  measurePoints: Array<[number, number, number]>;
 }
 
 export interface ViewStoreActions {
@@ -63,6 +64,8 @@ export interface ViewStoreActions {
   toggleSectionPlane: () => void;
   setSectionPlaneNormal: (normal: 'x' | 'y' | 'z') => void;
   setSectionPlaneOffset: (offset: number) => void;
+  addMeasurePoint: (point: [number, number, number]) => void;
+  clearMeasurePoints: () => void;
 }
 
 export interface UIStoreState {
