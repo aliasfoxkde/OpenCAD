@@ -33,7 +33,8 @@
     "y-indexeddb": "^9.0.12",
     "y-webrtc": "^10.3.0",
     "yjs": "^13.6.30",
-    "zustand": "^5.0.12"
+    "zustand": "^5.0.12",
+    "postprocessing": "^6.39.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
