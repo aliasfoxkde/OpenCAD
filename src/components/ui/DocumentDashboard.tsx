@@ -53,8 +53,23 @@ export function DocumentDashboard({ onOpen }: DocumentDashboardProps) {
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    let cancelled = false;
+
+    listDocuments()
+      .then((list) => {
+        if (!cancelled) setDocs(list);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load documents');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleCreate = useCallback(async () => {
     const name = newName.trim() || 'Untitled';
