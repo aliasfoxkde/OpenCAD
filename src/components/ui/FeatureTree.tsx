@@ -24,14 +24,8 @@ export function FeatureTree() {
     featureId: string;
   } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
   const editInputRef = useRef<HTMLInputElement>(null);
-
-  // Auto-expand all assemblies when features change
-  useEffect(() => {
-    const asmIds = new Set(features.filter((f) => f.type === 'assembly').map((f) => f.id));
-    setExpandedIds(asmIds);
-  }, [features]);
 
   // For search: collect matching feature IDs + ancestor assembly IDs
   const { visibleIds, autoExpandIds } = useMemo(() => {
@@ -53,25 +47,24 @@ export function FeatureTree() {
     return { visibleIds: new Set([...matchIds, ...ancestorIds]), autoExpandIds: ancestorIds };
   }, [features, searchQuery]);
 
-  // Auto-expand assemblies when search matches their descendants
-  useEffect(() => {
-    if (autoExpandIds.size > 0) {
-      setExpandedIds((prev) => {
-        const next = new Set(prev);
-        for (const id of autoExpandIds) next.add(id);
-        return next;
-      });
-    }
-  }, [autoExpandIds]);
+  // Assembly expansion is derived from the current feature tree. Search
+  // temporarily expands matching ancestors; user collapses are tracked
+  // separately so adding/removing features never needs an effect-driven reset.
+  const expandedIds = useMemo(() => {
+    const ids = new Set(features.filter((f) => f.type === 'assembly').map((f) => f.id));
+    for (const id of collapsedIds) ids.delete(id);
+    for (const id of autoExpandIds) ids.add(id);
+    return ids;
+  }, [features, collapsedIds, autoExpandIds]);
 
   const toggleExpand = useCallback((id: string) => {
-    setExpandedIds((prev) => {
+    setCollapsedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (expandedIds.has(id)) next.add(id);
+      else next.delete(id);
       return next;
     });
-  }, []);
+  }, [expandedIds]);
 
   const startEditing = useCallback((featureId: string, currentName: string) => {
     setEditingId(featureId);
