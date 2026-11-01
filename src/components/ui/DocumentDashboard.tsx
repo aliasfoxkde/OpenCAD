@@ -43,7 +43,6 @@ export function DocumentDashboard({ onOpen }: DocumentDashboardProps) {
 
   const refresh = useCallback(async () => {
     try {
-      setError(null);
       const list = await listDocuments();
       setDocs(list);
     } catch (err) {
@@ -82,6 +81,7 @@ export function DocumentDashboard({ onOpen }: DocumentDashboardProps) {
     async (id: string) => {
       await deleteDocument(id);
       setConfirmDeleteId(null);
+      setError(null);
       refresh();
     },
     [refresh],
