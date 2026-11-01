@@ -1,3 +1,5 @@
+> **Historical snapshot:** this progress log was last updated 2026-03-30. Its 90% overall-progress figure is not a current project metric. See [CURRENT_STATUS.md](CURRENT_STATUS.md) for the source-inspected capability matrix as of 2026-11-01.
+
 # OpenCAD - Progress Tracking
 
 **Last Updated**: 2026-03-30
