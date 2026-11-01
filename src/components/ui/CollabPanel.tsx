@@ -60,7 +60,7 @@ export function CollabPanel() {
       }
     });
     return unsub;
-  }, [setConnectionState, addToast]);
+  }, [setConnectionState, addToast, sync]);
 
   const handleShare = useCallback(async () => {
     try {
