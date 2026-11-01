@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useViewStore } from '../../stores/view-store';
@@ -23,15 +24,15 @@ export function CameraController() {
   const fitViewRequested = useViewStore((s) => s.fitViewRequested);
   const zoomToSelectionRequested = useViewStore((s) => s.zoomToSelectionRequested);
 
-  // When preset changes, set animation targets
-  if (cameraPreset) {
+  // Preset changes are external animation commands; apply them after render.
+  useEffect(() => {
+    if (!cameraPreset) return;
     const preset = getPreset(cameraPreset);
-    if (preset) {
-      animTarget.pos.set(...preset.position);
-      animTarget.lookAt.set(...preset.target);
-      animTarget.active = true;
-    }
-  }
+    if (!preset) return;
+    animTarget.pos.set(...preset.position);
+    animTarget.lookAt.set(...preset.target);
+    animTarget.active = true;
+  }, [cameraPreset]);
 
   useFrame(({ camera, scene }) => {
     // Track camera state for imperative calls (zoom)
