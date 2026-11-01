@@ -19,7 +19,11 @@ export function SectionPlane() {
   const offset = useViewStore((s) => s.sectionPlane.offset);
   const { gl, scene } = useThree();
 
-  const clippingPlane = useMemo(() => new THREE.Plane(), []);
+  const clippingPlane = useMemo(() => {
+    const normalVec = new THREE.Vector3(normal === 'x' ? 1 : 0, normal === 'y' ? 1 : 0, normal === 'z' ? 1 : 0);
+    const point = new THREE.Vector3(normal === 'x' ? offset : 0, normal === 'y' ? offset : 0, normal === 'z' ? offset : 0);
+    return new THREE.Plane().setFromNormalAndCoplanarPoint(normalVec, point);
+  }, [normal, offset]);
 
   useEffect(() => {
     gl.localClippingEnabled = true;
@@ -42,12 +46,6 @@ export function SectionPlane() {
       return;
     }
 
-    const normalVec = new THREE.Vector3(normal === 'x' ? 1 : 0, normal === 'y' ? 1 : 0, normal === 'z' ? 1 : 0);
-    clippingPlane.setFromNormalAndCoplanarPoint(
-      normalVec,
-      new THREE.Vector3(normal === 'x' ? offset : 0, normal === 'y' ? offset : 0, normal === 'z' ? offset : 0),
-    );
-
     scene.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
@@ -61,7 +59,7 @@ export function SectionPlane() {
         }
       }
     });
-  }, [enabled, normal, offset, clippingPlane, gl, scene]);
+  }, [enabled, clippingPlane, gl, scene]);
 
   if (!enabled) return null;
 
