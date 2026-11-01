@@ -842,8 +842,6 @@ function BooleanMesh({ feature, allFeatures, selected }: BooleanMeshProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paramsKey, allFeaturesKey, feature.type]);
 
-  if (!geometry) return null;
-
   const displayMode = useViewStore((s) => s.displayMode);
   const isWireframe = displayMode === 'wireframe';
   const showEdges = displayMode === 'shaded_edges';
@@ -877,6 +875,8 @@ function BooleanMesh({ feature, allFeatures, selected }: BooleanMeshProps) {
     },
     [feature.id],
   );
+
+  if (feature.suppressed || !geometry) return null;
 
   return (
     <mesh
