@@ -631,7 +631,7 @@ function FilletChamferMesh({ feature, allFeatures, selected }: FilletChamferProp
     }
 
     return result;
-  }, [feature.parameters, allFeatures]);
+  }, [feature.type, feature.parameters, allFeatures]);
 
   if (feature.suppressed || !geometry) return null;
 
@@ -939,7 +939,7 @@ function RevolveCutMesh({ feature, allFeatures, selected }: RevolveCutMeshProps)
     baseGeo.dispose();
     cutGeo.dispose();
     return result;
-  }, [feature.type, feature.parameters, allFeatures]);
+  }, [feature.parameters, allFeatures]);
 
   if (!geometry) return null;
 
