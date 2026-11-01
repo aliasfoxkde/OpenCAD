@@ -1,22 +1,33 @@
 # OpenCAD
 
-Open-source, web-native parametric 3D CAD platform. Combining the best of OnShape (collaboration, cloud-native) and Fusion360 (CAD + CAM + CAE breadth) into a free, open-source tool built for the browser.
+Open-source, browser-based parametric CAD prototype. It combines a custom TypeScript triangle-mesh modeling pipeline with a feature tree, sketch tools, local project storage, and optional peer-to-peer collaboration. It is not currently a full OpenCASCADE/B-rep CAD system.
 
 ## Features
 
-- **Parametric Modeling**: Full feature tree with extrude, revolve, fillet, chamfer, sweep, loft, and more
+- **Parametric Modeling**: Feature tree with primitives, sketch extrude/revolve, cut, sweep, loft, booleans, patterns, mirror, shell, and mesh-based fillet/chamfer operations; see the kernel limitations below
 - **2D Sketcher**: Draw with lines, arcs, circles, and intelligent constraints
-- **Real-Time Collaboration**: Multi-user editing via CRDT (Yjs)
-- **File Compatibility**: Import/export STEP, STL, OBJ, glTF, IGES
-- **Offline-First**: Works without internet via PWA and IndexedDB storage
-- **$0 Cost**: Runs on Cloudflare Pages free tier
+- **Collaboration**: Yjs CRDT document synchronization with a WebRTC peer-to-peer provider; connectivity and multi-user behavior still require deployment-level verification
+- **File I/O**: Import STL/OBJ; export STL/OBJ/GLB/3MF; native project serialization. STEP and IGES are not currently supported.
+- **Local Persistence**: IndexedDB-backed project storage and PWA scaffolding; offline/installability behavior still needs end-to-end verification
+- **Deployment**: Cloudflare Pages configuration is present; actual cost depends on configured services and usage, and deployment status must be verified separately
 - **Plugin System**: TypeScript-based feature SDK for extensions
+
+## Kernel and capability boundary
+
+OpenCAD currently builds and edits triangle meshes through custom generators
+and CSG operations. This is not a boundary-representation (B-rep) kernel:
+there is no OpenCASCADE/opencascade.js dependency in the current package.
+Consequently, the project must not claim STEP/IGES support or professional
+solid-modeling parity with Fusion 360/Onshape. Supported interchange formats
+are STL/OBJ import and STL/OBJ/GLB/3MF export, plus native project
+serialization. See [Current status](docs/CURRENT_STATUS.md) for the
+operation/format matrix and known limitations.
 
 ## Tech Stack
 
 - **Frontend**: Vite + React 19 + TypeScript 5.8
 - **3D Rendering**: Three.js via React Three Fiber (WebGPU/WebGL2)
-- **CAD Kernel**: OpenCASCADE (opencascade.js WASM) in Web Worker
+- **CAD Geometry**: Custom TypeScript mesh generators and `three-bvh-csg` boolean operations in Web Workers; no OpenCASCADE/B-rep kernel is included
 - **State**: Zustand
 - **Collaboration**: Yjs CRDT
 - **Persistence**: IndexedDB
@@ -41,7 +52,7 @@ npm run preview
 npm run test
 
 # Deploy to Cloudflare Pages
-npm run deploy
+npm run pages:deploy
 ```
 
 ## Documentation
