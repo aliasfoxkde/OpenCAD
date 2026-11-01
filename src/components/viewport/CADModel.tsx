@@ -561,8 +561,6 @@ interface FilletChamferProps {
 
 /** Renders fillet or chamfer result on a target body using CSG */
 function FilletChamferMesh({ feature, allFeatures, selected }: FilletChamferProps) {
-  const paramsKey = JSON.stringify(feature.parameters);
-  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
   const meshRef = useRef<THREE.Mesh>(null);
   useSelectionGlow(meshRef, selected);
 
@@ -665,8 +663,6 @@ interface CutMeshProps {
 
 /** Renders a cut (extruded sketch subtracted from target body) */
 function CutMesh({ feature, allFeatures, selected }: CutMeshProps) {
-  const paramsKey = JSON.stringify(feature.parameters);
-  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
   const meshRef = useRef<THREE.Mesh>(null);
   useSelectionGlow(meshRef, selected);
 
@@ -734,8 +730,6 @@ interface BooleanMeshProps {
 
 /** Renders the result of a boolean operation on referenced features */
 function BooleanMesh({ feature, allFeatures, selected }: BooleanMeshProps) {
-  const paramsKey = JSON.stringify(feature.parameters);
-  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
   const meshRef = useRef<THREE.Mesh>(null);
   useSelectionGlow(meshRef, selected);
 
@@ -906,8 +900,6 @@ interface RevolveCutMeshProps {
 
 /** Renders a revolve cut (revolved profile subtracted from target body) */
 function RevolveCutMesh({ feature, allFeatures, selected }: RevolveCutMeshProps) {
-  const paramsKey = JSON.stringify(feature.parameters);
-  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
   const meshRef = useRef<THREE.Mesh>(null);
   useSelectionGlow(meshRef, selected);
 
