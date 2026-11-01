@@ -163,7 +163,7 @@ function FeatureMeasurement({
     }
 
     return base;
-  }, [feature, allFeatures, feature.parameters]);
+  }, [feature, allFeatures]);
 
   return (
     <div style={styles.item}>
