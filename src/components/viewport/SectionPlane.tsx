@@ -13,6 +13,11 @@ import { useViewStore } from '../../stores/view-store';
 
 const PLANE_SIZE = 20;
 
+// Three.js renderer configuration is an imperative external-system setting.
+function enableLocalClipping(renderer: THREE.WebGLRenderer) {
+  renderer.localClippingEnabled = true;
+}
+
 export function SectionPlane() {
   const enabled = useViewStore((s) => s.sectionPlane.enabled);
   const normal = useViewStore((s) => s.sectionPlane.normal);
@@ -26,7 +31,7 @@ export function SectionPlane() {
   }, [normal, offset]);
 
   useEffect(() => {
-    gl.localClippingEnabled = true;
+    enableLocalClipping(gl);
   }, [gl]);
 
   useEffect(() => {
