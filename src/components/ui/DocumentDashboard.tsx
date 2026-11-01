@@ -43,7 +43,6 @@ export function DocumentDashboard({ onOpen }: DocumentDashboardProps) {
 
   const refresh = useCallback(async () => {
     try {
-      setLoading(true);
       setError(null);
       const list = await listDocuments();
       setDocs(list);
