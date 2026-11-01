@@ -146,9 +146,7 @@ function FeatureMesh({ featureId, type, params, selected, suppressed }: FeatureM
   const meshRef = useRef<THREE.Mesh>(null);
   useSelectionGlow(meshRef, selected);
 
-  // Serialize params for stable dependency
-  const paramsKey = JSON.stringify(params);
-  const geometry = useMemo(() => createGeometry(type, params), [type, paramsKey]);
+  const geometry = useMemo(() => createGeometry(type, params), [type, params]);
 
   const posX = (params.originX as number) ?? 0;
   const posY = (params.originY as number) ?? 0;
@@ -300,9 +298,6 @@ interface PatternMeshesProps {
 
 /** Renders pattern instances as transformed copies of the referenced feature */
 function PatternMeshes({ feature, allFeatures, selected }: PatternMeshesProps) {
-  const paramsKey = JSON.stringify(feature.parameters);
-  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
-
   const instances = useMemo(() => {
     const featureRef = feature.parameters.featureRef as string;
     if (!featureRef) return null;
@@ -327,8 +322,7 @@ function PatternMeshes({ feature, allFeatures, selected }: PatternMeshesProps) {
     const refPosZ = (refFeature.parameters.originZ as number) ?? 0;
 
     return { baseGeometry, transforms, refPos: [refPosX, refPosY, refPosZ] as [number, number, number] };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paramsKey, allFeaturesKey, feature.type]);
+  }, [feature.parameters, allFeatures, feature.type]);
 
   const displayMode = useViewStore((s) => s.displayMode);
   const isWireframe = displayMode === 'wireframe';
@@ -447,8 +441,6 @@ interface ShellMeshProps {
 
 /** Renders the result of shelling out a referenced body */
 function ShellMesh({ feature, allFeatures, selected }: ShellMeshProps) {
-  const paramsKey = JSON.stringify(feature.parameters);
-  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
   const meshRef = useRef<THREE.Mesh>(null);
   useSelectionGlow(meshRef, selected);
 
@@ -491,8 +483,7 @@ function ShellMesh({ feature, allFeatures, selected }: ShellMeshProps) {
 
     const result = booleanTwo(outerGeo, innerGeo, 'subtract');
     return result ?? null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paramsKey, allFeaturesKey, feature.type]);
+  }, [feature.parameters, allFeatures]);
 
   const displayMode = useViewStore((s) => s.displayMode);
   const isWireframe = displayMode === 'wireframe';
@@ -642,8 +633,7 @@ function FilletChamferMesh({ feature, allFeatures, selected }: FilletChamferProp
     }
 
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feature.type, paramsKey, allFeaturesKey]);
+  }, [feature.type, feature.parameters, allFeatures]);
 
   if (feature.suppressed || !geometry) return null;
 
@@ -712,8 +702,7 @@ function CutMesh({ feature, allFeatures, selected }: CutMeshProps) {
     baseGeo.dispose();
     cutGeo.dispose();
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feature.type, paramsKey, allFeaturesKey]);
+  }, [feature.type, feature.parameters, allFeatures]);
 
   if (!geometry) return null;
 
@@ -839,8 +828,7 @@ function BooleanMesh({ feature, allFeatures, selected }: BooleanMeshProps) {
     }
 
     return null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paramsKey, allFeaturesKey, feature.type]);
+  }, [feature.parameters, allFeatures, feature.type]);
 
   const displayMode = useViewStore((s) => s.displayMode);
   const isWireframe = displayMode === 'wireframe';
@@ -959,8 +947,7 @@ function RevolveCutMesh({ feature, allFeatures, selected }: RevolveCutMeshProps)
     baseGeo.dispose();
     cutGeo.dispose();
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feature.type, paramsKey, allFeaturesKey]);
+  }, [feature.type, feature.parameters, allFeatures]);
 
   if (!geometry) return null;
 
