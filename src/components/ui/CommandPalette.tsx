@@ -15,18 +15,13 @@ export function CommandPalette() {
   // Focus input when opened
   useEffect(() => {
     if (open) {
-      setQuery('');
-      setSelectedIndex(0);
       setTimeout(() => inputRef.current?.focus(), 0);
     }
   }, [open]);
 
-  // Reset selection when query changes
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [query]);
-
   const close = useCallback(() => {
+    setQuery('');
+    setSelectedIndex(0);
     toggle();
   }, [toggle]);
 
@@ -88,11 +83,11 @@ export function CommandPalette() {
             style={styles.input}
             placeholder="Type a command..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => { setQuery(e.target.value); setSelectedIndex(0); }}
             onKeyDown={handleKeyDown}
           />
           {query && (
-            <button style={styles.clearBtn} onClick={() => setQuery('')}>
+            <button style={styles.clearBtn} onClick={() => { setQuery(''); setSelectedIndex(0); }}>
               &times;
             </button>
           )}

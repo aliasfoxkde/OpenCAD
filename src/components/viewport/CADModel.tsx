@@ -146,14 +146,7 @@ function FeatureMesh({ featureId, type, params, selected, suppressed }: FeatureM
   const meshRef = useRef<THREE.Mesh>(null);
   useSelectionGlow(meshRef, selected);
 
-  if (suppressed) return null;
-
-  // Serialize params for stable dependency
-  const paramsKey = JSON.stringify(params);
-  const geometry = useMemo(() => createGeometry(type, params), [type, paramsKey]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-
-  if (!geometry) return null;
+  const geometry = useMemo(() => createGeometry(type, params), [type, params]);
 
   const posX = (params.originX as number) ?? 0;
   const posY = (params.originY as number) ?? 0;
@@ -191,6 +184,8 @@ function FeatureMesh({ featureId, type, params, selected, suppressed }: FeatureM
     },
     [featureId],
   );
+
+  if (suppressed || !geometry) return null;
 
   return (
     <mesh
@@ -303,11 +298,6 @@ interface PatternMeshesProps {
 
 /** Renders pattern instances as transformed copies of the referenced feature */
 function PatternMeshes({ feature, allFeatures, selected }: PatternMeshesProps) {
-  if (feature.suppressed) return null;
-
-  const paramsKey = JSON.stringify(feature.parameters);
-  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
-
   const instances = useMemo(() => {
     const featureRef = feature.parameters.featureRef as string;
     if (!featureRef) return null;
@@ -332,14 +322,13 @@ function PatternMeshes({ feature, allFeatures, selected }: PatternMeshesProps) {
     const refPosZ = (refFeature.parameters.originZ as number) ?? 0;
 
     return { baseGeometry, transforms, refPos: [refPosX, refPosY, refPosZ] as [number, number, number] };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paramsKey, allFeaturesKey, feature.type]);
-
-  if (!instances) return null;
+  }, [feature.parameters, allFeatures, feature.type]);
 
   const displayMode = useViewStore((s) => s.displayMode);
   const isWireframe = displayMode === 'wireframe';
   const showEdges = displayMode === 'shaded_edges';
+
+  if (feature.suppressed || !instances) return null;
 
   return (
     <>
@@ -452,10 +441,6 @@ interface ShellMeshProps {
 
 /** Renders the result of shelling out a referenced body */
 function ShellMesh({ feature, allFeatures, selected }: ShellMeshProps) {
-  if (feature.suppressed) return null;
-
-  const paramsKey = JSON.stringify(feature.parameters);
-  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
   const meshRef = useRef<THREE.Mesh>(null);
   useSelectionGlow(meshRef, selected);
 
@@ -498,10 +483,7 @@ function ShellMesh({ feature, allFeatures, selected }: ShellMeshProps) {
 
     const result = booleanTwo(outerGeo, innerGeo, 'subtract');
     return result ?? null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paramsKey, allFeaturesKey, feature.type]);
-
-  if (!geometry) return null;
+  }, [feature.parameters, allFeatures]);
 
   const displayMode = useViewStore((s) => s.displayMode);
   const isWireframe = displayMode === 'wireframe';
@@ -536,6 +518,8 @@ function ShellMesh({ feature, allFeatures, selected }: ShellMeshProps) {
     },
     [feature.id],
   );
+
+  if (feature.suppressed || !geometry) return null;
 
   return (
     <mesh
@@ -577,10 +561,6 @@ interface FilletChamferProps {
 
 /** Renders fillet or chamfer result on a target body using CSG */
 function FilletChamferMesh({ feature, allFeatures, selected }: FilletChamferProps) {
-  if (feature.suppressed) return null;
-
-  const paramsKey = JSON.stringify(feature.parameters);
-  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
   const meshRef = useRef<THREE.Mesh>(null);
   useSelectionGlow(meshRef, selected);
 
@@ -651,10 +631,9 @@ function FilletChamferMesh({ feature, allFeatures, selected }: FilletChamferProp
     }
 
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feature.type, paramsKey, allFeaturesKey]);
+  }, [feature.type, feature.parameters, allFeatures]);
 
-  if (!geometry) return null;
+  if (feature.suppressed || !geometry) return null;
 
   return (
     <mesh
@@ -684,10 +663,6 @@ interface CutMeshProps {
 
 /** Renders a cut (extruded sketch subtracted from target body) */
 function CutMesh({ feature, allFeatures, selected }: CutMeshProps) {
-  if (feature.suppressed) return null;
-
-  const paramsKey = JSON.stringify(feature.parameters);
-  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
   const meshRef = useRef<THREE.Mesh>(null);
   useSelectionGlow(meshRef, selected);
 
@@ -723,8 +698,7 @@ function CutMesh({ feature, allFeatures, selected }: CutMeshProps) {
     baseGeo.dispose();
     cutGeo.dispose();
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feature.type, paramsKey, allFeaturesKey]);
+  }, [feature.parameters, allFeatures]);
 
   if (!geometry) return null;
 
@@ -756,10 +730,6 @@ interface BooleanMeshProps {
 
 /** Renders the result of a boolean operation on referenced features */
 function BooleanMesh({ feature, allFeatures, selected }: BooleanMeshProps) {
-  if (feature.suppressed) return null;
-
-  const paramsKey = JSON.stringify(feature.parameters);
-  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
   const meshRef = useRef<THREE.Mesh>(null);
   useSelectionGlow(meshRef, selected);
 
@@ -852,10 +822,7 @@ function BooleanMesh({ feature, allFeatures, selected }: BooleanMeshProps) {
     }
 
     return null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paramsKey, allFeaturesKey, feature.type]);
-
-  if (!geometry) return null;
+  }, [feature.parameters, allFeatures, feature.type]);
 
   const displayMode = useViewStore((s) => s.displayMode);
   const isWireframe = displayMode === 'wireframe';
@@ -890,6 +857,8 @@ function BooleanMesh({ feature, allFeatures, selected }: BooleanMeshProps) {
     },
     [feature.id],
   );
+
+  if (feature.suppressed || !geometry) return null;
 
   return (
     <mesh
@@ -931,10 +900,6 @@ interface RevolveCutMeshProps {
 
 /** Renders a revolve cut (revolved profile subtracted from target body) */
 function RevolveCutMesh({ feature, allFeatures, selected }: RevolveCutMeshProps) {
-  if (feature.suppressed) return null;
-
-  const paramsKey = JSON.stringify(feature.parameters);
-  const allFeaturesKey = allFeatures.map((f) => `${f.id}:${f.type}:${JSON.stringify(f.parameters)}`).join('|');
   const meshRef = useRef<THREE.Mesh>(null);
   useSelectionGlow(meshRef, selected);
 
@@ -974,8 +939,7 @@ function RevolveCutMesh({ feature, allFeatures, selected }: RevolveCutMeshProps)
     baseGeo.dispose();
     cutGeo.dispose();
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feature.type, paramsKey, allFeaturesKey]);
+  }, [feature.parameters, allFeatures]);
 
   if (!geometry) return null;
 

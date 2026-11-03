@@ -149,7 +149,7 @@ export function SketchCanvas() {
         setHovered(hit);
       }
     },
-    [elements, tool],
+    [elements, tool, setCursor, setHovered, setSnap],
   );
 
   const handleClick = useCallback(
@@ -212,7 +212,7 @@ export function SketchCanvas() {
         }
       }
     },
-    [tool, cursor, snap, drawing, elements, selectedIds, pendingConstraintType],
+    [tool, cursor, snap, drawing, elements, selectedIds, pendingConstraintType, addConstraint, continueDrawing, finishDrawing, select, setPendingConstraintType, startDrawing],
   );
 
   const handleDblClick = useCallback(() => {
@@ -220,12 +220,12 @@ export function SketchCanvas() {
     if (drawing) {
       finishDrawing();
     }
-  }, [drawing]);
+  }, [drawing, finishDrawing]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     cancelDrawing();
-  }, []);
+  }, [cancelDrawing]);
 
   if (!active) return null;
 

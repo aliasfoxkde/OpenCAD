@@ -9,6 +9,7 @@ import { useViewStore } from '../../stores/view-store';
 import { createDistanceAnnotation } from '../../lib/annotations';
 import { estimateRadiusAtPoint } from '../../cad/analysis/measure';
 import { featureToMesh } from '../../lib/feature-to-mesh';
+import type { FeatureNode } from '../../types/cad';
 
 export function MeasurementOverlay() {
   const activeTool = useCADStore((s) => s.activeTool);
@@ -130,8 +131,8 @@ function FeatureMeasurement({
   feature,
   allFeatures,
 }: {
-  feature: { id: string; name: string; type: string; parameters: Record<string, unknown> };
-  allFeatures: Array<{ id: string; type: string; parameters: Record<string, unknown>; suppressed: boolean }>;
+  feature: FeatureNode;
+  allFeatures: FeatureNode[];
 }) {
   const measurements = useMemo(() => {
     const base = getFeatureMeasurements(feature.parameters);
@@ -140,7 +141,7 @@ function FeatureMeasurement({
     const hasRadius = 'radius' in feature.parameters || 'diameter' in feature.parameters;
     const isCurved = ['sphere', 'cone', 'torus', 'revolve', 'revolve_sketch', 'hole', 'sweep'].includes(feature.type);
     if (!hasRadius && isCurved) {
-      const mesh = featureToMesh(feature as any, allFeatures as any);
+      const mesh = featureToMesh(feature, allFeatures);
       if (mesh && mesh.vertices.length >= 12) {
         const centroid = {
           x: 0, y: 0, z: 0,
@@ -163,7 +164,7 @@ function FeatureMeasurement({
     }
 
     return base;
-  }, [feature, allFeatures, feature.parameters]);
+  }, [feature, allFeatures]);
 
   return (
     <div style={styles.item}>

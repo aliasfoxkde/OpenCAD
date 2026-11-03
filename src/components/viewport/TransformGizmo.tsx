@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useCallback, type ComponentRef } from 'react';
 import { TransformControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCADStore } from '../../stores/cad-store';
@@ -19,7 +19,7 @@ export function TransformGizmo() {
   const gridSnapSize = useViewStore((s) => s.gridSnapSize);
 
   const meshRef = useRef<THREE.Mesh>(null);
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<ComponentRef<typeof TransformControls>>(null);
   const dragging = useRef(false);
 
   const selectedFeature = selectedIds.length === 1 ? features.find((f) => f.id === selectedIds[0]) : null;
@@ -35,13 +35,6 @@ export function TransformGizmo() {
   const posZ = selectedFeature ? ((selectedFeature.parameters[posKeyZ] as number) ?? 0) : 0;
 
   const isGizmoVisible = !!selectedFeature && activeTool === 'select';
-
-  // Sync position from feature params to mesh
-  useEffect(() => {
-    if (meshRef.current && isGizmoVisible) {
-      meshRef.current.position.set(posX, posY, posZ);
-    }
-  }, [posX, posY, posZ, isGizmoVisible]);
 
   const snapValue = useCallback(
     (v: number): number => {

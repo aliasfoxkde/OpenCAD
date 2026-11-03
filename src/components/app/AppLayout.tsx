@@ -614,7 +614,7 @@ export function AppLayout() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [toggleCommandPalette, clearSelection, setSketchMode, handleDuplicate, handleSelectAll, handleSetCamera]);
+  }, [toggleCommandPalette, clearSelection, setSketchMode, handleDuplicate, handleSelectAll, handleSetCamera, closeContextMenu, removeFeature]);
 
   // Show dashboard when no document is open
   if (!documentId) {

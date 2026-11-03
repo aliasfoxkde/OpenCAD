@@ -3,7 +3,7 @@ import { useViewStore } from '../../stores/view-store';
 import { getDefaultParameters } from '../../cad/features';
 import { nanoid } from 'nanoid';
 import { DisplayModeToggle } from './DisplayModeToggle';
-import { useToast } from './Toast';
+import { getToast } from './Toast';
 import type { FeatureType } from '../../types/cad';
 import type { ToolType } from '../../types/cad';
 
@@ -73,7 +73,7 @@ export function Toolbar() {
   const handleToolClick = (toolId: ToolType) => {
     const comingSoon = ['fillet', 'chamfer'] as ToolType[];
     if (comingSoon.includes(toolId)) {
-      useToast().addToast(`${toolId.charAt(0).toUpperCase() + toolId.slice(1)} tool coming soon`, 'warning');
+      getToast().addToast(`${toolId.charAt(0).toUpperCase() + toolId.slice(1)} tool coming soon`, 'warning');
       return;
     }
 
